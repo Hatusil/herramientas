@@ -343,15 +343,24 @@ class Sidebar(ctk.CTkFrame):
         desc_frame = ctk.CTkFrame(main, fg_color="transparent")
         desc_frame.pack(pady=5, padx=10)
         
-        desc_text = """Soy estudiante de desarrollo de software con una fuerte pasión por llevar una vida integral y explorar el análisis de datos, la cartografía y los sistemas de información geográfica."""
+        desc_text = """Soy desarrollador de software con una fuerte pasión por llevar una vida integral y explorar el análisis de datos, la cartografía y los sistemas de información geográfica. Admiro a las personas virtuosas que se esforzan por mejorarse cada día."""
         
         ctk.CTkLabel(
             desc_frame,
             text=desc_text,
             font=ctk.CTkFont(size=11),
             text_color="gray",
-            wraplength=350
+            wraplength=380
         ).pack(pady=5)
+        
+        # Fecha de última actualización
+        año = datetime.datetime.now().year
+        ctk.CTkLabel(
+            main,
+            text=f"Última actualización: Abril {año}",
+            font=ctk.CTkFont(size=12),
+            text_color="gray"
+        ).pack(pady=(10, 0))
         
         # Copyright
         año = datetime.datetime.now().year
