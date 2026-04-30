@@ -225,8 +225,9 @@ class VideoToolUI(ctk.CTkFrame):
         
         ctk.CTkButton(frame, text="👁️ Ver Info", command=self._show_info).pack(pady=10)
         
-        self.info_text = ctk.CTkTextbox(frame, width=400, height=200)
+        self.info_text = ctk.CTkTextbox(frame, width=350, height=200, wrap="word")
         self.info_text.pack(padx=10, pady=10)
+        self.info_text.configure(state="disabled")
     
     def _show_info(self) -> None:
         if not self._check_files():
@@ -239,22 +240,32 @@ class VideoToolUI(ctk.CTkFrame):
         self.info_text.delete("1.0", tk.END)
         
         if result['success']:
-            self.info_text.insert("1.0", f"""Información del Video:
-─────────────────────────────────
-Archivo: {result['file_name']}
-Tamaño: {result['file_size'] / 1024 / 1024:.2f} MB
-Duración: {result['duration']:.2f} seg
-Formato: {result['format']}
+            # Formatear FPS más limpio
+            fps = result['video_fps']
+            if '/' in str(fps):
+                try:
+                    num, den = fps.split('/')
+                    fps = f"{float(num)/float(den):.2f}"
+                except:
+                    pass
+            
+            info = f"""📹 INFO DEL VIDEO
+{'='*30}
+📁 Archivo: {result['file_name']}
+💾 Tamaño: {result['file_size'] / 1024 / 1024:.2f} MB
+⏱️ Duración: {result['duration']:.2f} seg
+📦 Formato: {result['format']}
 
-Video:
-─────────────────────────────────
-Codec: {result['video_codec']}
-Resolución: {result['video_resolution']}
-FPS: {result['video_fps']}
+🎬 VIDEO
+{'='*30}
+🔧 Codec: {result['video_codec']}
+📐 Resolución: {result['video_resolution']}
+🎞️ FPS: {fps}
 
-Audio:
-─────────────────────────────────
-Codec: {result['audio_codec']}
-""")
+🔊 AUDIO
+{'='*30}
+🔧 Codec: {result['audio_codec']}
+"""
+            self.info_text.insert("1.0", info)
         else:
             self.info_text.insert("1.0", f"Error: {result.get('error', 'Desconocido')}")
