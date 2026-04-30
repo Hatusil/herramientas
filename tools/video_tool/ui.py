@@ -94,18 +94,35 @@ class VideoToolUI(ctk.CTkFrame):
             if f not in self.files:
                 self.files.append(f)
                 self.file_listbox.insert(tk.END, Path(f).name)
+        
+        if files:
+            self._update_selection_status()
     
     def _clear_files(self) -> None:
         self.files.clear()
         self.file_listbox.delete(0, tk.END)
+        self.status_label.configure(text="Lista vacía", text_color="gray")
     
     def _select_all(self) -> None:
         """Selecciona todos los archivos de la lista."""
         self.file_listbox.select_set(0, tk.END)
+        self._update_selection_status()
     
     def _deselect_all(self) -> None:
         """Deselecciona todos los archivos."""
         self.file_listbox.select_clear(0, tk.END)
+        self._update_selection_status()
+    
+    def _update_selection_status(self) -> None:
+        """Actualiza el status con la selección actual."""
+        selected = self._get_selected_files()
+        total = len(self.files)
+        if not selected:
+            self.status_label.configure(text=f"{total} archivos (ninguno seleccionado)", text_color="gray")
+        elif len(selected) == total:
+            self.status_label.configure(text=f"{total} seleccionados", text_color="blue")
+        else:
+            self.status_label.configure(text=f"{len(selected)}/{total} seleccionados", text_color="blue")
     
     def _get_selected_files(self) -> List[str]:
         """Retorna lista de archivos seleccionados (no todos)."""
@@ -363,8 +380,11 @@ class VideoToolUI(ctk.CTkFrame):
             else:
                 self.info_text.insert("1.0", "⚠️ ERRORES:\n" + "\n".join(errors))
         
-        status = f"Mostrando {len(all_info)}/{len(selected)} videos"
-        self.status_label.configure(text=status, text_color="green" if not errors else "orange")
+        # Update status bar
+        if errors and not all_info:
+            self.status_label.configure(text="Error al cargar info", text_color="red")
+        else:
+            self._update_selection_status()
         
         # Disable textbox again
         self.info_text.configure(state="disabled")
