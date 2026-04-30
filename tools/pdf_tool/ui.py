@@ -782,7 +782,7 @@ class PDFToolUI(ctk.CTkFrame):
             command=self._show_pdf_info
         ).pack(pady=5)
     
-    def _show_pdf_info(self) -> None:
+def _show_pdf_info(self) -> None:
         if not self._check_files():
             return
         
@@ -790,38 +790,30 @@ class PDFToolUI(ctk.CTkFrame):
             self.status_label.configure(text="Seleccione un PDF", text_color="orange")
             return
         
-        # Mostrar info del primer archivo
+        # Mostrar info de TODOS los archivos
         from tools.pdf_tool.processor import get_pdf_info
-        
-        info = get_pdf_info(self.files[0])
         
         self.info_text.delete("1.0", tk.END)
         
-        if info.get('success'):
-            self.info_text.insert("1.0", f"""Información del PDF:
-─────────────────────────────────
-Archivo: {info.get('file_name', 'N/A')}
+        resultados = []
+        for file_path in self.files:
+            info = get_pdf_info(file_path)
+            resultados.append(info)
+        
+        # Mostrar todos los resultados
+        for i, info in enumerate(resultados):
+            if info.get('success'):
+                self.info_text.insert(tk.END, f"""[{i+1}] {info.get('file_name', 'N/A')}
+────────────────────────────────
 Tamaño: {info.get('file_size', 0)} bytes
 Páginas: {info.get('num_pages', 0)}
 Encriptado: {'Sí' if info.get('is_encrypted') else 'No'}
-
-Metadatos:
-─────────────────────────────────
 Título: {info.get('title', 'N/A')}
 Autor: {info.get('author', 'N/A')}
-Creador: {info.get('creator', 'N/A')}
-Productor: {info.get('producer', 'N/A')}
-Fecha creación: {info.get('creation_date', 'N/A')}
+
 """)
-            
-            # Info de páginas
-            pages = info.get('pages', [])
-            if pages:
-                self.info_text.insert(tk.END, "\nPáginas:\n─────────────────────────────────\n")
-                for p in pages[:10]:  # Mostrar max 10
-                    self.info_text.insert(tk.END, f"Página {p['page_num']}: Rotación={p['rotation']}°\n")
-        else:
-            self.info_text.insert("1.0", f"Error: {info.get('error', 'Error desconocido')}")
+            else:
+                self.info_text.insert(tk.END, f"[{i+1}] Error: {info.get('error', 'Error desconocido')}\n\n")
     
     # =========================================================================
     # UTILIDADES
