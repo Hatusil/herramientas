@@ -1,5 +1,6 @@
 """UI: Interfaz para herramienta de video."""
 import sys
+import threading
 from ui.help_panel import add_help
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -10,6 +11,7 @@ import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
 from typing import List, Callable
+import queue
 
 
 class VideoToolUI(ctk.CTkFrame):
@@ -156,20 +158,45 @@ class VideoToolUI(ctk.CTkFrame):
         RadioButton(quality_frame, text="Media (23)", variable=self.crf_var, value="23").pack(side="left", padx=5)
         RadioButton(quality_frame, text="Baja (28)", variable=self.crf_var, value="28").pack(side="left", padx=5)
         
-        ctk.CTkButton(frame, text="🔄 Convertir", command=self._convert_video, height=40).pack(pady=20)
+        # Progress bar
+        self.convert_progress = ctk.CTkProgressBar(frame, width=300)
+        self.convert_progress.pack(pady=10)
+        self.convert_progress.set(0)
+        
+        ctk.CTkButton(frame, text="🔄 Convertir", command=self._convert_video, height=40).pack(pady=10)
     
     def _convert_video(self) -> None:
         if not self._check_files():
             return
         
-        from tools.video_tool.processor import convert_video
+        # Disable button and show progress
+        self.convert_progress.set(0.1)
+        self.status_label.configure(text="Convirtiendo... (puede tardar)", text_color="yellow")
+        self.update()
         
-        result = convert_video(self.files[0], self.out_format.get(), crf=int(self.crf_var.get()))
+        # Run conversion in thread
+        def convert_thread():
+            try:
+                from tools.video_tool.processor import convert_video
+                result = convert_video(self.files[0], self.out_format.get(), crf=int(self.crf_var.get()))
+                
+                # Update UI in main thread
+                self.after(0, lambda: self._on_convert_done(result))
+            except Exception as e:
+                self.after(0, lambda: self._on_convert_done({'success': False, 'error': str(e)}))
+        
+        threading.Thread(target=convert_thread, daemon=True).start()
+    
+    def _on_convert_done(self, result: dict) -> None:
+        self.convert_progress.set(1)
         
         if result['success']:
             self.status_label.configure(text=result['message'], text_color="green")
         else:
             self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
+        
+        # Reset progress after delay
+        self.after(2000, lambda: self.convert_progress.set(0))
     
     def _setup_info_tab(self) -> None:
         frame = self.tab_info
