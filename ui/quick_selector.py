@@ -9,6 +9,7 @@ from tkinter import filedialog
 from pathlib import Path
 from typing import List, Callable
 import tkinter as tk
+from ui.tooltip import add_tooltip
 
 logger = logging.getLogger(__name__)
 
@@ -34,50 +35,55 @@ class QuickFileSelector:
         quick_frame.pack(fill="x", pady=(0, 5))
         
         # Botones de acceso rápido tipo botón
-        ctk.CTkButton(
+        btn_actual = ctk.CTkButton(
             quick_frame,
             text="📂",
-            tooltip="Directorio actual",
             command=self._open_current,
             width=35,
             height=28
-        ).pack(side="left", padx=2)
+        )
+        btn_actual.pack(side="left", padx=2)
+        add_tooltip(btn_actual, "Directorio actual")
         
-        ctk.CTkButton(
+        btn_escritorio = ctk.CTkButton(
             quick_frame,
             text="🖥️",
-            tooltip="Escritorio",
             command=self._open_desktop,
             width=35,
             height=28
-        ).pack(side="left", padx=2)
+        )
+        btn_escritorio.pack(side="left", padx=2)
+        add_tooltip(btn_escritorio, "Escritorio")
         
-        ctk.CTkButton(
+        btn_docs = ctk.CTkButton(
             quick_frame,
             text="📁",
-            tooltip="Documentos",
             command=self._open_documents,
             width=35,
             height=28
-        ).pack(side="left", padx=2)
+        )
+        btn_docs.pack(side="left", padx=2)
+        add_tooltip(btn_docs, "Documentos")
         
-        ctk.CTkButton(
+        btn_descargas = ctk.CTkButton(
             quick_frame,
             text="⬇️",
-            tooltip="Descargas",
             command=self._open_downloads,
             width=35,
             height=28
-        ).pack(side="left", padx=2)
+        )
+        btn_descargas.pack(side="left", padx=2)
+        add_tooltip(btn_descargas, "Descargas")
         
-        ctk.CTkButton(
+        btn_usb = ctk.CTkButton(
             quick_frame,
             text="💾",
-            tooltip="USB / Disco extraíble",
             command=self._open_removable,
             width=35,
             height=28
-        ).pack(side="left", padx=2)
+        )
+        btn_usb.pack(side="left", padx=2)
+        add_tooltip(btn_usb, "USB / Disco extraíble")
     
     def _open_current(self):
         self._open_folder(os.getcwd())

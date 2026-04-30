@@ -69,11 +69,12 @@ class App(ctk.CTk):
     
     def _on_closing(self) -> None:
         """Cierra la app cuando se presiona X o Salir."""
-        # Usar destroy() normal, pero capturar excepciones del bug de CTkButton
+        # Bug conocido de CustomTkinter CTkButton con _font attribute
+        # Usar try/except directo para evitar múltiples warnings
         try:
-            self.quit()
             self.destroy()
-        except AttributeError:
+        except (AttributeError, RuntimeError):
+            # RuntimeError puede ocurrir si el widget ya fue destruido
             # Bug conocido de CustomTkinter CTkButton - forzar salida
             import sys
             sys.exit(0)
