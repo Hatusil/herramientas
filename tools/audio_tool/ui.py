@@ -131,14 +131,12 @@ class AudioToolUI(ctk.CTkFrame):
         self.tab_clean = self.tabview.add("Limpiar")
         self.tab_convert = self.tabview.add("Convertir")
         self.tab_repair = self.tabview.add("Reparar")
-        self.tab_verify = self.tabview.add("Verificar")
         self.tab_info = self.tabview.add("Info")
         
         self._setup_normalize_tab()
         self._setup_clean_tab()
         self._setup_convert_tab()
         self._setup_repair_tab()
-        self._setup_verify_tab()
         self._setup_info_tab()
         
         # Status
@@ -440,31 +438,115 @@ class AudioToolUI(ctk.CTkFrame):
         
         info2 = ctk.CTkLabel(
             frame,
-            text="Intenta corregir frames corruptos y recuperaraudio reproducible.",
+            text="Primero verificá qué archivos están corruptos, luego decidí qué reparar",
             text_color="gray"
         )
         info2.pack(pady=5)
         
-        info3 = ctk.CTkLabel(
-            frame,
-            text="Útil para archivos que no se reproducen correctamente.",
-            text_color="gray"
-        )
-        info3.pack(pady=5)
+        # Textbox para resultados de verificación
+        self.repair_verify_text = ctk.CTkTextbox(frame, width=500, height=180, wrap="word")
+        self.repair_verify_text.pack(padx=10, pady=10)
+        self.repair_verify_text.configure(state="disabled")
+        
+        # Botones de acción
+        btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        btn_frame.pack(pady=10)
         
         ctk.CTkButton(
-            frame,
-            text="🔧 Reparar Archivos",
-            command=self._repair,
-            height=40,
-            font=ctk.CTkFont(size=14)
-        ).pack(pady=20)
+            btn_frame,
+            text="🔍 Verificar",
+            command=self._verify_before_repair,
+            height=35,
+            width=120
+        ).pack(side="left", padx=3)
+        
+        self.btn_repair_corrupt = ctk.CTkButton(
+            btn_frame,
+            text="🔧 Solo Corruptos",
+            command=lambda: self._do_repair(mode='corrupt'),
+            height=35,
+            width=130,
+            state="disabled"
+        )
+        self.btn_repair_corrupt.pack(side="left", padx=3)
+        
+        self.btn_repair_all = ctk.CTkButton(
+            btn_frame,
+            text="🔧 Reparar Todos",
+            command=lambda: self._do_repair(mode='all'),
+            height=35,
+            width=130,
+            state="disabled"
+        )
+        self.btn_repair_all.pack(side="left", padx=3)
+        
+        # Estado de verificación
+        self.verify_state = {'ok': [], 'corrupt': []}
     
-    def _repair(self) -> None:
-        if not self._check_files():
+    def _verify_before_repair(self) -> None:
+        selected = self._get_selected_files()
+        if not selected:
+            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
             return
         
-        self.status_label.configure(text="Procesando...", text_color="blue")
+        self.status_label.configure(text="Verificando...", text_color="yellow")
+        self.repair_verify_text.configure(state="normal")
+        self.repair_verify_text.delete("1.0", tk.END)
+        self.update()
+        
+        try:
+            from tools.audio_tool.processor import verify_multiple_audio
+            result = verify_multiple_audio(selected)
+            
+            # Clasificar
+            ok_files = [r for r in result['results'] if not r['corrupt']]
+            corrupt_files = [r for r in result['results'] if r['corrupt']]
+            
+            # Guardar estado
+            self.verify_state = {'ok': [r['file'] for r in ok_files], 'corrupt': [r['file'] for r in corrupt_files]}
+            
+            # Mostrar resultados
+            self.repair_verify_text.insert("1.0", f"📊 VERIFICACIÓN:\n{'─'*35}\n")
+            
+            if ok_files:
+                self.repair_verify_text.insert(tk.END, f"✅ OK ({len(ok_files)}):\n")
+                for r in ok_files:
+                    self.repair_verify_text.insert(tk.END, f"  ✓ {r['name']}\n")
+                self.repair_verify_text.insert(tk.END, "\n")
+            
+            if corrupt_files:
+                self.repair_verify_text.insert(tk.END, f"❌ CORRUPTOS ({len(corrupt_files)}):\n")
+                for r in corrupt_files:
+                    self.repair_verify_text.insert(tk.END, f"  ✗ {r['name']}\n")
+            
+            self.repair_verify_text.insert(tk.END, f"\n{'─'*35}\nTotal: {result['total']} | OK: {result['ok']} | corruptos: {result['corrupt']}")
+            self.repair_verify_text.configure(state="disabled")
+            
+            # Habilitar botones
+            if len(corrupt_files) > 0:
+                self.btn_repair_corrupt.configure(state="normal")
+                self.status_label.configure(text=f"{len(corrupt_files)} corruptos", text_color="orange")
+            else:
+                self.btn_repair_corrupt.configure(state="disabled")
+                self.status_label.configure(text="Todos OK", text_color="green")
+            
+            self.btn_repair_all.configure(state="normal" if len(ok_files) > 0 else "disabled")
+                
+        except Exception as e:
+            self.status_label.configure(text=f"Error: {str(e)}", text_color="red")
+    
+    def _do_repair(self, mode: str) -> None:
+        if mode == 'corrupt':
+            files = self.verify_state['corrupt']
+            if not files:
+                return
+            self.status_label.configure(text=f"Reparando {len(files)} corruptos...", text_color="yellow")
+        else:
+            files = self._get_selected_files()
+            self.status_label.configure(text=f"Reparando {len(files)} archivos...", text_color="yellow")
+        
+        result = self.on_process('repair', files, {})
+        self._show_result(result)
         
         result = self.on_process('repair', self.files, {})
         self._show_result(result)
