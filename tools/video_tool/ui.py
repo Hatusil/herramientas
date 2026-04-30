@@ -117,20 +117,42 @@ class VideoToolUI(ctk.CTkFrame):
         RadioButton(fmt_frame, text="WAV", variable=self.audio_format, value="wav").pack(side="left", padx=10)
         RadioButton(fmt_frame, text="OGG", variable=self.audio_format, value="ogg").pack(side="left", padx=10)
         
-        ctk.CTkButton(frame, text="🎵 Extraer Audio", command=self._extract_audio, height=40).pack(pady=20)
+        # Progress bar (reusa el de convertir)
+        self.extract_progress = ctk.CTkProgressBar(frame, width=300)
+        self.extract_progress.pack(pady=10)
+        self.extract_progress.set(0)
+        
+        ctk.CTkButton(frame, text="🎵 Extraer Audio", command=self._extract_audio, height=40).pack(pady=10)
     
     def _extract_audio(self) -> None:
         if not self._check_files():
             return
         
-        from tools.video_tool.processor import extract_audio
+        # Show progress
+        self.extract_progress.set(0.1)
+        self.status_label.configure(text="Extrayendo audio...", text_color="yellow")
+        self.update()
         
-        result = extract_audio(self.files[0], self.audio_format.get())
+        # Run in thread
+        def extract_thread():
+            try:
+                from tools.video_tool.processor import extract_audio
+                result = extract_audio(self.files[0], self.audio_format.get())
+                self.after(0, lambda: self._on_extract_done(result))
+            except Exception as e:
+                self.after(0, lambda: self._on_extract_done({'success': False, 'error': str(e)}))
+        
+        threading.Thread(target=extract_thread, daemon=True).start()
+    
+    def _on_extract_done(self, result: dict) -> None:
+        self.extract_progress.set(1)
         
         if result['success']:
             self.status_label.configure(text=result['message'], text_color="green")
         else:
             self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
+        
+        self.after(2000, lambda: self.extract_progress.set(0))
     
     def _setup_convert_tab(self) -> None:
         frame = self.tab_convert
