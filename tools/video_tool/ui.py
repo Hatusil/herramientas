@@ -313,44 +313,47 @@ class VideoToolUI(ctk.CTkFrame):
             self.status_label.configure(text="Seleccioná un video", text_color="orange")
             return
         
-        result = get_video_info(selected[0])
-        
         # Enable textbox to write
         self.info_text.configure(state="normal")
         self.info_text.delete("1.0", tk.END)
         
-        if result['success']:
-            # Formatear FPS más limpio
-            fps = result['video_fps']
-            if '/' in str(fps):
-                try:
-                    num, den = fps.split('/')
-                    fps = f"{float(num)/float(den):.2f}"
-                except:
-                    pass
+        all_info = []
+        errors = []
+        
+        for video_path in selected:
+            result = get_video_info(video_path)
             
-            info = f"""📹 INFO DEL VIDEO
-{'='*30}
-📁 Archivo: {result['file_name']}
-💾 Tamaño: {result['file_size'] / 1024 / 1024:.2f} MB
-⏱️ Duración: {result['duration']:.2f} seg
-📦 Formato: {result['format']}
-
-🎬 VIDEO
-{'='*30}
-🔧 Codec: {result['video_codec']}
-📐 Resolución: {result['video_resolution']}
-🎞️ FPS: {fps}
-
-🔊 AUDIO
-{'='*30}
-🔧 Codec: {result['audio_codec']}
-"""
-            self.info_text.insert("1.0", info)
-            self.status_label.configure(text="Info cargada", text_color="green")
-        else:
-            self.info_text.insert("1.0", f"Error: {result.get('error', 'Desconocido')}")
-            self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
+            if result['success']:
+                # Formatear FPS más limpio
+                fps = result['video_fps']
+                if '/' in str(fps):
+                    try:
+                        num, den = fps.split('/')
+                        fps = f"{float(num)/float(den):.2f}"
+                    except:
+                        pass
+                
+                info = f"""📹 {result['file_name']}
+{'─'*30}
+💾 {result['file_size'] / 1024 / 1024:.2f} MB | ⏱️ {result['duration']:.1f}s | 📦 {result['format']}
+🎬 {result['video_codec']} | {result['video_resolution']} | 🎞️ {fps}fps
+🔊 {result['audio_codec']}"""
+                all_info.append(info)
+            else:
+                errors.append(f"{Path(video_path).name}: {result.get('error', 'Error')}")
+        
+        # Display results
+        if all_info:
+            self.info_text.insert("1.0", "\n\n".join(all_info))
+        
+        if errors:
+            if all_info:
+                self.info_text.insert(tk.END, f"\n\n⚠️ ERRORES:\n" + "\n".join(errors))
+            else:
+                self.info_text.insert("1.0", "⚠️ ERRORES:\n" + "\n".join(errors))
+        
+        status = f"Mostrando {len(all_info)}/{len(selected)} videos"
+        self.status_label.configure(text=status, text_color="green" if not errors else "orange")
         
         # Disable textbox again
         self.info_text.configure(state="disabled")
