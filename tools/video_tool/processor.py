@@ -28,8 +28,19 @@ def extract_audio(video_path: str, output_format: str = 'mp3') -> Dict[str, Any]
         p = Path(video_path)
         output_path = p.parent / f"{p.stem}_audio.{output_format}"
         
-        codec = 'libmp3lame' if output_format == 'mp3' else 'copy'
-        bitrate = '192k' if output_format == 'mp3' else None
+        # Configurar codec según formato de salida
+        if output_format == 'mp3':
+            codec = 'libmp3lame'
+            bitrate = '192k'
+        elif output_format == 'ogg':
+            codec = 'libvorbis'
+            bitrate = '192k'
+        elif output_format == 'wav':
+            codec = 'pcm_s16le'
+            bitrate = None
+        else:
+            codec = 'copy'
+            bitrate = None
         
         cmd = [get_ffmpeg_path(), '-y', '-i', video_path, '-vn']
         
