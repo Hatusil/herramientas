@@ -110,8 +110,17 @@ def extract_text_from_file(file_path: str) -> Dict[str, Any]:
 
 def extract_text_from_url(url: str) -> Dict[str, Any]:
     """Extrae texto de una URL."""
+    logger.info(f"Intentando scrapear URL: {url}")
+    
     if not REQUESTS_AVAILABLE:
+        logger.error("requests no está instalado")
         return {'success': False, 'error': 'requests no instalado'}
+    
+    # Validar que la URL tenga protocolo
+    url = url.strip()
+    if not url.startswith(('http://', 'https://')):
+        logger.warning(f"URL sin protocolo válido: {url}")
+        url = 'https://' + url
     
     try:
         headers = {
@@ -123,9 +132,12 @@ def extract_text_from_url(url: str) -> Dict[str, Any]:
             'Upgrade-Insecure-Requests': '1',
             'Cache-Control': 'max-age=0',
         }
+        
+        logger.info(f"Haciendo request a: {url}")
         response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()
         
+        logger.info(f"Response received, status: {response.status_code}")
         soup = BeautifulSoup(response.text, 'html.parser')
         
         # Extraer texto visible
@@ -135,11 +147,20 @@ def extract_text_from_url(url: str) -> Dict[str, Any]:
         text = soup.get_text(separator=' ')
         text = re.sub(r'\s+', ' ', text).strip()
         
+        logger.info(f"Texto extraído: {len(text)} caracteres")
         return {'success': True, 'text': text, 'source': url}
     
     except requests.exceptions.HTTPError as e:
+        logger.error(f"HTTP Error: {e}")
         return {'success': False, 'error': f'HTTP {e.response.status_code}'}
+    except requests.exceptions.ConnectionError:
+        logger.error("Error de conexión - verifica la URL")
+        return {'success': False, 'error': 'Error de conexión - verifica la URL'}
+    except requests.exceptions.Timeout:
+        logger.error("Timeout - la página tardó mucho en responder")
+        return {'success': False, 'error': 'Timeout - la página tardó mucho'}
     except Exception as e:
+        logger.error(f"Error al scrapear: {e}")
         return {'success': False, 'error': str(e)}
 
 
