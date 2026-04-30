@@ -69,7 +69,7 @@ class VideoToolUI(ctk.CTkFrame):
         list_cont = ctk.CTkFrame(frame, fg_color="transparent")
         list_cont.pack(fill="both", expand=True, padx=10, pady=5)
         
-        self.file_listbox = tk.Listbox(list_cont, height=3, selectmode=tk.MULTIPLE)
+        self.file_listbox = tk.Listbox(list_cont, height=3, selectmode=tk.EXTENDED)
         scroll = tk.Scrollbar(list_cont, orient="vertical")
         self.file_listbox.config(yscrollcommand=scroll.set)
         scroll.config(command=self.file_listbox.yview)
