@@ -76,6 +76,19 @@ class AudioTool(BaseTool):
                 logger.debug(f"repair result: success={result.get('success', False)}")
                 return result
             
+            elif action == 'edit_metadata':
+                return processor.edit_audio_metadata(
+                    files,
+                    title=options.get('title'),
+                    artist=options.get('artist'),
+                    album=options.get('album'),
+                    genre=options.get('genre'),
+                    year=options.get('year'),
+                    track=options.get('track'),
+                    comment=options.get('comment'),
+                    composer=options.get('composer')
+                )
+            
             else:
                 return {
                     'success': False,

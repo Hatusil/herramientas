@@ -129,12 +129,14 @@ class AudioToolUI(ctk.CTkFrame):
         
         self.tab_normalize = self.tabview.add("Normalizar")
         self.tab_clean = self.tabview.add("Limpiar")
+        self.tab_edit_meta = self.tabview.add("Editar Metadatos")
         self.tab_convert = self.tabview.add("Convertir")
         self.tab_repair = self.tabview.add("Reparar")
         self.tab_info = self.tabview.add("Info")
         
         self._setup_normalize_tab()
         self._setup_clean_tab()
+        self._setup_edit_meta_tab()
         self._setup_convert_tab()
         self._setup_repair_tab()
         self._setup_info_tab()
@@ -227,7 +229,7 @@ class AudioToolUI(ctk.CTkFrame):
         ctk.CTkLabel(lufs_frame, text="Target LUFS:").pack(side="left", padx=5)
         self.lufs_var = ctk.StringVar(value="-16")
         
-        rb_font = ("Segoe UI", 11)
+        rb_font = ctk.CTkFont(size=14)
         for val, label in [("-20", "Muy bajo (-20)"), ("-16", "Estándar (-16)"), 
                           ("-14", "Alto (-14)"), ("-12", "Muy alto (-12)")]:
             RadioButton(
@@ -349,6 +351,69 @@ class AudioToolUI(ctk.CTkFrame):
         self.status_label.configure(text="Procesando...", text_color="blue")
         
         result = self.on_process('clean', self.files, {})
+        self._show_result(result)
+    
+    # =========================================================================
+    # TAB: EDITAR METADATOS
+    # =========================================================================
+    def _setup_edit_meta_tab(self) -> None:
+        frame = self.tab_edit_meta
+        
+        info = ctk.CTkLabel(
+            frame,
+            text="Editar metadatos (título, artista, álbum, género...)",
+            font=ctk.CTkFont(weight="bold")
+        )
+        info.pack(pady=10)
+        
+        container = ctk.CTkFrame(frame)
+        container.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        fields = [
+            ("title", "Título:"),
+            ("artist", "Artista:"),
+            ("album", "Álbum:"),
+            ("genre", "Género:"),
+            ("year", "Año:"),
+            ("track", "Pista:"),
+            ("comment", "Comentario:"),
+            ("composer", "Compositor:")
+        ]
+        
+        self.meta_vars = {}
+        
+        for i, (key, label) in enumerate(fields):
+            row = i // 2
+            col = (i % 2) * 2
+            
+            ctk.CTkLabel(container, text=label).grid(row=row, column=col, padx=5, pady=5, sticky="e")
+            
+            var = ctk.StringVar()
+            self.meta_vars[key] = var
+            
+            ctk.CTkEntry(container, textvariable=var, width=180).grid(row=row, column=col+1, padx=5, pady=5, sticky="w")
+        
+        ctk.CTkButton(
+            container,
+            text="✏️ Editar Metadatos",
+            command=self._edit_metadata,
+            height=40,
+            font=ctk.CTkFont(size=14)
+        ).grid(row=4, column=0, columnspan=4, pady=20)
+    
+    def _edit_metadata(self) -> None:
+        if not self._check_files():
+            return
+        
+        options = {k: v.get() for k, v in self.meta_vars.items() if v.get().strip()}
+        
+        if not options:
+            self.status_label.configure(text="Ingresa al menos un campo", text_color="orange")
+            return
+        
+        self.status_label.configure(text="Procesando...", text_color="blue")
+        
+        result = self.on_process('edit_metadata', self.files, options)
         self._show_result(result)
     
     # =========================================================================

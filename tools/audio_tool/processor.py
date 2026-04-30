@@ -284,6 +284,136 @@ def clean_audio_metadata(files: List[str]) -> Dict[str, Any]:
 
 
 # =============================================================================
+# EDITAR METADATOS
+# =============================================================================
+
+def validate_metadata_value(value: str, max_length: int = 100) -> tuple[bool, str]:
+    """
+    Valida un valor de metadato.
+    
+    Args:
+        value: Valor a validar
+        max_length: Longitud máxima permitida
+    
+    Returns:
+        (is_valid, sanitized_value)
+    """
+    if not value:
+        return (False, "")
+    
+    value = ' '.join(value.split())
+    
+    if not value.strip():
+        return (False, "")
+    
+    if len(value) > max_length:
+        value = value[:max_length]
+    
+    allowed_pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜÑabcdefghijklmnopqrstuvwxyz0123456789 ()-_.!,?'&"
+    
+    sanitized = ""
+    for char in value:
+        if char.upper() in allowed_pattern.upper():
+            sanitized += char
+    
+    if not sanitized.strip():
+        return (False, "")
+    
+    return (True, sanitized)
+
+
+def edit_audio_metadata(
+    files: List[str],
+    title: str = None,
+    artist: str = None,
+    album: str = None,
+    genre: str = None,
+    year: str = None,
+    track: str = None,
+    comment: str = None,
+    composer: str = None
+) -> Dict[str, Any]:
+    """
+    Edita metadatos de archivos de audio.
+    """
+    if not check_ffmpeg():
+        return {'success': False, 'error': 'FFmpeg no instalado', 'output_files': []}
+    
+    metadata_fields = {}
+    field_map = {
+        'title': title,
+        'artist': artist,
+        'album': album,
+        'genre': genre,
+        'date': year,
+        'track': track,
+        'comment': comment,
+        'composer': composer
+    }
+    
+    for field, value in field_map.items():
+        if value:
+            is_valid, sanitized = validate_metadata_value(value)
+            if is_valid:
+                metadata_fields[field] = sanitized
+    
+    if not metadata_fields:
+        return {'success': False, 'error': 'No hay metadatos válidos para agregar'}
+    
+    output_files = []
+    errors = []
+    
+    for file_path in files:
+        input_file = Path(file_path)
+        
+        if not input_file.exists():
+            errors.append(f"No encontrado: {input_file.name}")
+            continue
+        
+        output_file = get_output_path(file_path, '_edited')
+        
+        cmd = [
+            get_ffmpeg_path(), '-y', '-nostdin',
+            '-i', str(input_file),
+            '-codec:a', 'libmp3lame',
+            '-b:a', '320k'
+        ]
+        
+        for field, value in metadata_fields.items():
+            cmd.extend(['-metadata', f'{field}={value}'])
+        
+        cmd.append(str(output_file))
+        
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
+            
+            if result.returncode == 0 and Path(output_file).exists():
+                output_files.append(str(output_file))
+                logger.info(f"Editado: {input_file.name}")
+            else:
+                err = result.stderr[-200:] if result.stderr else 'Unknown error'
+                errors.append(f"{input_file.name}: {err[:80]}")
+        
+        except Exception as e:
+            errors.append(f"Excepción: {str(e)}")
+    
+    success = len(output_files) > 0
+    fields_edited = ', '.join(metadata_fields.keys())
+    
+    return {
+        'success': success,
+        'message': f"Editados {len(output_files)}/{len(files)} archivos ({fields_edited})",
+        'output_files': output_files,
+        'error': '; '.join(errors) if errors else None
+    }
+
+
+# =============================================================================
 # CONVERTIR
 # =============================================================================
 
