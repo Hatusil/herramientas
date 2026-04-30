@@ -1,0 +1,497 @@
+"""UI: Interfaz de usuario para la herramienta de audio."""
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from ui.help_panel import add_help
+from ui.radiobutton import RadioButton
+import customtkinter as ctk
+import tkinter as tk
+from tkinter import filedialog
+from pathlib import Path
+from typing import List, Callable, Dict, Any
+
+# Wrapper para RadioButton ya que CTk no tiene
+def RadioButton(parent, **kwargs):
+    return tk.Radiobutton(parent, **kwargs)
+
+
+class AudioToolUI(ctk.CTkFrame):
+    """UI para procesamiento de archivos de audio."""
+    
+    def __init__(self, master, on_process: Callable):
+        super().__init__(master)
+        
+        self.on_process = on_process
+        self.files: List[str] = []
+        
+        self._setup_ui()
+    
+    def _setup_ui(self) -> None:
+        """Configura los widgets de la UI."""
+        
+        # Título
+        title = ctk.CTkLabel(
+            self,
+            text="Procesamiento de Audio",
+            font=ctk.CTkFont(size=20, weight="bold")
+        )
+        title.pack(pady=(0, 10))
+        
+        # Panel de ayuda
+        help_panel = add_help(
+            self,
+            description="🎵 Procesa audio MP3/WAV/FLAC/OGG/M4A: normaliza volumen, limpia metadatos ID3, convierte formato, repara archivos, muestra info",
+            usage=[
+                "1. 📥 Agregar archivos de audio",
+                "2. 📑 Elegir operación (Normalizar/Limpiar/Convertir/Reparar/Info)",
+                "3. ⚙️ Configurar opciones LUFS o formato",
+                "4. ▶️ Click en ejecutar"
+            ],
+            warnings=[
+                "⚠️ Normalización alta puede afectar calidad",
+                "⚠️ Conversión siempre crea nuevo archivo",
+                "⚠️ Reparar archivos severos puede dejar artifactos"
+            ]
+        )
+        help_panel.pack(fill="x", padx=10, pady=5)
+        
+        # Selector de archivos
+        self._setup_file_selector()
+        
+        # Tabs
+        self._setup_tabs()
+    
+    def _setup_file_selector(self) -> None:
+        """Configura el selector de archivos."""
+        files_frame = ctk.CTkFrame(self)
+        files_frame.pack(fill="x", pady=(0, 10), padx=10)
+        
+        ctk.CTkLabel(
+            files_frame,
+            text="Archivos de audio:",
+            font=ctk.CTkFont(weight="bold")
+        ).pack(anchor="w", padx=10, pady=(10, 5))
+        
+        # Lista de archivos
+        list_container = ctk.CTkFrame(files_frame, fg_color="transparent")
+        list_container.pack(fill="both", expand=True, padx=10, pady=5)
+        
+        self.file_listbox = tk.Listbox(
+            list_container,
+            height=4,
+            selectmode=tk.EXTENDED
+        )
+        scrollbar = tk.Scrollbar(list_container, orient="vertical")
+        self.file_listbox.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.file_listbox.yview)
+        
+        self.file_listbox.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Botones
+        btn_frame = ctk.CTkFrame(files_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=10, pady=(0, 10))
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="Agregar archivos...",
+            command=self._add_files
+        ).pack(side="left", padx=5)
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="Limpiar",
+            command=self._clear_files
+        ).pack(side="left", padx=5)
+    
+    def _setup_tabs(self) -> None:
+        """Configura los tabs."""
+        self.tabview = ctk.CTkTabview(self)
+        self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        self.tab_normalize = self.tabview.add("Normalizar")
+        self.tab_clean = self.tabview.add("Limpiar")
+        self.tab_convert = self.tabview.add("Convertir")
+        self.tab_repair = self.tabview.add("Reparar")
+        self.tab_info = self.tabview.add("Info")
+        
+        self._setup_normalize_tab()
+        self._setup_clean_tab()
+        self._setup_convert_tab()
+        self._setup_repair_tab()
+        self._setup_info_tab()
+        
+        # Status
+        self.status_label = ctk.CTkLabel(
+            self,
+            text="",
+            text_color="gray"
+        )
+        self.status_label.pack(pady=5)
+    
+    def _add_files(self) -> None:
+        """Abre diálogo para seleccionar archivos."""
+        files = filedialog.askopenfilenames(
+            title="Seleccionar archivos de audio",
+            filetypes=[
+                ("Audio files", "*.mp3 *.wav *.flac *.ogg *.m4a *.aac"),
+                ("MP3", "*.mp3"),
+                ("Todos", "*.*")
+            ]
+        )
+        
+        for f in files:
+            if f not in self.files:
+                self.files.append(f)
+                self.file_listbox.insert(tk.END, Path(f).name)
+    
+    def _clear_files(self) -> None:
+        """Limpia la lista de archivos."""
+        self.files.clear()
+        self.file_listbox.delete(0, tk.END)
+    
+    def _check_files(self) -> bool:
+        """Verifica que haya archivos seleccionados."""
+        if not self.files:
+            self.status_label.configure(text="No hay archivos seleccionados", text_color="orange")
+            return False
+        return True
+    
+    # =========================================================================
+    # TAB: NORMALIZAR
+    # =========================================================================
+    def _setup_normalize_tab(self) -> None:
+        frame = self.tab_normalize
+        
+        info = ctk.CTkLabel(
+            frame,
+            text="Normalizar volumen del audio",
+            font=ctk.CTkFont(weight="bold")
+        )
+        info.pack(pady=10)
+        
+        # Target LUFS
+        lufs_frame = ctk.CTkFrame(frame)
+        lufs_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(lufs_frame, text="Target LUFS:").pack(side="left", padx=5)
+        self.lufs_var = ctk.StringVar(value="-16")
+        
+        for val, label in [("-20", "Muy bajo (-20)"), ("-16", "Estándar (-16)"), 
+                          ("-14", "Alto (-14)"), ("-12", "Muy alto (-12)")]:
+            RadioButton(
+                lufs_frame,
+                text=label,
+                variable=self.lufs_var,
+                value=val
+            ).pack(side="left", padx=5)
+        
+        # Opciones adicionales
+        opts_frame = ctk.CTkFrame(frame)
+        opts_frame.pack(fill="x", padx=10, pady=5)
+        
+        self.limit_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(
+            opts_frame,
+            text="Aplicar limitador (evita clipping)",
+            variable=self.limit_var
+        ).pack(anchor="w", padx=20)
+        
+        # Calidad
+        quality_frame = ctk.CTkFrame(frame)
+        quality_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(quality_frame, text="Calidad MP3:").pack(side="left", padx=5)
+        self.quality_var = ctk.StringVar(value="192")
+        
+        for val in ["128", "192", "256", "320"]:
+            RadioButton(
+                quality_frame,
+                text=f"{val} kbps",
+                variable=self.quality_var,
+                value=val
+            ).pack(side="left", padx=5)
+        
+        # Remuestreo
+        sample_frame = ctk.CTkFrame(frame)
+        sample_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(sample_frame, text="Remuestreo:").pack(side="left", padx=5)
+        self.sample_var = ctk.StringVar(value="0")
+        
+        RadioButton(
+            sample_frame,
+            text="Mantener original",
+            variable=self.sample_var,
+            value="0"
+        ).pack(side="left", padx=5)
+        
+        for val in ["44100", "48000"]:
+            RadioButton(
+                sample_frame,
+                text=f"{val} Hz",
+                variable=self.sample_var,
+                value=val
+            ).pack(side="left", padx=5)
+        
+        # Botón
+        ctk.CTkButton(
+            frame,
+            text="🎚️ Normalizar Volumen",
+            command=self._normalize,
+            height=40,
+            font=ctk.CTkFont(size=14)
+        ).pack(pady=20)
+    
+    def _normalize(self) -> None:
+        if not self._check_files():
+            return
+        
+        self.status_label.configure(text="Procesando...", text_color="blue")
+        
+        options = {
+            'target_lufs': int(self.lufs_var.get()),
+            'limit_clipping': self.limit_var.get(),
+            'quality': int(self.quality_var.get()),
+        }
+        
+        sample = self.sample_var.get()
+        if sample != "0":
+            options['sample_rate'] = int(sample)
+        
+        result = self.on_process('normalize', self.files, options)
+        self._show_result(result)
+    
+    # =========================================================================
+    # TAB: LIMPIAR
+    # =========================================================================
+    def _setup_clean_tab(self) -> None:
+        frame = self.tab_clean
+        
+        info = ctk.CTkLabel(
+            frame,
+            text="Limpiar metadatos (ID3, título, artista, etc.)",
+            font=ctk.CTkFont(weight="bold")
+        )
+        info.pack(pady=10)
+        
+        info2 = ctk.CTkLabel(
+            frame,
+            text="Esto eliminará: título, artista, álbum, género, año, etc.",
+            text_color="gray"
+        )
+        info2.pack(pady=5)
+        
+        ctk.CTkButton(
+            frame,
+            text="🧹 Limpiar Metadatos",
+            command=self._clean_metadata,
+            height=40,
+            font=ctk.CTkFont(size=14)
+        ).pack(pady=20)
+    
+    def _clean_metadata(self) -> None:
+        if not self._check_files():
+            return
+        
+        self.status_label.configure(text="Procesando...", text_color="blue")
+        
+        result = self.on_process('clean', self.files, {})
+        self._show_result(result)
+    
+    # =========================================================================
+    # TAB: CONVERTIR
+    # =========================================================================
+    def _setup_convert_tab(self) -> None:
+        frame = self.tab_convert
+        
+        info = ctk.CTkLabel(
+            frame,
+            text="Convertir a otro formato de audio",
+            font=ctk.CTkFont(weight="bold")
+        )
+        info.pack(pady=10)
+        
+        # Formato de salida
+        format_frame = ctk.CTkFrame(frame)
+        format_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(format_frame, text="Formato de salida:").pack(side="left", padx=5)
+        self.format_var = ctk.StringVar(value="mp3")
+        
+        for fmt in ["mp3", "wav", "flac", "ogg"]:
+            RadioButton(
+                format_frame,
+                text=fmt.upper(),
+                variable=self.format_var,
+                value=fmt
+            ).pack(side="left", padx=10)
+        
+        # Calidad
+        quality_frame = ctk.CTkFrame(frame)
+        quality_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(quality_frame, text="Calidad:").pack(side="left", padx=5)
+        self.conv_quality_var = ctk.StringVar(value="192")
+        
+        for val in ["128", "192", "256", "320"]:
+            RadioButton(
+                quality_frame,
+                text=f"{val} kbps",
+                variable=self.conv_quality_var,
+                value=val
+            ).pack(side="left", padx=5)
+        
+        info2 = ctk.CTkLabel(
+            frame,
+            text="Nota: WAV y FLAC usan calidad sin pérdida",
+            text_color="gray",
+            font=ctk.CTkFont(size=14)
+        )
+        info2.pack(pady=5)
+        
+        ctk.CTkButton(
+            frame,
+            text="🔄 Convertir Formato",
+            command=self._convert,
+            height=40,
+            font=ctk.CTkFont(size=14)
+        ).pack(pady=20)
+    
+    def _convert(self) -> None:
+        if not self._check_files():
+            return
+        
+        self.status_label.configure(text="Procesando...", text_color="blue")
+        
+        result = self.on_process('convert', self.files, {
+            'format': self.format_var.get(),
+            'quality': int(self.conv_quality_var.get())
+        })
+        
+        self._show_result(result)
+    
+    # =========================================================================
+    # TAB: REPARAR
+    # =========================================================================
+    def _setup_repair_tab(self) -> None:
+        frame = self.tab_repair
+        
+        info = ctk.CTkLabel(
+            frame,
+            text="Reparar archivos de audio corruptos",
+            font=ctk.CTkFont(weight="bold")
+        )
+        info.pack(pady=10)
+        
+        info2 = ctk.CTkLabel(
+            frame,
+            text="Intenta corregir frames corruptos y recuperaraudio reproducible.",
+            text_color="gray"
+        )
+        info2.pack(pady=5)
+        
+        info3 = ctk.CTkLabel(
+            frame,
+            text="Útil para archivos que no se reproducen correctamente.",
+            text_color="gray"
+        )
+        info3.pack(pady=5)
+        
+        ctk.CTkButton(
+            frame,
+            text="🔧 Reparar Archivos",
+            command=self._repair,
+            height=40,
+            font=ctk.CTkFont(size=14)
+        ).pack(pady=20)
+    
+    def _repair(self) -> None:
+        if not self._check_files():
+            return
+        
+        self.status_label.configure(text="Procesando...", text_color="blue")
+        
+        result = self.on_process('repair', self.files, {})
+        self._show_result(result)
+    
+    # =========================================================================
+    # TAB: INFO
+    # =========================================================================
+    def _setup_info_tab(self) -> None:
+        frame = self.tab_info
+        
+        ctk.CTkLabel(
+            frame,
+            text="Información del archivo de audio:",
+            font=ctk.CTkFont(weight="bold")
+        ).pack(pady=10)
+        
+        self.info_text = ctk.CTkTextbox(frame, width=450, height=250)
+        self.info_text.pack(padx=10, pady=10)
+        
+        ctk.CTkButton(
+            frame,
+            text="👁️ Ver Información",
+            command=self._show_info
+        ).pack(pady=5)
+    
+    def _show_info(self) -> None:
+        if not self._check_files():
+            return
+        
+        # Usar el primer archivo
+        file_path = self.files[0]
+        
+        self.info_text.delete("1.0", tk.END)
+        self.info_text.insert("1.0", f"Analizando: {Path(file_path).name}\n\n")
+        
+        try:
+            from tools.audio_tool.processor import get_audio_info
+            info = get_audio_info(file_path)
+            
+            if info.get('success'):
+                self.info_text.insert(tk.END, f"""Información del Archivo:
+─────────────────────────────────
+Archivo: {info.get('file_name', 'N/A')}
+Tamaño: {info.get('file_size', 0) / 1024 / 1024:.2f} MB
+Duración: {info.get('duration', 0):.2f} segundos
+Formato: {info.get('format', 'N/A')}
+
+Audio:
+─────────────────────────────────
+Codec: {info.get('codec', 'N/A')}
+Muestreo: {info.get('sample_rate', 0)} Hz
+Canales: {info.get('channels', 0)}
+Bitrate: {info.get('bit_rate', 0) / 1000:.0f} kbps
+
+Metadatos:
+─────────────────────────────────
+Título: {info.get('title', 'N/A')}
+Artista: {info.get('artist', 'N/A')}
+Álbum: {info.get('album', 'N/A')}
+Pista: {info.get('track', 'N/A')}
+Año: {info.get('year', 'N/A')}
+Género: {info.get('genre', 'N/A')}
+""")
+            else:
+                self.info_text.insert(tk.END, f"Error: {info.get('error', 'Desconocido')}")
+                
+        except Exception as e:
+            self.info_text.insert(tk.END, f"Error: {str(e)}")
+    
+    # =========================================================================
+    # UTILIDADES
+    # =========================================================================
+    def _show_result(self, result: Dict[str, Any]) -> None:
+        """Muestra el resultado del procesamiento."""
+        if result.get('success'):
+            self.status_label.configure(
+                text=result.get('message', 'Completado'),
+                text_color="green"
+            )
+        else:
+            self.status_label.configure(
+                text=result.get('message', 'Error'),
+                text_color="red"
+            )

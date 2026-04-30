@@ -1,0 +1,85 @@
+# ===========================================
+# HERRAMIENTAS - .gitignore
+# Proyecto: Gestor de herramientas multimedia
+# ===========================================
+
+# --- Python ---
+venv/
+env/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+coverage/
+htmlcov/
+*.cover
+.pytest_cache/
+.mypy_cache/
+dmypy.json
+.ruff_cache/
+
+# --- Entornos virtuales ---
+venv-win/
+.venv3/
+
+# --- PyInstaller ---
+*.spec
+build.py
+build/
+dist/
+PKG-*.toc
+PYZ-00.toc
+PYZ-00.pyz
+xref-*.html
+warn-*.txt
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- FFmpeg (binario, no source) ---
+ffmpeg-*-essentials_build/
+ffmpeg.zip
+tools/ffmpeg/
+
+# --- Logs y backups ---
+*.log
+*.tmp
+.backup/
+backups-config/
+*.bak
+*.old
+
+# --- Testing ---
+.coverage
+.pytest_cache/
+coverage.xml
+
+# --- OS específico ---
+# Windows
+*.lnk
+# Linux
+*.lock
+# Mac
+.DS_Store
+
+# --- Proyecto ---
+!Herramientas.spec  # Este SÍ se necesita para PyInstaller

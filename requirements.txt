@@ -1,0 +1,19 @@
+customtkinter>=5.2
+mutagen>=1.47
+pypdf>=3.0
+Pillow>=10.0
+reportlab>=4.0
+piexif>=1.1
+python-docx>=1.0
+openpyxl>=3.1
+chardet>=5.0
+# Text Analyzer
+wordcloud>=1.9
+nltk>=3.8
+pdfplumber>=0.11
+requests>=2.31
+beautifulsoup4>=4.12
+# Search Tool
+python-pptx>=0.6
+# Portable/Build
+pyinstaller>=6.0
