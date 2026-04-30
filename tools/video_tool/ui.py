@@ -127,6 +127,11 @@ class VideoToolUI(ctk.CTkFrame):
         else:
             self.status_label.configure(text=f"{len(selected)}/{total} seleccionados", text_color="blue")
     
+    def _hide_progress_bar(self, progress_bar) -> None:
+        """Oculta la barra de progreso."""
+        progress_bar.set(0)
+        progress_bar.pack_forget()
+    
     def _get_selected_files(self) -> List[str]:
         """Retorna lista de archivos seleccionados (no todos)."""
         selected = self.file_listbox.curselection()
@@ -156,9 +161,10 @@ class VideoToolUI(ctk.CTkFrame):
         RadioButton(fmt_frame, text="WAV", variable=self.audio_format, value="wav").pack(side="left", padx=10)
         RadioButton(fmt_frame, text="OGG", variable=self.audio_format, value="ogg").pack(side="left", padx=10)
         
-        # Progress bar (reusa el de convertir)
+        # Progress bar (hidden initially)
         self.extract_progress = ctk.CTkProgressBar(frame, width=300)
         self.extract_progress.pack(pady=10)
+        self.extract_progress.pack_forget()
         self.extract_progress.set(0)
         
         ctk.CTkButton(frame, text="🎵 Extraer Audio", command=self._extract_audio, height=40).pack(pady=10)
@@ -168,6 +174,7 @@ class VideoToolUI(ctk.CTkFrame):
             return
         
         # Show progress
+        self.extract_progress.pack()
         self.extract_progress.set(0.1)
         self.status_label.configure(text="Extrayendo audio...", text_color="yellow")
         self.update()
@@ -215,7 +222,7 @@ class VideoToolUI(ctk.CTkFrame):
         else:
             self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
         
-        self.after(3000, lambda: self.extract_progress.set(0))
+        self.after(3000, lambda: self._hide_progress_bar(self.extract_progress))
     
     def _setup_convert_tab(self) -> None:
         frame = self.tab_convert
@@ -241,9 +248,10 @@ class VideoToolUI(ctk.CTkFrame):
         RadioButton(quality_frame, text="Media (23)", variable=self.crf_var, value="23").pack(side="left", padx=5)
         RadioButton(quality_frame, text="Baja (28)", variable=self.crf_var, value="28").pack(side="left", padx=5)
         
-        # Progress bar
+        # Progress bar (hidden initially)
         self.convert_progress = ctk.CTkProgressBar(frame, width=300)
         self.convert_progress.pack(pady=10)
+        self.convert_progress.pack_forget()
         self.convert_progress.set(0)
         
         ctk.CTkButton(frame, text="🔄 Convertir", command=self._convert_video, height=40).pack(pady=10)
@@ -253,6 +261,7 @@ class VideoToolUI(ctk.CTkFrame):
             return
         
         # Disable button and show progress
+        self.convert_progress.pack()
         self.convert_progress.set(0.1)
         selected = self._get_selected_files()
         self.status_label.configure(text=f"Convirtiendo 0/{len(selected)}...", text_color="yellow")
@@ -304,8 +313,8 @@ class VideoToolUI(ctk.CTkFrame):
         else:
             self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
         
-        # Reset progress after delay
-        self.after(3000, lambda: self.convert_progress.set(0))
+        # Reset and hide progress after delay
+        self.after(3000, lambda: self._hide_progress_bar(self.convert_progress))
     
     def _setup_info_tab(self) -> None:
         frame = self.tab_info
