@@ -145,7 +145,7 @@ class VideoToolUI(ctk.CTkFrame):
         ctk.CTkLabel(fmt_frame, text="Formato salida:").pack(side="left", padx=5)
         self.out_format = ctk.StringVar(value="mp4")
         
-        for fmt in ["mp4", "avi", "mkv", "webm", "mov"]:
+        for fmt in ["mp4", "avi", "mkv", "mov"]:
             RadioButton(fmt_frame, text=fmt, variable=self.out_format, value=fmt).pack(side="left", padx=5)
         
         quality_frame = ctk.CTkFrame(frame)
