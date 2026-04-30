@@ -155,8 +155,20 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         ctk.CTkLabel(self.url_frame, text="URL:").pack(anchor="w")
         
-        self.url_entry = ctk.CTkEntry(self.url_frame, placeholder_text="https://...")
-        self.url_entry.pack(fill="x", pady=5)
+        url_input_frame = ctk.CTkFrame(self.url_frame, fg_color="transparent")
+        url_input_frame.pack(fill="x", pady=5)
+        
+        self.url_entry = ctk.CTkEntry(url_input_frame, placeholder_text="https://...")
+        self.url_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        
+        ctk.CTkButton(
+            url_input_frame,
+            text="🗑️",
+            width=40,
+            command=lambda: self.url_entry.delete(0, tk.END),
+            fg_color="transparent",
+            border_width=1
+        ).pack(side="left")
         
         # Botón cargar/procesar
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
