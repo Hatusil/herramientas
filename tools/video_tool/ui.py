@@ -231,12 +231,18 @@ class VideoToolUI(ctk.CTkFrame):
     
     def _show_info(self) -> None:
         if not self._check_files():
+            self.status_label.configure(text="Seleccioná un video primero", text_color="orange")
             return
         
         from tools.video_tool.processor import get_video_info
         
+        self.status_label.configure(text="Cargando info...", text_color="yellow")
+        self.update()
+        
         result = get_video_info(self.files[0])
         
+        # Enable textbox to write
+        self.info_text.configure(state="normal")
         self.info_text.delete("1.0", tk.END)
         
         if result['success']:
@@ -267,5 +273,10 @@ class VideoToolUI(ctk.CTkFrame):
 🔧 Codec: {result['audio_codec']}
 """
             self.info_text.insert("1.0", info)
+            self.status_label.configure(text="Info cargada", text_color="green")
         else:
             self.info_text.insert("1.0", f"Error: {result.get('error', 'Desconocido')}")
+            self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
+        
+        # Disable textbox again
+        self.info_text.configure(state="disabled")
