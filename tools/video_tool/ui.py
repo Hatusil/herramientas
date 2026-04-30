@@ -68,7 +68,7 @@ class VideoToolUI(ctk.CTkFrame):
         list_cont = ctk.CTkFrame(frame, fg_color="transparent")
         list_cont.pack(fill="both", expand=True, padx=10, pady=5)
         
-        self.file_listbox = tk.Listbox(list_cont, height=3)
+        self.file_listbox = tk.Listbox(list_cont, height=3, selectmode=tk.MULTIPLE)
         scroll = tk.Scrollbar(list_cont, orient="vertical")
         self.file_listbox.config(yscrollcommand=scroll.set)
         scroll.config(command=self.file_listbox.yview)
@@ -78,8 +78,10 @@ class VideoToolUI(ctk.CTkFrame):
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
         btn_frame.pack(fill="x", padx=10, pady=(0, 10))
         
-        ctk.CTkButton(btn_frame, text="Seleccionar video...", command=self._add_files).pack(side="left", padx=5)
-        ctk.CTkButton(btn_frame, text="Limpiar", command=self._clear_files).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="+ Agregar videos...", command=self._add_files).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="✓ Todos", command=self._select_all).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="✗ Ninguno", command=self._deselect_all).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="🗑️", command=self._clear_files, fg_color="#dc2626", width=40).pack(side="left", padx=2)
     
     def _add_files(self) -> None:
         files = filedialog.askopenfilenames(
@@ -96,9 +98,25 @@ class VideoToolUI(ctk.CTkFrame):
         self.files.clear()
         self.file_listbox.delete(0, tk.END)
     
+    def _select_all(self) -> None:
+        """Selecciona todos los archivos de la lista."""
+        self.file_listbox.select_set(0, tk.END)
+    
+    def _deselect_all(self) -> None:
+        """Deselecciona todos los archivos."""
+        self.file_listbox.select_clear(0, tk.END)
+    
+    def _get_selected_files(self) -> List[str]:
+        """Retorna lista de archivos seleccionados (no todos)."""
+        selected = self.file_listbox.curselection()
+        if not selected:
+            return []
+        return [self.files[i] for i in selected]
+    
     def _check_files(self) -> bool:
-        if not self.files:
-            self.status_label.configure(text="No hay archivos", text_color="orange")
+        selected = self._get_selected_files()
+        if not selected:
+            self.status_label.configure(text="Seleccioná al menos un video", text_color="orange")
             return False
         return True
     
@@ -138,11 +156,12 @@ class VideoToolUI(ctk.CTkFrame):
             try:
                 from tools.video_tool.processor import extract_audio
                 
-                total = len(self.files)
+                selected = self._get_selected_files()
+                total = len(selected)
                 success_count = 0
                 errors = []
                 
-                for i, video_file in enumerate(self.files):
+                for i, video_file in enumerate(selected):
                     # Update progress
                     progress = (i + 1) / total
                     self.after(0, lambda p=progress: self.extract_progress.set(p))
@@ -214,7 +233,8 @@ class VideoToolUI(ctk.CTkFrame):
         
         # Disable button and show progress
         self.convert_progress.set(0.1)
-        self.status_label.configure(text=f"Convirtiendo 0/{len(self.files)}...", text_color="yellow")
+        selected = self._get_selected_files()
+        self.status_label.configure(text=f"Convirtiendo 0/{len(selected)}...", text_color="yellow")
         self.update()
         
         # Run conversion in thread
@@ -222,11 +242,11 @@ class VideoToolUI(ctk.CTkFrame):
             try:
                 from tools.video_tool.processor import convert_video
                 
-                total = len(self.files)
+                total = len(selected)
                 success_count = 0
                 errors = []
                 
-                for i, video_file in enumerate(self.files):
+                for i, video_file in enumerate(selected):
                     # Update progress
                     progress = (i + 1) / total
                     self.after(0, lambda p=progress, c=i+1: self._update_convert_progress(p, c, total))
@@ -287,7 +307,12 @@ class VideoToolUI(ctk.CTkFrame):
         self.status_label.configure(text="Cargando info...", text_color="yellow")
         self.update()
         
-        result = get_video_info(self.files[0])
+        selected = self._get_selected_files()
+        if not selected:
+            self.status_label.configure(text="Seleccioná un video", text_color="orange")
+            return
+        
+        result = get_video_info(selected[0])
         
         # Enable textbox to write
         self.info_text.configure(state="normal")
