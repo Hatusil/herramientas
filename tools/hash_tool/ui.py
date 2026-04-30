@@ -35,17 +35,23 @@ class HashToolUI(ctk.CTkFrame):
         # Panel de ayuda
         help_panel = add_help(
             self,
-            description="🔐 Calcula y verifica hashes MD5/SHA1/SHA256/SHA512 para verificar integridad o detectar cambios",
+            description="🔐 Calcula y verifica hashes (MD5/SHA1/SHA256/SHA512) para verificar integridad de archivos descargados o copiar/mover sin cambios",
             usage=[
                 "1. 📥 Agregar archivos (+)",
                 "2. ☑️ Seleccionar con Ctrl+click o botones",
                 "3. 🎯 Seleccionar algoritmo (SHA256 recomendado)",
-                "4. 🔢 Click en calcular (procesa seleccionados)"
+                "4. 🔢 Click en calcular (procesa seleccionados)",
+                "",
+                "📌 ¿PARA QUÉ SIRVE?",
+                "• Verificar descargas: Compara el hash calculado con el del servidor",
+                "• Detectar cambios: Si hash es diferente, el archivo fue modificado",
+                "• Identificar duplicados: Mismo hash = mismo archivo"
             ],
             warnings=[
-                "⚠️ Hash diferente = archivo modificado",
+                "⚠️ Hash diferente = archivo modificado o corrupto",
                 "⚠️ MD5 no es seguro - solo para verificación de descarga",
-                "⚠️ Verificación debe ser exacta (case-sensitive)"
+                "⚠️ Verificación debe ser exacta (case-sensitive)",
+                "⚠️ Copiar un archivo NO cambia su hash"
             ]
         )
         help_panel.pack(fill="x", padx=10, pady=5)
@@ -143,7 +149,16 @@ class HashToolUI(ctk.CTkFrame):
     def _setup_calc_tab(self) -> None:
         frame = self.tab_calc
         
-        ctk.CTkLabel(frame, text="Algoritmo:", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        ctk.CTkLabel(frame, text="Calcular hash (huella única del archivo):", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        
+        # Explicación
+        info = ctk.CTkLabel(
+            frame,
+            text="SHA256 = recommended | MD5 = only for old downloads",
+            text_color="gray",
+            font=ctk.CTkFont(size=11)
+        )
+        info.pack(pady=5)
         
         self.algo_var = ctk.StringVar(value="sha256")
         
@@ -179,7 +194,16 @@ class HashToolUI(ctk.CTkFrame):
     def _setup_verify_tab(self) -> None:
         frame = self.tab_verify
         
-        ctk.CTkLabel(frame, text="Verificar hash de archivo:", font=ctk.CTkFont(weight="bold")).pack(pady=5)
+        ctk.CTkLabel(frame, text="Verificar hash (comparar con valor conocido):", font=ctk.CTkFont(weight="bold")).pack(pady=5)
+        
+        # Info labels
+        info = ctk.CTkLabel(
+            frame,
+            text="Ingresa el hash del servidor o el original para comparar",
+            text_color="gray",
+            font=ctk.CTkFont(size=12)
+        )
+        info.pack(pady=5)
         
         input_frame = ctk.CTkFrame(frame)
         input_frame.pack(fill="x", padx=10, pady=5)
