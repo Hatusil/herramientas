@@ -157,9 +157,10 @@ class VideoToolUI(ctk.CTkFrame):
         ctk.CTkLabel(fmt_frame, text="Formato:").pack(side="left", padx=5)
         self.audio_format = ctk.StringVar(value="mp3")
         
-        RadioButton(fmt_frame, text="MP3", variable=self.audio_format, value="mp3").pack(side="left", padx=10)
-        RadioButton(fmt_frame, text="WAV", variable=self.audio_format, value="wav").pack(side="left", padx=10)
-        RadioButton(fmt_frame, text="OGG", variable=self.audio_format, value="ogg").pack(side="left", padx=10)
+        rb_font = ("Segoe UI", 12)
+        RadioButton(fmt_frame, text="MP3", variable=self.audio_format, value="mp3", font=rb_font).pack(side="left", padx=10)
+        RadioButton(fmt_frame, text="WAV", variable=self.audio_format, value="wav", font=rb_font).pack(side="left", padx=10)
+        RadioButton(fmt_frame, text="OGG", variable=self.audio_format, value="ogg", font=rb_font).pack(side="left", padx=10)
         
         # Progress bar (hidden initially)
         self.extract_progress = ctk.CTkProgressBar(frame, width=300)
@@ -235,8 +236,9 @@ class VideoToolUI(ctk.CTkFrame):
         ctk.CTkLabel(fmt_frame, text="Formato salida:").pack(side="left", padx=5)
         self.out_format = ctk.StringVar(value="mp4")
         
+        rb_font = ("Segoe UI", 12)
         for fmt in ["mp4", "avi", "mkv", "mov"]:
-            RadioButton(fmt_frame, text=fmt, variable=self.out_format, value=fmt).pack(side="left", padx=5)
+            RadioButton(fmt_frame, text=fmt, variable=self.out_format, value=fmt, font=rb_font).pack(side="left", padx=5)
         
         quality_frame = ctk.CTkFrame(frame)
         quality_frame.pack(pady=5)
@@ -244,9 +246,9 @@ class VideoToolUI(ctk.CTkFrame):
         ctk.CTkLabel(quality_frame, text="Calidad:").pack(side="left", padx=5)
         self.crf_var = ctk.StringVar(value="23")
         
-        RadioButton(quality_frame, text="Alta (18)", variable=self.crf_var, value="18").pack(side="left", padx=5)
-        RadioButton(quality_frame, text="Media (23)", variable=self.crf_var, value="23").pack(side="left", padx=5)
-        RadioButton(quality_frame, text="Baja (28)", variable=self.crf_var, value="28").pack(side="left", padx=5)
+        RadioButton(quality_frame, text="Alta (18)", variable=self.crf_var, value="18", font=rb_font).pack(side="left", padx=5)
+        RadioButton(quality_frame, text="Media (23)", variable=self.crf_var, value="23", font=rb_font).pack(side="left", padx=5)
+        RadioButton(quality_frame, text="Baja (28)", variable=self.crf_var, value="28", font=rb_font).pack(side="left", padx=5)
         
         # Progress bar (hidden initially)
         self.convert_progress = ctk.CTkProgressBar(frame, width=300)
