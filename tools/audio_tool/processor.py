@@ -46,9 +46,13 @@ def get_audio_info(file_path: str) -> Dict[str, Any]:
         return {'success': False, 'error': 'FFmpeg no instalado'}
     
     try:
+        # Usar ffprobe desde la misma ubicación que ffmpeg
+        ffmpeg_bin = Path(get_ffmpeg_path()).parent
+        ffprobe_bin = ffmpeg_bin / 'ffprobe.exe'
+        
         # Usar ffprobe para obtener info
         cmd = [
-            'ffprobe',
+            str(ffprobe_bin) if ffprobe_bin.exists() else 'ffprobe',
             '-v', 'quiet',
             '-print_format', 'json',
             '-show_format',
