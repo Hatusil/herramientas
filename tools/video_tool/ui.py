@@ -5,13 +5,11 @@ from ui.help_panel import add_help
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ui.radiobutton import RadioButton
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
 from typing import List, Callable
-import queue
 
 
 class VideoToolUI(ctk.CTkFrame):
