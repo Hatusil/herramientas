@@ -83,8 +83,8 @@ def convert_video(video_path: str, output_format: str, **options) -> Dict[str, A
         p = Path(video_path)
         output_path = p.parent / f"{p.stem}_converted.{output_format}"
         
-        # Codec según formato
-        codecs = {
+        # Codec de video según formato
+        video_codecs = {
             'mp4': 'libx264',
             'avi': 'mpeg4',
             'mkv': 'libx264',
@@ -92,9 +92,19 @@ def convert_video(video_path: str, output_format: str, **options) -> Dict[str, A
             'mov': 'mpeg4'
         }
         
-        codec = codecs.get(output_format, 'libx264')
+        # Codec de audio según formato
+        audio_codecs = {
+            'mp4': 'aac',
+            'avi': 'mp3',
+            'mkv': 'aac',
+            'webm': 'libopus',
+            'mov': 'aac'
+        }
         
-        cmd = [get_ffmpeg_path(), '-y', '-i', video_path, '-codec:v', codec]
+        video_codec = video_codecs.get(output_format, 'libx264')
+        audio_codec = audio_codecs.get(output_format, 'aac')
+        
+        cmd = [get_ffmpeg_path(), '-y', '-i', video_path, '-codec:v', video_codec]
         
         # Calidad
         crf = options.get('crf', 23)
@@ -102,7 +112,10 @@ def convert_video(video_path: str, output_format: str, **options) -> Dict[str, A
             cmd.extend(['-crf', str(crf)])
         
         # Audio
-        cmd.extend(['-codec:a', 'aac', '-b:a', '128k'])
+        if audio_codec in ['libopus', 'libvorbis']:
+            cmd.extend(['-codec:a', audio_codec])
+        else:
+            cmd.extend(['-codec:a', audio_codec, '-b:a', '128k'])
         
         cmd.append(str(output_path))
         
@@ -116,14 +129,11 @@ def convert_video(video_path: str, output_format: str, **options) -> Dict[str, A
                 'error': None
             }
         else:
-            # Filter out ffmpeg version info from error
-            err = result.stderr
-            if err and 'ffmpeg version' in err:
-                lines = err.split('\n')
-                err = '\n'.join([l for l in lines if 'ffmpeg' not in l.lower() and l.strip()])
+            # Get error message
+            err = result.stderr[:300] if result.stderr else 'Unknown error'
             return {
                 'success': False,
-                'error': 'Error al convertir video',
+                'error': f'Error al convertir: {err[:100]}',
                 'output_files': []
             }
             
