@@ -76,6 +76,9 @@ class VideoToolUI(ctk.CTkFrame):
         self.file_listbox.pack(side="left", fill="both", expand=True)
         scroll.pack(side="right", fill="y")
         
+        # Bind selection change to update status
+        self.file_listbox.bind('<<ListboxSelect>>', lambda e: self._update_selection_status())
+        
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
         btn_frame.pack(fill="x", padx=10, pady=(0, 10))
         
