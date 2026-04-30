@@ -294,7 +294,7 @@ class VideoToolUI(ctk.CTkFrame):
         
         ctk.CTkButton(frame, text="👁️ Ver Info", command=self._show_info).pack(pady=10)
         
-        self.info_text = ctk.CTkTextbox(frame, width=350, height=200, wrap="word")
+        self.info_text = ctk.CTkTextbox(frame, width=450, height=280, wrap="word")
         self.info_text.pack(padx=10, pady=10)
         self.info_text.configure(state="disabled")
     
