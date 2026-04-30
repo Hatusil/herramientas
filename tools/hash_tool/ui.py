@@ -89,13 +89,6 @@ class HashToolUI(ctk.CTkFrame):
         
         ctk.CTkButton(btn_frame, text="Agregar...", command=self._add_files, height=35).pack(side="left", padx=5)
         ctk.CTkButton(btn_frame, text="Limpiar", command=self._clear_files, height=35).pack(side="left", padx=5)
-        
-        # Agregar botones de acceso rápido
-        try:
-            from ui.quick_selector import add_quick_buttons
-            add_quick_buttons(btn_frame, self.file_listbox, self.files)
-        except Exception as e:
-            logger.debug(f"Quick buttons not available: {e}")
     
     def _add_files(self) -> None:
         files = filedialog.askopenfilenames(title="Seleccionar archivos")
