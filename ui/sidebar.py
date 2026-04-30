@@ -317,7 +317,7 @@ class Sidebar(ctk.CTkFrame):
         desc_frame = ctk.CTkFrame(main, fg_color="transparent")
         desc_frame.pack(pady=5, padx=10)
         
-        desc_text = """Soy desarrollador de software con una fuerte pasión por llevar una vida integral y explorar el análisis de datos, la cartografía y los sistemas de información geográfica. Admiro a las personas virtuosas que se esfuerzan por mejorarse cada día."""
+        desc_text = """Soy un desarrollador de software y analista de datos que busca subordinar la técnica y las ciencias a la Verdad y la Sabiduría, para no ser esclavo de la máquina."""
         
         ctk.CTkLabel(
             desc_frame,
