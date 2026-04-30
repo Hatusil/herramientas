@@ -479,8 +479,9 @@ class AudioToolUI(ctk.CTkFrame):
             font=ctk.CTkFont(weight="bold")
         ).pack(pady=10)
         
-        self.info_text = ctk.CTkTextbox(frame, width=450, height=250)
+        self.info_text = ctk.CTkTextbox(frame, width=500, height=300, wrap="word")
         self.info_text.pack(padx=10, pady=10)
+        self.info_text.configure(state="disabled")
         
         ctk.CTkButton(
             frame,
@@ -489,48 +490,61 @@ class AudioToolUI(ctk.CTkFrame):
         ).pack(pady=5)
     
     def _show_info(self) -> None:
-        if not self._check_files():
+        selected = self._get_selected_files()
+        if not selected:
+            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
             return
         
-        # Usar el primer archivo
-        file_path = self.files[0]
-        
+        # Enable textbox to write
+        self.info_text.configure(state="normal")
         self.info_text.delete("1.0", tk.END)
-        self.info_text.insert("1.0", f"Analizando: {Path(file_path).name}\n\n")
         
-        try:
-            from tools.audio_tool.processor import get_audio_info
-            info = get_audio_info(file_path)
-            
-            if info.get('success'):
-                self.info_text.insert(tk.END, f"""Información del Archivo:
-─────────────────────────────────
-Archivo: {info.get('file_name', 'N/A')}
-Tamaño: {info.get('file_size', 0) / 1024 / 1024:.2f} MB
-Duración: {info.get('duration', 0):.2f} segundos
-Formato: {info.get('format', 'N/A')}
-
-Audio:
-─────────────────────────────────
-Codec: {info.get('codec', 'N/A')}
-Muestreo: {info.get('sample_rate', 0)} Hz
-Canales: {info.get('channels', 0)}
-Bitrate: {info.get('bit_rate', 0) / 1000:.0f} kbps
-
-Metadatos:
-─────────────────────────────────
-Título: {info.get('title', 'N/A')}
-Artista: {info.get('artist', 'N/A')}
-Álbum: {info.get('album', 'N/A')}
-Pista: {info.get('track', 'N/A')}
-Año: {info.get('year', 'N/A')}
-Género: {info.get('genre', 'N/A')}
-""")
-            else:
-                self.info_text.insert(tk.END, f"Error: {info.get('error', 'Desconocido')}")
+        all_info = []
+        errors = []
+        
+        for file_path in selected:
+            try:
+                from tools.audio_tool.processor import get_audio_info
+                info = get_audio_info(file_path)
                 
-        except Exception as e:
-            self.info_text.insert(tk.END, f"Error: {str(e)}")
+                if info.get('success'):
+                    audio_info = f"""📄 {info.get('file_name', 'N/A')}
+{'─'*35}
+  💾 Tamaño:      {info.get('file_size', 0) / 1024 / 1024:.2f} MB
+  ⏱️ Duración:    {info.get('duration', 0):.1f} seg
+  📦 Formato:    {info.get('format', 'N/A')}
+  🔊 Codec:      {info.get('codec', 'N/A')}
+  🎵 Muestreo:   {info.get('sample_rate', 0)} Hz
+  🔀 Canales:    {info.get('channels', 0)}
+  📊 Bitrate:    {info.get('bit_rate', 0) / 1000:.0f} kbps
+  📝 Título:     {info.get('title', 'N/A')}
+  👤 Artista:    {info.get('artist', 'N/A')}
+  📀 Álbum:      {info.get('album', 'N/A')}
+  #️⃣ Pista:      {info.get('track', 'N/A')}
+  📅 Año:        {info.get('year', 'N/A')}
+  🎼 Género:     {info.get('genre', 'N/A')}"""
+                    all_info.append(audio_info)
+                else:
+                    errors.append(f"{Path(file_path).name}: {info.get('error', 'Error')}")
+            except Exception as e:
+                errors.append(f"{Path(file_path).name}: {str(e)}")
+        
+        # Display results
+        if all_info:
+            self.info_text.insert("1.0", "\n\n".join(all_info))
+        
+        if errors:
+            if all_info:
+                self.info_text.insert(tk.END, f"\n\n⚠️ ERRORES:\n" + "\n".join(errors))
+            else:
+                self.info_text.insert("1.0", "⚠️ ERRORES:\n" + "\n".join(errors))
+        
+        # Disable textbox again
+        self.info_text.configure(state="disabled")
+        
+        # Update status
+        status = f"Mostrando {len(all_info)}/{len(selected)} archivos"
+        self.status_label.configure(text=status, text_color="green" if not errors else "orange")
     
     # =========================================================================
     # UTILIDADES
