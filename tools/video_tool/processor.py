@@ -83,6 +83,8 @@ def convert_video(video_path: str, output_format: str, **options) -> Dict[str, A
         p = Path(video_path)
         output_path = p.parent / f"{p.stem}_converted.{output_format}"
         
+        logger.info(f"Convirtiendo {p.name} a {output_format}...")
+        
         # Codec de video según formato
         video_codecs = {
             'mp4': 'libx264',
@@ -106,10 +108,19 @@ def convert_video(video_path: str, output_format: str, **options) -> Dict[str, A
         
         cmd = [get_ffmpeg_path(), '-y', '-i', video_path, '-codec:v', video_codec]
         
+        # Preset de velocidad (sacrifica calidad por velocidad)
+        # Para WebM es más importante porque VP9 es lento
+        if output_format == 'webm':
+            cmd.extend(['-preset', 'faster'])  # Más rápido, menor calidad
+        elif output_format in ['mp4', 'mkv']:
+            cmd.extend(['-preset', 'medium'])
+        
         # Calidad
         crf = options.get('crf', 23)
         if output_format in ['mp4', 'mkv', 'webm']:
-            cmd.extend(['-crf', str(crf)])
+            # Mayor CRF = menor calidad pero más rápido
+            crf_value = crf + 5 if output_format == 'webm' else crf
+            cmd.extend(['-crf', str(crf_value)])
         
         # Audio
         if audio_codec in ['libopus', 'libvorbis']:
