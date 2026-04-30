@@ -10,7 +10,6 @@ import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
 from typing import List, Callable
-from ui.quick_selector import add_quick_buttons
 import os
 
 
@@ -85,12 +84,6 @@ class CompressToolUI(ctk.CTkFrame):
         ctk.CTkButton(btn_frame, text="Agregar archivos...", command=self._add_files).pack(side="left", padx=5)
         ctk.CTkButton(btn_frame, text="Agregar carpeta...", command=self._add_folder).pack(side="left", padx=5)
         ctk.CTkButton(btn_frame, text="Limpiar", command=self._clear_files).pack(side="left", padx=5)
-        
-        # Botones de acceso rápido
-        try:
-            add_quick_buttons(btn_frame, self.file_listbox, self.files)
-        except Exception as e:
-            logger.warning(f"Could not add quick buttons: {e}")
     
     def _add_files(self) -> None:
         files = filedialog.askopenfilenames(title="Seleccionar archivos")
