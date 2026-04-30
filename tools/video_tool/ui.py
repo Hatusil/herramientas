@@ -28,12 +28,12 @@ class VideoToolUI(ctk.CTkFrame):
         # Panel de ayuda
         help_panel = add_help(
             self,
-            description="🎬 Procesa video MP4/AVI/MKV/MOV: extrae audio (MP3/WAV/OGG), convierte formato, muestra info",
+            description="🎬 Procesa video (soporta múltiples archivos): extrae audio, convierte formato, muestra info",
             usage=[
-                "1. 📥 Seleccionar archivo de video",
+                "1. 📥 Seleccionar uno o varios videos",
                 "2. 📑 Elegir operación (Extraer Audio/Convertir/Info)",
                 "3. ⚙️ Configurar formato y calidad",
-                "4. ▶️ Click en ejecutar"
+                "4. ▶️ Click en ejecutar (procesa todos)"
             ],
             warnings=[
                 "⚠️ Conversión de video puede tardar varios minutos",
@@ -137,8 +137,31 @@ class VideoToolUI(ctk.CTkFrame):
         def extract_thread():
             try:
                 from tools.video_tool.processor import extract_audio
-                result = extract_audio(self.files[0], self.audio_format.get())
-                self.after(0, lambda: self._on_extract_done(result))
+                
+                total = len(self.files)
+                success_count = 0
+                errors = []
+                
+                for i, video_file in enumerate(self.files):
+                    # Update progress
+                    progress = (i + 1) / total
+                    self.after(0, lambda p=progress: self.extract_progress.set(p))
+                    
+                    result = extract_audio(video_file, self.audio_format.get())
+                    if result['success']:
+                        success_count += 1
+                    else:
+                        errors.append(Path(video_file).name)
+                
+                # Final result
+                if success_count == total:
+                    final_result = {'success': True, 'message': f'✓ Audio extraído de {total} videos'}
+                elif success_count > 0:
+                    final_result = {'success': True, 'message': f'✓ {success_count}/{total} OK, {len(errors)} errores'}
+                else:
+                    final_result = {'success': False, 'error': f'Errores: {", ".join(errors[:3])}'}
+                
+                self.after(0, lambda: self._on_extract_done(final_result))
             except Exception as e:
                 self.after(0, lambda: self._on_extract_done({'success': False, 'error': str(e)}))
         
@@ -152,7 +175,7 @@ class VideoToolUI(ctk.CTkFrame):
         else:
             self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
         
-        self.after(2000, lambda: self.extract_progress.set(0))
+        self.after(3000, lambda: self.extract_progress.set(0))
     
     def _setup_convert_tab(self) -> None:
         frame = self.tab_convert
@@ -191,21 +214,46 @@ class VideoToolUI(ctk.CTkFrame):
         
         # Disable button and show progress
         self.convert_progress.set(0.1)
-        self.status_label.configure(text="Convirtiendo... (puede tardar)", text_color="yellow")
+        self.status_label.configure(text=f"Convirtiendo 0/{len(self.files)}...", text_color="yellow")
         self.update()
         
         # Run conversion in thread
         def convert_thread():
             try:
                 from tools.video_tool.processor import convert_video
-                result = convert_video(self.files[0], self.out_format.get(), crf=int(self.crf_var.get()))
                 
-                # Update UI in main thread
-                self.after(0, lambda: self._on_convert_done(result))
+                total = len(self.files)
+                success_count = 0
+                errors = []
+                
+                for i, video_file in enumerate(self.files):
+                    # Update progress
+                    progress = (i + 1) / total
+                    self.after(0, lambda p=progress, c=i+1: self._update_convert_progress(p, c, total))
+                    
+                    result = convert_video(video_file, self.out_format.get(), crf=int(self.crf_var.get()))
+                    if result['success']:
+                        success_count += 1
+                    else:
+                        errors.append(Path(video_file).name)
+                
+                # Final result
+                if success_count == total:
+                    final_result = {'success': True, 'message': f'✓ {total} videos convertidos'}
+                elif success_count > 0:
+                    final_result = {'success': True, 'message': f'✓ {success_count}/{total} OK'}
+                else:
+                    final_result = {'success': False, 'error': f'Errores: {", ".join(errors[:3])}'}
+                
+                self.after(0, lambda: self._on_convert_done(final_result))
             except Exception as e:
                 self.after(0, lambda: self._on_convert_done({'success': False, 'error': str(e)}))
         
         threading.Thread(target=convert_thread, daemon=True).start()
+    
+    def _update_convert_progress(self, progress: float, current: int, total: int) -> None:
+        self.convert_progress.set(progress)
+        self.status_label.configure(text=f"Convirtiendo {current}/{total}...", text_color="yellow")
     
     def _on_convert_done(self, result: dict) -> None:
         self.convert_progress.set(1)
@@ -216,7 +264,7 @@ class VideoToolUI(ctk.CTkFrame):
             self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
         
         # Reset progress after delay
-        self.after(2000, lambda: self.convert_progress.set(0))
+        self.after(3000, lambda: self.convert_progress.set(0))
     
     def _setup_info_tab(self) -> None:
         frame = self.tab_info
