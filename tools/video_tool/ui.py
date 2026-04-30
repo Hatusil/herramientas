@@ -334,10 +334,13 @@ class VideoToolUI(ctk.CTkFrame):
                         pass
                 
                 info = f"""📹 {result['file_name']}
-{'─'*30}
-💾 {result['file_size'] / 1024 / 1024:.2f} MB | ⏱️ {result['duration']:.1f}s | 📦 {result['format']}
-🎬 {result['video_codec']} | {result['video_resolution']} | 🎞️ {fps}fps
-🔊 {result['audio_codec']}"""
+{'─'*35}
+  📦 Formato:     {result['format'] or 'N/A'}
+  💾 Tamaño:      {result['file_size'] / 1024 / 1024:.2f} MB
+  ⏱️ Duración:    {result['duration']:.1f} seg
+  🎬 Video:      {result['video_codec'] or 'N/A'} | {result['video_resolution'] or 'N/A'}
+  🎞️ FPS:        {fps}
+  🔊 Audio:       {result['audio_codec'] or 'N/A'}"""
                 all_info.append(info)
             else:
                 errors.append(f"{Path(video_path).name}: {result.get('error', 'Error')}")
