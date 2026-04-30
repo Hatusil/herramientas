@@ -37,10 +37,10 @@ class HashToolUI(ctk.CTkFrame):
             self,
             description="🔐 Calcula y verifica hashes MD5/SHA1/SHA256/SHA512 para verificar integridad o detectar cambios",
             usage=[
-                "1. 📥 Agregar archivos con 'Agregar...'",
-                "2. 🎯 Seleccionar algoritmo (SHA256 recomendado)",
-                "3. 🔢 Click en 'Calcular Hash'",
-                "4. ✅ Para verificar: ingresar hash esperado y click en 'Verificar'"
+                "1. 📥 Agregar archivos (+)",
+                "2. ☑️ Seleccionar con Ctrl+click o botones",
+                "3. 🎯 Seleccionar algoritmo (SHA256 recomendado)",
+                "4. 🔢 Click en calcular (procesa seleccionados)"
             ],
             warnings=[
                 "⚠️ Hash diferente = archivo modificado",
@@ -87,8 +87,13 @@ class HashToolUI(ctk.CTkFrame):
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
         btn_frame.pack(fill="x", padx=10, pady=(0, 10))
         
-        ctk.CTkButton(btn_frame, text="Agregar...", command=self._add_files, height=35).pack(side="left", padx=5)
-        ctk.CTkButton(btn_frame, text="Limpiar", command=self._clear_files, height=35).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="Agregar...", command=self._add_files, height=35).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="✓ Todos", command=self._select_all, height=35).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="✗ Ninguno", command=self._deselect_all, height=35).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="🗑️", command=self._clear_files, fg_color="#dc2626", width=40, height=35).pack(side="left", padx=2)
+        
+        # Bind selection change
+        self.file_listbox.bind('<<ListboxSelect>>', lambda e: self._update_selection_status())
     
     def _add_files(self) -> None:
         files = filedialog.askopenfilenames(title="Seleccionar archivos")
@@ -96,14 +101,42 @@ class HashToolUI(ctk.CTkFrame):
             if f not in self.files:
                 self.files.append(f)
                 self.file_listbox.insert(tk.END, Path(f).name)
+        if files:
+            self._update_selection_status()
     
     def _clear_files(self) -> None:
         self.files.clear()
         self.file_listbox.delete(0, tk.END)
+        self.status_label.configure(text="Lista vacía", text_color="gray")
+    
+    def _select_all(self) -> None:
+        self.file_listbox.select_set(0, tk.END)
+        self._update_selection_status()
+    
+    def _deselect_all(self) -> None:
+        self.file_listbox.select_clear(0, tk.END)
+        self._update_selection_status()
+    
+    def _get_selected_files(self) -> List[str]:
+        selected = self.file_listbox.curselection()
+        if not selected:
+            return []
+        return [self.files[i] for i in selected]
+    
+    def _update_selection_status(self) -> None:
+        selected = self._get_selected_files()
+        total = len(self.files)
+        if not selected:
+            self.status_label.configure(text=f"{total} archivos (ninguno seleccionado)", text_color="gray")
+        elif len(selected) == total:
+            self.status_label.configure(text=f"{total} seleccionados", text_color="blue")
+        else:
+            self.status_label.configure(text=f"{len(selected)}/{total} seleccionados", text_color="blue")
     
     def _check_files(self) -> bool:
-        if not self.files:
-            self.status_label.configure(text="No hay archivos", text_color="orange")
+        selected = self._get_selected_files()
+        if not selected:
+            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
             return False
         return True
     

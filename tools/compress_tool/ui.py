@@ -34,11 +34,10 @@ class CompressToolUI(ctk.CTkFrame):
             self,
             description="📦 Comprime archivos en ZIP/TAR.GZ/TAR.BZ2 o extrae contenidos de archivos comprimidos",
             usage=[
-                "1. 📥 Agregar archivos o carpetas",
-                "2. 📦 Elegir formato (ZIP universal, TAR.GZ ratio, TAR.BZ2 compresión)",
-                "3. ⚙️ Seleccionar nivel (Rápido/Normal/Máximo)",
-                "4. ▶️ Click en 'Comprimir'",
-                "5. 📂 Para extraer: tab Extraer, seleccionar archivo"
+                "1. 📥 Agregar archivos/carpetas (+)",
+                "2. ☑️ Seleccionar con Ctrl+click o botones",
+                "3. 📦 Elegir formato y nivel de compresión",
+                "4. ▶️ Click en Comprimir (procesa seleccionados)"
             ],
             warnings=[
                 "⚠️ ZIP límite 4GB por archivo",
@@ -83,7 +82,12 @@ class CompressToolUI(ctk.CTkFrame):
         
         ctk.CTkButton(btn_frame, text="Agregar archivos...", command=self._add_files).pack(side="left", padx=5)
         ctk.CTkButton(btn_frame, text="Agregar carpeta...", command=self._add_folder).pack(side="left", padx=5)
-        ctk.CTkButton(btn_frame, text="Limpiar", command=self._clear_files).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="✓ Todos", command=self._select_all).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="✗ Ninguno", command=self._deselect_all).pack(side="left", padx=2)
+        ctk.CTkButton(btn_frame, text="🗑️", command=self._clear_files, fg_color="#dc2626", width=40).pack(side="left", padx=2)
+        
+        # Bind selection change
+        self.file_listbox.bind('<<ListboxSelect>>', lambda e: self._update_selection_status())
     
     def _add_files(self) -> None:
         files = filedialog.askopenfilenames(title="Seleccionar archivos")
@@ -91,20 +95,49 @@ class CompressToolUI(ctk.CTkFrame):
             if f not in self.files:
                 self.files.append(f)
                 self.file_listbox.insert(tk.END, Path(f).name)
+        if files:
+            self._update_selection_status()
     
     def _add_folder(self) -> None:
         folder = filedialog.askdirectory(title="Seleccionar carpeta")
         if folder and folder not in self.files:
             self.files.append(folder)
             self.file_listbox.insert(tk.END, f"📁 {Path(folder).name}")
+            self._update_selection_status()
     
     def _clear_files(self) -> None:
         self.files.clear()
         self.file_listbox.delete(0, tk.END)
+        self.status_label.configure(text="Lista vacía", text_color="gray")
+    
+    def _select_all(self) -> None:
+        self.file_listbox.select_set(0, tk.END)
+        self._update_selection_status()
+    
+    def _deselect_all(self) -> None:
+        self.file_listbox.select_clear(0, tk.END)
+        self._update_selection_status()
+    
+    def _get_selected_files(self) -> List[str]:
+        selected = self.file_listbox.curselection()
+        if not selected:
+            return []
+        return [self.files[i] for i in selected]
+    
+    def _update_selection_status(self) -> None:
+        selected = self._get_selected_files()
+        total = len(self.files)
+        if not selected:
+            self.status_label.configure(text=f"{total} archivos (ninguno seleccionado)", text_color="gray")
+        elif len(selected) == total:
+            self.status_label.configure(text=f"{total} seleccionados", text_color="blue")
+        else:
+            self.status_label.configure(text=f"{len(selected)}/{total} seleccionados", text_color="blue")
     
     def _check_files(self) -> bool:
-        if not self.files:
-            self.status_label.configure(text="No hay archivos", text_color="orange")
+        selected = self._get_selected_files()
+        if not selected:
+            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
             return False
         return True
     

@@ -42,10 +42,11 @@ class AudioToolUI(ctk.CTkFrame):
             self,
             description="🎵 Procesa audio MP3/WAV/FLAC/OGG/M4A: normaliza volumen, limpia metadatos ID3, convierte formato, repara archivos, muestra info",
             usage=[
-                "1. 📥 Agregar archivos de audio",
-                "2. 📑 Elegir operación (Normalizar/Limpiar/Convertir/Reparar/Info)",
-                "3. ⚙️ Configurar opciones LUFS o formato",
-                "4. ▶️ Click en ejecutar"
+                "1. 📥 Agregar archivos (+)",
+                "2. ☑️ Seleccionar con Ctrl+click o botones 'Todos'/'Ninguno'",
+                "3. 📑 Elegir operación (Normalizar/Limpiar/Convertir/Reparar/Info)",
+                "4. ⚙️ Configurar opciones LUFS o formato",
+                "5. ▶️ Click en ejecutar (procesa solo los seleccionados)"
             ],
             warnings=[
                 "⚠️ Normalización alta puede afectar calidad",
@@ -94,15 +95,32 @@ class AudioToolUI(ctk.CTkFrame):
         
         ctk.CTkButton(
             btn_frame,
-            text="Agregar archivos...",
+            text="+ Agregar archivos...",
             command=self._add_files
-        ).pack(side="left", padx=5)
+        ).pack(side="left", padx=2)
         
         ctk.CTkButton(
             btn_frame,
-            text="Limpiar",
-            command=self._clear_files
-        ).pack(side="left", padx=5)
+            text="✓ Todos",
+            command=self._select_all
+        ).pack(side="left", padx=2)
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="✗ Ninguno",
+            command=self._deselect_all
+        ).pack(side="left", padx=2)
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="🗑️",
+            command=self._clear_files,
+            fg_color="#dc2626",
+            width=40
+        ).pack(side="left", padx=2)
+        
+        # Bind selection change to update status
+        self.file_listbox.bind('<<ListboxSelect>>', lambda e: self._update_selection_status())
     
     def _setup_tabs(self) -> None:
         """Configura los tabs."""
@@ -144,11 +162,43 @@ class AudioToolUI(ctk.CTkFrame):
             if f not in self.files:
                 self.files.append(f)
                 self.file_listbox.insert(tk.END, Path(f).name)
+        
+        if files:
+            self._update_selection_status()
     
     def _clear_files(self) -> None:
         """Limpia la lista de archivos."""
         self.files.clear()
         self.file_listbox.delete(0, tk.END)
+        self.status_label.configure(text="Lista vacía", text_color="gray")
+    
+    def _select_all(self) -> None:
+        """Selecciona todos los archivos de la lista."""
+        self.file_listbox.select_set(0, tk.END)
+        self._update_selection_status()
+    
+    def _deselect_all(self) -> None:
+        """Deselecciona todos los archivos."""
+        self.file_listbox.select_clear(0, tk.END)
+        self._update_selection_status()
+    
+    def _get_selected_files(self) -> List[str]:
+        """Retorna lista de archivos seleccionados (no todos)."""
+        selected = self.file_listbox.curselection()
+        if not selected:
+            return []
+        return [self.files[i] for i in selected]
+    
+    def _update_selection_status(self) -> None:
+        """Actualiza el status con la selección actual."""
+        selected = self._get_selected_files()
+        total = len(self.files)
+        if not selected:
+            self.status_label.configure(text=f"{total} archivos (ninguno seleccionado)", text_color="gray")
+        elif len(selected) == total:
+            self.status_label.configure(text=f"{total} seleccionados", text_color="blue")
+        else:
+            self.status_label.configure(text=f"{len(selected)}/{total} seleccionados", text_color="blue")
     
     def _check_files(self) -> bool:
         """Verifica que haya archivos seleccionados."""
@@ -177,13 +227,15 @@ class AudioToolUI(ctk.CTkFrame):
         ctk.CTkLabel(lufs_frame, text="Target LUFS:").pack(side="left", padx=5)
         self.lufs_var = ctk.StringVar(value="-16")
         
+        rb_font = ("Segoe UI", 11)
         for val, label in [("-20", "Muy bajo (-20)"), ("-16", "Estándar (-16)"), 
                           ("-14", "Alto (-14)"), ("-12", "Muy alto (-12)")]:
             RadioButton(
                 lufs_frame,
                 text=label,
                 variable=self.lufs_var,
-                value=val
+                value=val,
+                font=rb_font
             ).pack(side="left", padx=5)
         
         # Opciones adicionales
