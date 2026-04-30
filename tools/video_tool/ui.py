@@ -30,10 +30,11 @@ class VideoToolUI(ctk.CTkFrame):
             self,
             description="🎬 Procesa video (soporta múltiples archivos): extrae audio, convierte formato, muestra info",
             usage=[
-                "1. 📥 Seleccionar uno o varios videos",
-                "2. 📑 Elegir operación (Extraer Audio/Convertir/Info)",
-                "3. ⚙️ Configurar formato y calidad",
-                "4. ▶️ Click en ejecutar (procesa todos)"
+                "1. 📥 Agregar videos (+)",
+                "2. ☑️ Seleccionar con Ctrl+click o botones 'Todos'/'Ninguno'",
+                "3. 📑 Elegir operación (Extraer Audio/Convertir/Info)",
+                "4. ⚙️ Configurar formato y calidad",
+                "5. ▶️ Click en ejecutar (procesa solo los seleccionados)"
             ],
             warnings=[
                 "⚠️ Conversión de video puede tardar varios minutos",
