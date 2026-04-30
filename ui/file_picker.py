@@ -3,6 +3,7 @@ FilePicker: Selector de archivos con acceso rápido a unidades y favoritos.
 """
 import os
 import logging
+import tkinter as tk
 import customtkinter as ctk
 from tkinter import filedialog
 from typing import List, Callable
@@ -30,15 +31,22 @@ class FilePicker(ctk.CTkFrame):
     
     def _setup_ui(self):
         """Configura la UI."""
-        # Título
+        self._setup_title()
+        self._setup_quick_buttons()
+        self._setup_file_list()
+        self._setup_action_buttons()
+    
+    def _setup_title(self):
+        """Configura el título."""
         title = ctk.CTkLabel(
             self,
             text="Seleccionar archivos:",
             font=ctk.CTkFont(size=14, weight="bold")
         )
         title.pack(anchor="w", pady=(0, 5))
-        
-        # Botones de acceso rápido
+    
+    def _setup_quick_buttons(self):
+        """Configura los botones de acceso rápido."""
         quick_frame = ctk.CTkFrame(self, fg_color="transparent")
         quick_frame.pack(fill="x", pady=(0, 5))
         
@@ -92,8 +100,9 @@ class FilePicker(ctk.CTkFrame):
                     width=50,
                     height=28
                 ).pack(side="left", padx=2)
-        
-        # Frame para lista de archivos
+    
+    def _setup_file_list(self):
+        """Configura la lista de archivos."""
         list_frame = ctk.CTkFrame(self)
         list_frame.pack(fill="both", expand=True, pady=5)
         
@@ -102,7 +111,6 @@ class FilePicker(ctk.CTkFrame):
         scroll.pack(side="right", fill="y")
         
         # Listbox
-        import tkinter as tk
         self.listbox = tk.Listbox(
             list_frame,
             height=5,
@@ -117,8 +125,9 @@ class FilePicker(ctk.CTkFrame):
         
         # Bind para doble click
         self.listbox.bind("<Double-Button-1>", self._on_double_click)
-        
-        # Botones de acción
+    
+    def _setup_action_buttons(self):
+        """Configura los botones de acción."""
         btn_frame = ctk.CTkFrame(self, fg_color="transparent")
         btn_frame.pack(fill="x", pady=(5, 0))
         

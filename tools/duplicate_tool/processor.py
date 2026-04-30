@@ -52,7 +52,9 @@ def find_duplicates_by_hash(folder_path: str, extensions: List[str] = None) -> D
                     hash_dict[file_hash] = []
                 hash_dict[file_hash].append(file_path)
                 
-            except Exception:
+            except Exception as e:
+                # Loguear error pero continuar con otros archivos
+                logger.debug(f"Error procesando {file_path}: {e}")
                 continue
     
     # Filtrar solo duplicados (más de un archivo con el mismo hash)

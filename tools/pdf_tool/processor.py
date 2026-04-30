@@ -1077,14 +1077,8 @@ def compress_pdf(files: List[str], level: str = 'medium') -> Dict[str, Any]:
             reader = PdfReader(file_path)
             writer = PdfWriter()
             
-            # Configurar compresión según nivel
-            if level == 'low':
-                writer.add_page(page)  # Solo copiar
-            elif level == 'medium':
-                pass  # Optimización básica
-            elif level == 'high':
-                pass  # Más agresiva (limitado en pypdf)
-            
+            # Copiar todas las páginas al writer
+            # pypdf aplica compresión básica al escribir
             for page in reader.pages:
                 writer.add_page(page)
             

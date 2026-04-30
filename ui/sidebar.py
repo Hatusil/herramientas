@@ -12,6 +12,20 @@ from core import constants
 logger = logging.getLogger(__name__)
 
 
+def _create_tool_callback(tool_name: str, callback: Callable[[str], None]) -> Callable[[], None]:
+    """
+    Crea un callback que captura el nombre de la herramienta.
+    
+    Args:
+        tool_name: Nombre de la herramienta
+        callback: Función a llamar con el nombre
+        
+    Returns:
+        Función sin argumentos que llama a callback con tool_name
+    """
+    return lambda: callback(tool_name)
+
+
 def make_circle_image(image_path: str, size: int = 80) -> Image.Image:
     """
     Convierte una imagen a círculo con fondo transparente.
@@ -203,7 +217,7 @@ class Sidebar(ctk.CTkFrame):
                 self.scroll_frame,
                 text=f"{icon}  {display_name}",
                 anchor="w",
-                command=lambda n=name: self.on_tool_select(n),
+                command=_create_tool_callback(name, self.on_tool_select),
                 height=50,
                 fg_color=constants.COLORS["bg_light"],
                 border_width=0,
@@ -271,7 +285,7 @@ class Sidebar(ctk.CTkFrame):
             logo_path = base / "assets" / "logo.png"
             if logo_path.exists():
                 try:
-                    from ui.sidebar import make_circle_image
+                    # make_circle_image está definida en este archivo
                     circle_img = make_circle_image(str(logo_path), size=80)
                     logo_ctk = ctk.CTkImage(
                         light_image=circle_img,
@@ -349,17 +363,6 @@ Scrubber • Video • Renombrar • Duplicados • Texto"""
         ctk.CTkLabel(
             main,
             text="Gracias por usar esta herramienta!",
-            text_color="green"
-        ).pack(pady=5)
-        
-        # Separator
-        sep2 = ctk.CTkFrame(main, height=1, fg_color="gray")
-        sep2.pack(fill="x", pady=15)
-        
-        # Gracias
-        ctk.CTkLabel(
-            main,
-            text="¡Gracias por usar esta herramienta!",
             text_color="green"
         ).pack(pady=5)
         
