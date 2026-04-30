@@ -294,7 +294,7 @@ class VideoToolUI(ctk.CTkFrame):
         
         ctk.CTkButton(frame, text="👁️ Ver Info", command=self._show_info).pack(pady=10)
         
-        self.info_text = ctk.CTkTextbox(frame, width=450, height=280, wrap="word")
+        self.info_text = ctk.CTkTextbox(frame, width=500, height=300, wrap="word")
         self.info_text.pack(padx=10, pady=10)
         self.info_text.configure(state="disabled")
     
@@ -333,12 +333,20 @@ class VideoToolUI(ctk.CTkFrame):
                     except:
                         pass
                 
+                # Formato: mostrar solo el primero (ej: "mov" en lugar de "mov,mp4,m4a,3gp,3g2,mj2")
+                fmt = result['format'] or 'N/A'
+                if ',' in fmt:
+                    fmt = fmt.split(',')[0]
+                
+                # Acortar resolución para que no sea tan larga
+                res = result['video_resolution'] or 'N/A'
+                
                 info = f"""📹 {result['file_name']}
 {'─'*35}
-  📦 Formato:     {result['format'] or 'N/A'}
+  📦 Formato:     {fmt}
   💾 Tamaño:      {result['file_size'] / 1024 / 1024:.2f} MB
-  ⏱️ Duración:    {result['duration']:.1f} seg
-  🎬 Video:      {result['video_codec'] or 'N/A'} | {result['video_resolution'] or 'N/A'}
+  ⏱️ Duración:    {result['duration']:.1f}s
+  🎬 Video:       {result['video_codec'] or 'N/A'} | {res}
   🎞️ FPS:        {fps}
   🔊 Audio:       {result['audio_codec'] or 'N/A'}"""
                 all_info.append(info)
