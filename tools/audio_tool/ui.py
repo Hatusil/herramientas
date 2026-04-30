@@ -131,12 +131,14 @@ class AudioToolUI(ctk.CTkFrame):
         self.tab_clean = self.tabview.add("Limpiar")
         self.tab_convert = self.tabview.add("Convertir")
         self.tab_repair = self.tabview.add("Reparar")
+        self.tab_verify = self.tabview.add("Verificar")
         self.tab_info = self.tabview.add("Info")
         
         self._setup_normalize_tab()
         self._setup_clean_tab()
         self._setup_convert_tab()
         self._setup_repair_tab()
+        self._setup_verify_tab()
         self._setup_info_tab()
         
         # Status
@@ -466,6 +468,87 @@ class AudioToolUI(ctk.CTkFrame):
         
         result = self.on_process('repair', self.files, {})
         self._show_result(result)
+    
+    # =========================================================================
+    # TAB: VERIFICAR
+    # =========================================================================
+    def _setup_verify_tab(self) -> None:
+        frame = self.tab_verify
+        
+        info = ctk.CTkLabel(
+            frame,
+            text="Verificar integridad de archivos de audio",
+            font=ctk.CTkFont(weight="bold")
+        )
+        info.pack(pady=10)
+        
+        info2 = ctk.CTkLabel(
+            frame,
+            text="Verifica qué archivos están corruptos antes de repararlos",
+            text_color="gray"
+        )
+        info2.pack(pady=5)
+        
+        # Textbox para resultados
+        self.verify_text = ctk.CTkTextbox(frame, width=500, height=280, wrap="word")
+        self.verify_text.pack(padx=10, pady=10)
+        self.verify_text.configure(state="disabled")
+        
+        ctk.CTkButton(
+            frame,
+            text="🔍 Verificar Archivos",
+            command=self._verify_audio,
+            height=40,
+            font=ctk.CTkFont(size=14)
+        ).pack(pady=10)
+    
+    def _verify_audio(self) -> None:
+        selected = self._get_selected_files()
+        if not selected:
+            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
+            return
+        
+        self.status_label.configure(text="Verificando archivos...", text_color="yellow")
+        self.update()
+        
+        try:
+            from tools.audio_tool.processor import verify_multiple_audio
+            result = verify_multiple_audio(selected)
+            
+            # Enable textbox to write
+            self.verify_text.configure(state="normal")
+            self.verify_text.delete("1.0", tk.END)
+            
+            # Mostrar resultados
+            ok_files = [r for r in result['results'] if not r['corrupt']]
+            corrupt_files = [r for r in result['results'] if r['corrupt']]
+            
+            if ok_files:
+                self.verify_text.insert("1.0", f"✅ ARCHIVOS OK ({len(ok_files)}):\n")
+                for r in ok_files:
+                    self.verify_text.insert(tk.END, f"  ✓ {r['name']}\n")
+            
+            if corrupt_files:
+                if ok_files:
+                    self.verify_text.insert(tk.END, f"\n")
+                self.verify_text.insert(tk.END, f"❌ ARCHIVOS CORRUPTOS ({len(corrupt_files)}):\n")
+                for r in corrupt_files:
+                    self.verify_text.insert(tk.END, f"  ✗ {r['name']} - {r['message']}\n")
+            
+            # Resumen
+            self.verify_text.insert(tk.END, f"\n{'─'*35}\n")
+            self.verify_text.insert(tk.END, f"Total: {result['total']} | OK: {result['ok']} | Corruptos: {result['corrupt']}")
+            
+            self.verify_text.configure(state="disabled")
+            
+            # Status
+            if result['corrupt'] == 0:
+                self.status_label.configure(text=f"Todos OK ({result['ok']} archivos)", text_color="green")
+            else:
+                self.status_label.configure(text=f"{result['ok']} OK, {result['corrupt']} corruptos", text_color="orange")
+                
+        except Exception as e:
+            self.status_label.configure(text=f"Error: {str(e)}", text_color="red")
     
     # =========================================================================
     # TAB: INFO

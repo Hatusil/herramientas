@@ -373,6 +373,84 @@ def convert_audio(files: List[str], output_format: str, **options) -> Dict[str, 
 # REPARAR
 # =============================================================================
 
+def verify_audio_integrity(file_path: str) -> Dict[str, Any]:
+    """
+    Verifica si un archivo de audio está corrupto o no.
+    Returns: {'corrupt': bool, 'message': str, 'details': dict}
+    """
+    if not check_ffmpeg():
+        return {'corrupt': False, 'message': 'FFmpeg no instalado', 'details': {}}
+    
+    if not os.path.exists(file_path):
+        return {'corrupt': False, 'message': 'Archivo no encontrado', 'details': {}}
+    
+    try:
+        # Usar ffprobe para verificar
+        ffmpeg_bin = Path(get_ffmpeg_path()).parent
+        ffprobe_bin = ffmpeg_bin / 'ffprobe.exe'
+        
+        cmd = [
+            str(ffprobe_bin) if ffprobe_bin.exists() else 'ffprobe',
+            '-v', 'error',
+            '-show_format',
+            '-show_streams',
+            file_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        
+        if result.returncode != 0:
+            # Hay error - archivo potencialmente corrupto
+            return {
+                'corrupt': True,
+                'message': 'Archivo corrupto o no válido',
+                'details': {'error': result.stderr[:200]}
+            }
+        
+        # Verificar si tiene stream de audio
+        if 'audio' not in result.stdout.lower():
+            return {
+                'corrupt': True,
+                'message': 'No contiene stream de audio',
+                'details': {}
+            }
+        
+        return {'corrupt': False, 'message': 'Archivo OK', 'details': {}}
+        
+    except subprocess.TimeoutExpired:
+        return {'corrupt': True, 'message': 'Timeout al verificar', 'details': {}}
+    except Exception as e:
+        return {'corrupt': True, 'message': f'Error: {str(e)}', 'details': {}}
+
+
+def verify_multiple_audio(files: List[str]) -> Dict[str, Any]:
+    """Verifica múltiples archivos y retorna el estado de cada uno."""
+    results = []
+    corrupt_count = 0
+    ok_count = 0
+    
+    for file_path in files:
+        result = verify_audio_integrity(file_path)
+        results.append({
+            'file': file_path,
+            'name': Path(file_path).name,
+            'corrupt': result['corrupt'],
+            'message': result['message']
+        })
+        if result['corrupt']:
+            corrupt_count += 1
+        else:
+            ok_count += 1
+    
+    return {
+        'success': True,
+        'total': len(files),
+        'ok': ok_count,
+        'corrupt': corrupt_count,
+        'results': results
+    }
+
+
 def repair_audio(files: List[str]) -> Dict[str, Any]:
     """
     Repara archivos de audio corruptos.
