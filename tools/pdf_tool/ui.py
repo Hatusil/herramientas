@@ -34,10 +34,10 @@ class PDFToolUI(ctk.CTkFrame):
             self,
             description="📄 Procesa PDFs: watermark, anotar, rotar, combinar, extraer páginas, agregar números, encriptar, comprimir, ver info",
             usage=[
-                "1. 📥 Agregar PDFs con 'Agregar PDFs...'",
-                "2. 📑 Elegir operación (Watermark/Editar/Transformar/etc)",
-                "3. ⚙️ Configurar opciones",
-                "4. ▶️ Click en ejecutar"
+                "1. 📥 Agregar PDFs (+)",
+                "2. ☑️ Seleccionar con Ctrl+click o botones",
+                "3. 📑 Elegir operación",
+                "4. ▶️ Click en ejecutar (procesa seleccionados)"
             ],
             warnings=[
                 "⚠️ PDFs encriptados requieren contraseña primero",
@@ -86,15 +86,32 @@ class PDFToolUI(ctk.CTkFrame):
         
         ctk.CTkButton(
             btn_frame,
-            text="Agregar PDFs...",
+            text="+ Agregar PDFs...",
             command=self._add_files
-        ).pack(side="left", padx=5)
+        ).pack(side="left", padx=2)
         
         ctk.CTkButton(
             btn_frame,
-            text="Limpiar",
-            command=self._clear_files
-        ).pack(side="left", padx=5)
+            text="✓ Todos",
+            command=self._select_all
+        ).pack(side="left", padx=2)
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="✗ Ninguno",
+            command=self._deselect_all
+        ).pack(side="left", padx=2)
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="🗑️",
+            command=self._clear_files,
+            fg_color="#dc2626",
+            width=40
+        ).pack(side="left", padx=2)
+        
+        # Bind selection change
+        self.file_listbox.bind('<<ListboxSelect>>', lambda e: self._update_selection_status())
     
     def _setup_tabs(self) -> None:
         """Configura los tabs de operaciones."""
@@ -143,16 +160,44 @@ class PDFToolUI(ctk.CTkFrame):
             if f not in self.files:
                 self.files.append(f)
                 self.file_listbox.insert(tk.END, Path(f).name)
+        if files:
+            self._update_selection_status()
     
     def _clear_files(self) -> None:
         """Limpia la lista de archivos."""
         self.files.clear()
         self.file_listbox.delete(0, tk.END)
+        self.status_label.configure(text="Lista vacía", text_color="gray")
+    
+    def _select_all(self) -> None:
+        self.file_listbox.select_set(0, tk.END)
+        self._update_selection_status()
+    
+    def _deselect_all(self) -> None:
+        self.file_listbox.select_clear(0, tk.END)
+        self._update_selection_status()
+    
+    def _get_selected_files(self) -> List[str]:
+        selected = self.file_listbox.curselection()
+        if not selected:
+            return []
+        return [self.files[i] for i in selected]
+    
+    def _update_selection_status(self) -> None:
+        selected = self._get_selected_files()
+        total = len(self.files)
+        if not selected:
+            self.status_label.configure(text=f"{total} archivos (ninguno seleccionado)", text_color="gray")
+        elif len(selected) == total:
+            self.status_label.configure(text=f"{total} seleccionados", text_color="blue")
+        else:
+            self.status_label.configure(text=f"{len(selected)}/{total} seleccionados", text_color="blue")
     
     def _check_files(self) -> bool:
         """Verifica que haya archivos seleccionados."""
-        if not self.files:
-            self.status_label.configure(text="No hay archivos seleccionados", text_color="orange")
+        selected = self._get_selected_files()
+        if not selected:
+            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
             return False
         return True
     
