@@ -28,7 +28,7 @@ class VideoToolUI(ctk.CTkFrame):
         # Panel de ayuda
         help_panel = add_help(
             self,
-            description="🎬 Procesa video MP4/AVI/MKV/MOV/WEBM: extrae audio, convierte formato, muestra info. Requiere FFmpeg",
+            description="🎬 Procesa video MP4/AVI/MKV/MOV: extrae audio (MP3/WAV/OGG), convierte formato, muestra info",
             usage=[
                 "1. 📥 Seleccionar archivo de video",
                 "2. 📑 Elegir operación (Extraer Audio/Convertir/Info)",
@@ -36,7 +36,7 @@ class VideoToolUI(ctk.CTkFrame):
                 "4. ▶️ Click en ejecutar"
             ],
             warnings=[
-                "⚠️ Conversión es PESADA -CPU/GPU potente requise",
+                "⚠️ Conversión de video puede tardar varios minutos",
                 "⚠️ FFmpeg debe estar instalado",
                 "⚠️ Archivos >1GB necesitan mucho espacio temporal"
             ]
