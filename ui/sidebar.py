@@ -345,9 +345,9 @@ class Sidebar(ctk.CTkFrame):
             font=ctk.CTkFont(size=15, weight="bold")
         ).pack(pady=(5, 5))
         
-        # Lista de tools
-        tools_list = """Text Analyzer • Audio • PDF • Hash • GIF • Comprimir
-Scrubber • Video • Renombrar • Duplicados • Texto"""
+        # Lista de tools - 11 herramientas actuales
+        tools_list = """Audio • Comprimir • Duplicados • GIF • Hash
+PDF • Renombrar • Scrubber • Search • Texto • Video"""
         
         ctk.CTkLabel(
             main,
