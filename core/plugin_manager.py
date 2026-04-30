@@ -5,7 +5,7 @@ Escanea el directorio tools/ y carga automáticamente las tools disponibles.
 import logging
 import sys
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from core.base_tool import BaseTool
 from core import constants
@@ -84,7 +84,7 @@ class PluginManager:
             logger.error(f"Error cargando tool '{tool_name}': {e}")
             self.tool_status[tool_name] = constants.TOOL_STATUS_ERROR
     
-    def _find_tool_class(self, module) -> type:
+    def _find_tool_class(self, module: Any) -> Optional[type]:
         """
         Busca una clase que hereda de BaseTool en el módulo.
         

@@ -3,6 +3,7 @@ BaseTool: Interfaz abstracta para herramientas del sistema.
 Todas las tools deben heredar de esta clase y implementar los métodos requeridos.
 """
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional
 
 
 class BaseTool(ABC):
@@ -48,7 +49,7 @@ class BaseTool(ABC):
         pass
     
     @abstractmethod
-    def build_ui(self, parent_frame) -> None:
+    def build_ui(self, parent_frame: Any) -> None:
         """
         Construye la interfaz de usuario de la herramienta en el frame recibido.
         
@@ -58,7 +59,7 @@ class BaseTool(ABC):
         pass
     
     @abstractmethod
-    def process(self, files: list, options: dict) -> dict:
+    def process(self, files: List[str], options: Dict[str, Any]) -> Dict[str, Any]:
         """
         Procesa los archivos seleccionados.
         

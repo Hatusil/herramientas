@@ -4,6 +4,7 @@ Dashboard unificado para navegar entre herramientas.
 """
 import sys
 import logging
+from typing import Any
 import customtkinter as ctk
 from pathlib import Path
 
@@ -61,7 +62,7 @@ class App(ctk.CTk):
         # Protocolo para cerrar con X
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
     
-    def _on_resize(self, event) -> None:
+    def _on_resize(self, event: Any) -> None:
         """Maneja cuando se redimensiona la ventana."""
         # Actualizar el sidebar width según alto de ventana
         pass  # Por ahora solo mantener
