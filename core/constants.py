@@ -61,7 +61,6 @@ APPEARANCE_MODE = "dark"
 
 try:
     ctk.set_default_color_theme("dark-blue")
-    ctk.set_default_color_theme("dark-blue")
 except Exception:
     pass  # Theme puede no estar disponible en algunos entornos
 
@@ -82,8 +81,16 @@ FONT_SIZE_NORMAL = 16    # Antes 14
 FONT_SIZE_LARGE = 18    # Antes 16
 FONT_SIZE_TITLE = 24    # Antes 20
 
-def font(size="normal", weight="normal"):
-    """Retorna font con el tamaño especificado."""
+def font(size: str = "normal", weight: str = "normal") -> ctk.CTkFont:
+    """Retorna font con el tamaño especificado.
+    
+    Args:
+        size: Tamaño de fuente (small, normal, large, title)
+        weight: Peso de fuente (normal, bold)
+        
+    Returns:
+        CTkFont configurado
+    """
     from customtkinter import CTkFont
     sizes = {
         "small": FONT_SIZE_SMALL,

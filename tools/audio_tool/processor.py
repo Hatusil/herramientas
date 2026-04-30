@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 from core import constants
+from core.utils import get_ffmpeg_path, check_ffmpeg, get_output_path, get_output_path_format
 
 
 logger = logging.getLogger(__name__)
@@ -17,46 +18,11 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # UTILIDADES
 # =============================================================================
-
-def get_ffmpeg_path() -> str:
-    """Obtiene el path de ffmpeg (local o del sistema)."""
-    # Primero verificar en tools/ffmpeg/
-    local_ffmpeg = Path(__file__).parent.parent / "ffmpeg" / "bin" / "ffmpeg.exe"
-    if local_ffmpeg.exists():
-        return str(local_ffmpeg)
-    return "ffmpeg"  # Usar del PATH
-
-def check_ffmpeg() -> bool:
-    """Verifica si FFmpeg está instalado."""
-    try:
-        ffmpeg = get_ffmpeg_path()
-        result = subprocess.run(
-            [ffmpeg, '-version'],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-        return result.returncode == 0
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        return False
-
-
-def get_output_path(input_path: str, suffix: str) -> str:
-    """Genera ruta de salida con sufijo."""
-    p = Path(input_path)
-    parent = p.parent
-    stem = p.stem
-    ext = p.suffix
-    # Mantener mismo formato si no se especifica
-    return str(parent / f"{stem}{suffix}{ext}")
-
-
-def get_output_path_format(input_path: str, suffix: str, new_ext: str) -> str:
-    """Genera ruta de salida con nuevo formato."""
-    p = Path(input_path)
-    parent = p.parent
-    stem = p.stem
-    return str(parent / f"{stem}{suffix}{new_ext}")
+# Funciones importadas desde core.utils para evitar duplicación:
+# - get_ffmpeg_path()
+# - check_ffmpeg()
+# - get_output_path()
+# - get_output_path_format()
 
 
 # =============================================================================

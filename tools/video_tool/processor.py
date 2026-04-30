@@ -7,25 +7,13 @@ import os
 from pathlib import Path
 from typing import Dict, Any
 
+from core.utils import get_ffmpeg_path, check_ffmpeg
+
 logger = logging.getLogger(__name__)
 
-
-def get_ffmpeg_path() -> str:
-    """Obtiene el path de ffmpeg (local o del sistema)."""
-    local_ffmpeg = Path(__file__).parent.parent / "ffmpeg" / "bin" / "ffmpeg.exe"
-    if local_ffmpeg.exists():
-        return str(local_ffmpeg)
-    return "ffmpeg"
-
-def check_ffmpeg() -> bool:
-    """Verifica si FFmpeg está instalado."""
-    try:
-        ffmpeg = get_ffmpeg_path()
-        result = subprocess.run([ffmpeg, '-version'], capture_output=True, timeout=5)
-        return result.returncode == 0
-    except Exception as e:
-        logger.warning(f"FFmpeg check failed: {e}")
-        return False
+# Funciones importadas desde core.utils para evitar duplicación:
+# - get_ffmpeg_path()
+# - check_ffmpeg()
 
 
 def extract_audio(video_path: str, output_format: str = 'mp3') -> Dict[str, Any]:
