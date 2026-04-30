@@ -260,7 +260,7 @@ class Sidebar(ctk.CTkFrame):
         # Crear ventana Toplevel
         dialog = ctk.CTkToplevel(self)
         dialog.title("Acerca de")
-        dialog.geometry("420x500")
+        dialog.geometry("450x620")
         dialog.resizable(False, False)
         
         # Centrar
@@ -322,9 +322,36 @@ class Sidebar(ctk.CTkFrame):
         
         ctk.CTkLabel(
             main,
+            text="hatusil@proton.me",
+            text_color="gray",
+            font=ctk.CTkFont(size=12)
+        ).pack(pady=(0, 5))
+        
+        ctk.CTkLabel(
+            main,
             text="github.com/Hatusil",
             text_color="blue"
+        ).pack(pady=(0, 2))
+        
+        ctk.CTkLabel(
+            main,
+            text="☕ buymeacoffee.com/hatusil",
+            text_color="orange"
         ).pack(pady=(0, 10))
+        
+        # Descripción
+        desc_frame = ctk.CTkFrame(main, fg_color="transparent")
+        desc_frame.pack(pady=5, padx=10)
+        
+        desc_text = """Soy estudiante de desarrollo de software con una fuerte pasión por llevar una vida integral y explorar el análisis de datos, la cartografía y los sistemas de información geográfica."""
+        
+        ctk.CTkLabel(
+            desc_frame,
+            text=desc_text,
+            font=ctk.CTkFont(size=11),
+            text_color="gray",
+            wraplength=350
+        ).pack(pady=5)
         
         # Copyright
         año = datetime.datetime.now().year
