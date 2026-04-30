@@ -406,41 +406,41 @@ class ScrubberToolUI(ctk.CTkFrame):
         if not self._check_files():
             return
         
-        # Usar el primer archivo
-        file_path = self.files[0]
-        
         self.preview_text.delete("1.0", tk.END)
-        self.preview_text.insert("1.0", f"Analizando: {os.path.basename(file_path)}\n\n")
         
-        ext = Path(file_path).suffix.lower()
-        
-        try:
-            if ext in ['.jpg', '.jpeg']:
-                from tools.scrubber.processor import get_image_metadata
-                info = get_image_metadata(file_path)
-            elif ext == '.docx':
-                from tools.scrubber.processor import get_docx_metadata
-                info = get_docx_metadata(file_path)
-            elif ext == '.xlsx':
-                from tools.scrubber.processor import get_xlsx_metadata
-                info = get_xlsx_metadata(file_path)
-            elif ext == '.pdf':
-                from tools.pdf_tool.processor import get_pdf_info
-                info = get_pdf_info(file_path)
-            else:
-                self.preview_text.insert(tk.END, "Formato no soportado para preview")
-                return
+        # Procesar TODOS los archivos
+        for i, file_path in enumerate(self.files):
+            self.preview_text.insert(tk.END, f"\n[{i+1}] {os.path.basename(file_path)}\n{'='*30}\n")
             
-            if info.get('success'):
-                metadata = info.get('metadata', {})
-                for key, value in metadata.items():
-                    if value:
-                        self.preview_text.insert(tk.END, f"{key}: {value}\n")
-            else:
-                self.preview_text.insert(tk.END, f"Error: {info.get('error', 'Desconocido')}")
+            ext = Path(file_path).suffix.lower()
+            
+            try:
+                if ext in ['.jpg', '.jpeg']:
+                    from tools.scrubber.processor import get_image_metadata
+                    info = get_image_metadata(file_path)
+                elif ext == '.docx':
+                    from tools.scrubber.processor import get_docx_metadata
+                    info = get_docx_metadata(file_path)
+                elif ext == '.xlsx':
+                    from tools.scrubber.processor import get_xlsx_metadata
+                    info = get_xlsx_metadata(file_path)
+                elif ext == '.pdf':
+                    from tools.pdf_tool.processor import get_pdf_info
+                    info = get_pdf_info(file_path)
+                else:
+                    self.preview_text.insert(tk.END, "Formato no soportado\n")
+                    continue
                 
-        except Exception as e:
-            self.preview_text.insert(tk.END, f"Error: {str(e)}")
+                if info.get('success'):
+                    metadata = info.get('metadata', {})
+                    for key, value in metadata.items():
+                        if value:
+                            self.preview_text.insert(tk.END, f"{key}: {value}\n")
+                else:
+                    self.preview_text.insert(tk.END, f"Error: {info.get('error', 'Desconocido')}\n")
+                    
+            except Exception as e:
+                self.preview_text.insert(tk.END, f"Error: {str(e)}\n")
 
 
 import os

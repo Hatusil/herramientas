@@ -241,16 +241,15 @@ class HashToolUI(ctk.CTkFrame):
         
         from tools.hash_tool.processor import verify_hash
         
-        file_path = self.files[0]  # Solo el primero
-        result = verify_hash(file_path, expected, algo)
-        
-        if result['success']:
-            if result['matches']:
-                self.verify_result.insert("1.0", f"✅ ¡CORRESPIDE!\n\nArchivo: {result['file_name']}\nHash: {result['actual']}")
-                self.status_label.configure(text="Hash verificado", text_color="green")
-            else:
-                self.verify_result.insert("1.0", f"❌ NO CORRESPIDE\n\nEsperado: {result['expected']}\nActual: {result['actual']}")
-                self.status_label.configure(text="Hash NO coincide", text_color="red")
+        # Procesar TODOS los archivos
+        for file_path in self.files:
+            result = verify_hash(file_path, expected, algo)
+            
+            if result['success']:
+                if result['matches']:
+                    self.verify_result.insert(tk.END, f"[OK] {result['file_name']}: ✅ CORRESPIDE\n")
+                else:
+                    self.verify_result.insert(tk.END, f"[FAIL] {result['file_name']}: ❌ NO CORRESPIDE\n  Esperado: {result['expected'][:20]}...\n  Actual: {result['actual'][:20]}...\n")
     
     def _setup_list_tab(self) -> None:
         frame = self.tab_list
