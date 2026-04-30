@@ -299,7 +299,7 @@ class Sidebar(ctk.CTkFrame):
         if logo_ctk:
             ctk.CTkLabel(main, image=logo_ctk, text="").pack(pady=(10, 5))
         
-# Título
+        # Título
         ctk.CTkLabel(
             main,
             text="Herramientas",
@@ -313,37 +313,11 @@ class Sidebar(ctk.CTkFrame):
             text_color="gray"
         ).pack(pady=(0, 15))
         
-        # Desarrollador
-        ctk.CTkLabel(
-            main,
-            text="Desarrollado por: Hatusil (Ewoc Logic)",
-            font=ctk.CTkFont(size=16, weight="bold")
-        ).pack(pady=(5, 0))
-        
-        ctk.CTkLabel(
-            main,
-            text="hatusil@proton.me",
-            text_color="gray",
-            font=ctk.CTkFont(size=12)
-        ).pack(pady=(0, 5))
-        
-        ctk.CTkLabel(
-            main,
-            text="github.com/Hatusil",
-            text_color="blue"
-        ).pack(pady=(0, 2))
-        
-        ctk.CTkLabel(
-            main,
-            text="☕ buymeacoffee.com/hatusil",
-            text_color="orange"
-        ).pack(pady=(0, 10))
-        
-        # Descripción
+        # Descripción personal
         desc_frame = ctk.CTkFrame(main, fg_color="transparent")
         desc_frame.pack(pady=5, padx=10)
         
-        desc_text = """Soy desarrollador de software con una fuerte pasión por llevar una vida integral y explorar el análisis de datos, la cartografía y los sistemas de información geográfica. Admiro a las personas virtuosas que se esforzan por mejorarse cada día."""
+        desc_text = """Soy desarrollador de software con una fuerte pasión por llevar una vida integral y explorar el análisis de datos, la cartografía y los sistemas de información geográfica. Admiro a las personas virtuosas que se esfuerzan por mejorarse cada día."""
         
         ctk.CTkLabel(
             desc_frame,
@@ -353,52 +327,77 @@ class Sidebar(ctk.CTkFrame):
             wraplength=380
         ).pack(pady=5)
         
+        # Info contacto
+        ctk.CTkLabel(
+            main,
+            text="Desarrollado por: Hatusil (Ewoc Logic)",
+            font=ctk.CTkFont(size=14, weight="bold")
+        ).pack(pady=(10, 0))
+        
+        ctk.CTkLabel(
+            main,
+            text="hatusil@proton.me",
+            text_color="gray",
+            font=ctk.CTkFont(size=11)
+        ).pack(pady=(2, 0))
+        
+        ctk.CTkLabel(
+            main,
+            text="github.com/Hatusil",
+            text_color="blue"
+        ).pack(pady=(2, 0))
+        
+        ctk.CTkLabel(
+            main,
+            text="☕ buymeacoffee.com/hatusil",
+            text_color="orange"
+        ).pack(pady=(2, 10))
+        
         # Fecha de última actualización
         año = datetime.datetime.now().year
         ctk.CTkLabel(
             main,
             text=f"Última actualización: Abril {año}",
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(size=11),
             text_color="gray"
-        ).pack(pady=(10, 0))
+        ).pack(pady=(5, 0))
         
         # Copyright
-        año = datetime.datetime.now().year
         ctk.CTkLabel(
             main,
             text=f"© {año} - Todos los derechos reservados",
-            font=ctk.CTkFont(size=14)
-        ).pack(pady=(10, 0))
+            font=ctk.CTkFont(size=12)
+        ).pack(pady=(5, 0))
         
         # Separator
         sep = ctk.CTkFrame(main, height=1, fg_color="gray")
-        sep.pack(fill="x", pady=15)
+        sep.pack(fill="x", pady=12)
         
-        # Features título
+        # Herramientas título
         ctk.CTkLabel(
             main,
             text="Herramientas incluidas:",
-            font=ctk.CTkFont(size=15, weight="bold")
+            font=ctk.CTkFont(size=14, weight="bold")
         ).pack(pady=(5, 5))
         
-        # Lista de tools - 11 herramientas actuales
+        # Lista de tools
         tools_list = """Audio • Comprimir • Duplicados • GIF • Hash
 PDF • Renombrar • Scrubber • Search • Texto • Video"""
         
         ctk.CTkLabel(
             main,
             text=tools_list,
-            font=ctk.CTkFont(size=14)
+            font=ctk.CTkFont(size=13)
         ).pack(pady=5)
         
         # Separator
         sep2 = ctk.CTkFrame(main, height=1, fg_color="gray")
-        sep2.pack(fill="x", pady=15)
+        sep2.pack(fill="x", pady=12)
         
         # Gracias
         ctk.CTkLabel(
             main,
-            text="Gracias por usar esta herramienta!",
+            text="¡Gracias por usar esta herramienta!",
             text_color="green"
         ).pack(pady=5)
         
@@ -407,6 +406,6 @@ PDF • Renombrar • Scrubber • Search • Texto • Video"""
             main,
             text="Cerrar",
             command=dialog.destroy,
-            width=140,
-            height=35
-        ).pack(pady=15)
+            width=120,
+            height=32
+        ).pack(pady=10)
