@@ -23,6 +23,11 @@ def create_gif(image_paths: List[str], output_path: str = None, duration: int = 
     if not image_paths:
         return {'success': False, 'error': 'No hay imágenes', 'output_files': []}
     
+    # Skip if input is already GIF
+    for path in image_paths:
+        if path.lower().endswith('.gif'):
+            return {'success': False, 'error': 'Entrada ya es GIF', 'output_files': []}
+    
     try:
         # Abrir todas las imágenes
         images = []
@@ -79,6 +84,12 @@ def extract_frames(gif_path: str, output_dir: str = None) -> Dict[str, Any]:
     """
     if not os.path.exists(gif_path):
         return {'success': False, 'error': 'Archivo no encontrado', 'output_files': []}
+    
+    # Skip if input is already an image format (not gif)
+    ext = os.path.splitext(gif_path)[1].lower()
+    image_exts = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp', '.ico'}
+    if ext in image_exts:
+        return {'success': False, 'error': 'Entrada es imagen, no gif', 'output_files': []}
     
     try:
         gif = Image.open(gif_path)

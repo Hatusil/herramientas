@@ -5,7 +5,7 @@ import logging
 import subprocess
 import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict, List
 
 from core.utils import get_ffmpeg_path, check_ffmpeg
 
@@ -71,51 +71,75 @@ def extract_audio(video_path: str, output_format: str = 'mp3') -> Dict[str, Any]
         return {'success': False, 'error': str(e), 'output_files': []}
 
 
-def convert_video(video_path: str, output_format: str, **options) -> Dict[str, Any]:
+def convert_video(files: List[str], output_format: str, **options) -> Dict[str, Any]:
     """Convierte video a otro formato."""
     if not check_ffmpeg():
         return {'success': False, 'error': 'FFmpeg no instalado', 'output_files': []}
     
-    if not os.path.exists(video_path):
-        return {'success': False, 'error': 'Archivo no encontrado', 'output_files': []}
+    output_files = []
+    errors = []
+    skipped = []
     
-    try:
+    video_codecs = {
+        'mp4': 'libx264',
+        'avi': 'mpeg4',
+        'mkv': 'libx264',
+        'mov': 'mpeg4'
+    }
+    
+    audio_codecs = {
+        'mp4': 'aac',
+        'avi': 'mp3',
+        'mkv': 'aac',
+        'mov': 'aac'
+    }
+    
+    for video_path in files:
+        if not os.path.exists(video_path):
+            errors.append(f"No encontrado: {Path(video_path).name}")
+            continue
+        
+        video_info = get_video_info(video_path)
+        
+        input_format = None
+        if video_info.get('success'):
+            input_format = video_info.get('format', '').lower()
+        
+        if not input_format:
+            input_format = Path(video_path).suffix.lstrip('.').lower()
+        
+        output_format_lower = output_format.lower()
+        
+        needs_conversion = input_format != output_format_lower
+        
+        if not needs_conversion and video_info.get('success'):
+            input_codec = video_info.get('video_codec', '').lower()
+            output_codec = video_codecs.get(output_format, 'libx264').lower()
+            
+            if input_codec == output_codec:
+                crf = options.get('crf', 23)
+                if crf == 23:
+                    skipped.append(f"{Path(video_path).name} - Ya está en formato {input_format.upper()}")
+                    logger.info(f"Omite (mismo formato): {Path(video_path).name}")
+                    continue
+        
         p = Path(video_path)
         output_path = p.parent / f"{p.stem}_converted.{output_format}"
         
         logger.info(f"Convirtiendo {p.name} a {output_format}...")
-        
-        # Codec de video según formato
-        video_codecs = {
-            'mp4': 'libx264',
-            'avi': 'mpeg4',
-            'mkv': 'libx264',
-            'mov': 'mpeg4'
-        }
-        
-        # Codec de audio según formato
-        audio_codecs = {
-            'mp4': 'aac',
-            'avi': 'mp3',
-            'mkv': 'aac',
-            'mov': 'aac'
-        }
         
         video_codec = video_codecs.get(output_format, 'libx264')
         audio_codec = audio_codecs.get(output_format, 'aac')
         
         cmd = [get_ffmpeg_path(), '-y', '-i', video_path, '-codec:v', video_codec]
         
-        # Preset de velocidad
         if output_format in ['mp4', 'mkv']:
             cmd.extend(['-preset', 'medium'])
         
-        # Calidad
         crf = options.get('crf', 23)
         if output_format in ['mp4', 'mkv']:
             cmd.extend(['-crf', str(crf)])
         
-        # Audio
         if audio_codec in ['libopus', 'libvorbis']:
             cmd.extend(['-codec:a', audio_codec])
         else:
@@ -123,26 +147,40 @@ def convert_video(video_path: str, output_format: str, **options) -> Dict[str, A
         
         cmd.append(str(output_path))
         
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-        
-        if result.returncode == 0 and output_path.exists():
-            return {
-                'success': True,
-                'message': f'Convertido: {output_path.name}',
-                'output_files': [str(output_path)],
-                'error': None
-            }
-        else:
-            # Get error message
-            err = result.stderr[:300] if result.stderr else 'Unknown error'
-            return {
-                'success': False,
-                'error': f'Error al convertir: {err[:100]}',
-                'output_files': []
-            }
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
             
-    except Exception as e:
-        return {'success': False, 'error': str(e), 'output_files': []}
+            if result.returncode == 0 and output_path.exists():
+                output_files.append(str(output_path))
+                logger.info(f"Convertido: {p.name} -> {output_path.name}")
+            else:
+                err = result.stderr[:300] if result.stderr else 'Unknown error'
+                errors.append(f"{p.name}: {err[:100]}")
+                
+        except Exception as e:
+            errors.append(f"Excepción: {str(e)}")
+    
+    if not output_files and skipped:
+        return {
+            'success': False,
+            'message': f"Todos los archivos ya están en formato {output_format.upper()}",
+            'output_files': [],
+            'skipped': skipped,
+            'error': 'No hay archivos para convertir'
+        }
+    
+    success = len(output_files) > 0
+    msg = f"Convertidos {len(output_files)}/{len(files)} archivos a {output_format.upper()}"
+    if skipped:
+        msg += f" ({len(skipped)} omitidos)"
+    
+    return {
+        'success': success,
+        'message': msg,
+        'output_files': output_files,
+        'skipped': skipped,
+        'error': '; '.join(errors) if errors else None
+    }
 
 
 def get_video_info(video_path: str) -> Dict[str, Any]:

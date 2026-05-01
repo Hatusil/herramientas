@@ -23,14 +23,32 @@ def compress_to_zip(files: List[str], output_path: str = None, level: int = 6) -
     if not files:
         return {'success': False, 'error': 'No hay archivos', 'output_files': []}
     
+    skipped = []
+    valid_files = []
+    
+    for f in files:
+        input_path = Path(f)
+        if input_path.suffix.lower() == '.zip':
+            skipped.append(f"{input_path.name} - Ya es ZIP")
+            continue
+        valid_files.append(f)
+    
+    if not valid_files:
+        return {
+            'success': False,
+            'message': f'Todos los archivos ya son ZIP ({len(skipped)})',
+            'output_files': [],
+            'skipped': skipped,
+            'error': 'No hay archivos para comprimir'
+        }
+    
     try:
-        # Determinar nombre de salida
         if output_path is None:
-            first_file = files[0]
+            first_file = valid_files[0]
             output_path = Path(first_file).parent / f"{Path(first_file).stem}_compressed.zip"
         
         with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=level) as zf:
-            for f in files:
+            for f in valid_files:
                 if os.path.isfile(f):
                     zf.write(f, arcname=os.path.basename(f))
                 elif os.path.isdir(f):
@@ -40,15 +58,20 @@ def compress_to_zip(files: List[str], output_path: str = None, level: int = 6) -
                             arcname = os.path.relpath(file_path, os.path.dirname(f))
                             zf.write(file_path, arcname=arcname)
         
+        msg = f'Creado: {os.path.basename(output_path)}'
+        if skipped:
+            msg += f' ({len(skipped)} omitidos)'
+        
         return {
             'success': True,
-            'message': f'Creado: {os.path.basename(output_path)}',
+            'message': msg,
             'output_files': [output_path],
+            'skipped': skipped if skipped else None,
             'error': None
         }
         
     except Exception as e:
-        return {'success': False, 'error': str(e), 'output_files': []}
+        return {'success': False, 'error': str(e), 'output_files': [], 'skipped': skipped if skipped else None}
 
 
 def compress_to_tar(files: List[str], output_path: str = None, compression: str = 'gz') -> Dict[str, Any]:
@@ -66,26 +89,53 @@ def compress_to_tar(files: List[str], output_path: str = None, compression: str 
     if not files:
         return {'success': False, 'error': 'No hay archivos', 'output_files': []}
     
+    tar_extensions = {'.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz'}
+    
+    skipped = []
+    valid_files = []
+    
+    for f in files:
+        input_path = Path(f)
+        ext_lower = input_path.suffix.lower()
+        if ext_lower in tar_extensions:
+            skipped.append(f"{input_path.name} - Ya es TAR")
+            continue
+        valid_files.append(f)
+    
+    if not valid_files:
+        return {
+            'success': False,
+            'message': f'Todos los archivos ya son TAR ({len(skipped)})',
+            'output_files': [],
+            'skipped': skipped,
+            'error': 'No hay archivos para comprimir'
+        }
+    
     try:
         if output_path is None:
-            first_file = files[0]
+            first_file = valid_files[0]
             output_path = Path(first_file).parent / f"{Path(first_file).stem}.tar"
         
         mode = f'w:{compression}' if compression else 'w'
         
         with tarfile.open(output_path, mode) as tf:
-            for f in files:
+            for f in valid_files:
                 tf.add(f, arcname=os.path.basename(f))
+        
+        msg = f'Creado: {os.path.basename(output_path)}'
+        if skipped:
+            msg += f' ({len(skipped)} omitidos)'
         
         return {
             'success': True,
-            'message': f'Creado: {os.path.basename(output_path)}',
+            'message': msg,
             'output_files': [output_path],
+            'skipped': skipped if skipped else None,
             'error': None
         }
         
     except Exception as e:
-        return {'success': False, 'error': str(e), 'output_files': []}
+        return {'success': False, 'error': str(e), 'output_files': [], 'skipped': skipped if skipped else None}
 
 
 def decompress_zip(zip_path: str, output_dir: str = None) -> Dict[str, Any]:
