@@ -324,3 +324,51 @@ class TestCompressionRoundTrips:
         restored_file = os.path.join(extract_dir, 'original.txt')
         with open(restored_file, 'r') as f:
             assert f.read() == original_content
+
+
+class TestCompressSkipLogic:
+    """Tests for compression skip logic."""
+
+    def test_compress_skip_already_zip(self, temp_dir):
+        """Compressing a ZIP file should skip."""
+        zip_file = os.path.join(temp_dir, 'already.zip')
+        with zipfile.ZipFile(zip_file, 'w') as zf:
+            zf.writestr('test.txt', 'content')
+        
+        result = compress_to_zip([zip_file])
+        
+        assert result['success'] is False
+        assert 'skipped' in result
+        assert len(result['skipped']) == 1
+        assert 'Ya es ZIP' in result['skipped'][0]
+
+    def test_compress_skip_multiple_zips(self, temp_dir):
+        """Compressing multiple ZIPs should skip all."""
+        zips = []
+        for i in range(3):
+            zf = os.path.join(temp_dir, f'file{i}.zip')
+            with zipfile.ZipFile(zf, 'w') as z:
+                z.writestr(f'file{i}.txt', f'content{i}')
+            zips.append(zf)
+        
+        result = compress_to_zip(zips)
+        
+        assert result['success'] is False
+        assert 'skipped' in result
+        assert len(result['skipped']) == 3
+
+    def test_compress_mixed_zip_and_regular(self, temp_dir):
+        """Compressing ZIP + regular files should skip ZIP, compress others."""
+        zip_file = os.path.join(temp_dir, 'already.zip')
+        with zipfile.ZipFile(zip_file, 'w') as zf:
+            zf.writestr('test.txt', 'content')
+        
+        regular_file = os.path.join(temp_dir, 'regular.txt')
+        with open(regular_file, 'w') as f:
+            f.write('regular content')
+        
+        result = compress_to_zip([zip_file, regular_file])
+        
+        assert result['success'] is True
+        assert 'skipped' in result
+        assert len(result['skipped']) == 1
