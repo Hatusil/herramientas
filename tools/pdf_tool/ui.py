@@ -34,10 +34,10 @@ class PDFToolUI(ctk.CTkFrame):
             self,
             description="📄 Procesa PDFs: watermark, anotar, rotar, combinar, extraer páginas, agregar números, encriptar, comprimir, ver info",
             usage=[
-                "1. 📥 Agregar PDFs (+)",
-                "2. ☑️ Seleccionar con Ctrl+click o botones",
-                "3. 📑 Elegir operación",
-                "4. ▶️ Click en ejecutar (procesa seleccionados)"
+                "1. 📥 Agregar PDFs con 'Agregar PDFs...'",
+                "2. 📑 Elegir operación (Watermark/Editar/Transformar/etc)",
+                "3. ⚙️ Configurar opciones",
+                "4. ▶️ Click en ejecutar"
             ],
             warnings=[
                 "⚠️ PDFs encriptados requieren contraseña primero",
@@ -86,32 +86,27 @@ class PDFToolUI(ctk.CTkFrame):
         
         ctk.CTkButton(
             btn_frame,
-            text="+ Agregar PDFs...",
+            text="Agregar PDFs...",
             command=self._add_files
-        ).pack(side="left", padx=2)
+        ).pack(side="left", padx=5)
         
         ctk.CTkButton(
             btn_frame,
             text="✓ Todos",
             command=self._select_all
-        ).pack(side="left", padx=2)
+        ).pack(side="left", padx=5)
         
         ctk.CTkButton(
             btn_frame,
             text="✗ Ninguno",
             command=self._deselect_all
-        ).pack(side="left", padx=2)
+        ).pack(side="left", padx=5)
         
         ctk.CTkButton(
             btn_frame,
-            text="🗑️",
-            command=self._clear_files,
-            fg_color="#dc2626",
-            width=40
-        ).pack(side="left", padx=2)
-        
-        # Bind selection change
-        self.file_listbox.bind('<<ListboxSelect>>', lambda e: self._update_selection_status())
+            text="Limpiar",
+            command=self._clear_files
+        ).pack(side="left", padx=5)
     
     def _setup_tabs(self) -> None:
         """Configura los tabs de operaciones."""
@@ -160,44 +155,24 @@ class PDFToolUI(ctk.CTkFrame):
             if f not in self.files:
                 self.files.append(f)
                 self.file_listbox.insert(tk.END, Path(f).name)
-        if files:
-            self._update_selection_status()
     
     def _clear_files(self) -> None:
         """Limpia la lista de archivos."""
         self.files.clear()
         self.file_listbox.delete(0, tk.END)
-        self.status_label.configure(text="Lista vacía", text_color="gray")
     
     def _select_all(self) -> None:
+        """Selecciona todos los archivos en la lista."""
         self.file_listbox.select_set(0, tk.END)
-        self._update_selection_status()
     
     def _deselect_all(self) -> None:
+        """Deselecciona todos los archivos."""
         self.file_listbox.select_clear(0, tk.END)
-        self._update_selection_status()
-    
-    def _get_selected_files(self) -> List[str]:
-        selected = self.file_listbox.curselection()
-        if not selected:
-            return []
-        return [self.files[i] for i in selected]
-    
-    def _update_selection_status(self) -> None:
-        selected = self._get_selected_files()
-        total = len(self.files)
-        if not selected:
-            self.status_label.configure(text=f"{total} archivos (ninguno seleccionado)", text_color="gray")
-        elif len(selected) == total:
-            self.status_label.configure(text=f"{total} seleccionados", text_color="blue")
-        else:
-            self.status_label.configure(text=f"{len(selected)}/{total} seleccionados", text_color="blue")
     
     def _check_files(self) -> bool:
         """Verifica que haya archivos seleccionados."""
-        selected = self._get_selected_files()
-        if not selected:
-            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
+        if not self.files:
+            self.status_label.configure(text="No hay archivos seleccionados", text_color="orange")
             return False
         return True
     
@@ -782,7 +757,7 @@ class PDFToolUI(ctk.CTkFrame):
             command=self._show_pdf_info
         ).pack(pady=5)
     
-def _show_pdf_info(self) -> None:
+    def _show_pdf_info(self) -> None:
         if not self._check_files():
             return
         
@@ -790,30 +765,41 @@ def _show_pdf_info(self) -> None:
             self.status_label.configure(text="Seleccione un PDF", text_color="orange")
             return
         
-        # Mostrar info de TODOS los archivos
         from tools.pdf_tool.processor import get_pdf_info
         
         self.info_text.delete("1.0", tk.END)
         
-        resultados = []
+        # Procesar TODOS los archivos
         for file_path in self.files:
             info = get_pdf_info(file_path)
-            resultados.append(info)
-        
-        # Mostrar todos los resultados
-        for i, info in enumerate(resultados):
+            
             if info.get('success'):
-                self.info_text.insert(tk.END, f"""[{i+1}] {info.get('file_name', 'N/A')}
-────────────────────────────────
+                self.info_text.insert(tk.END, f"""Información del PDF:
+─────────────────────────────────
+Archivo: {info.get('file_name', 'N/A')}
 Tamaño: {info.get('file_size', 0)} bytes
 Páginas: {info.get('num_pages', 0)}
 Encriptado: {'Sí' if info.get('is_encrypted') else 'No'}
+
+Metadatos:
+─────────────────────────────────
 Título: {info.get('title', 'N/A')}
 Autor: {info.get('author', 'N/A')}
-
+Creador: {info.get('creator', 'N/A')}
+Productor: {info.get('producer', 'N/A')}
+Fecha creación: {info.get('creation_date', 'N/A')}
 """)
+                
+                # Info de páginas
+                pages = info.get('pages', [])
+                if pages:
+                    self.info_text.insert(tk.END, "\nPáginas:\n─────────────────────────────────\n")
+                    for p in pages[:10]:  # Mostrar max 10
+                        self.info_text.insert(tk.END, f"Página {p['page_num']}: Rotación={p['rotation']}°\n")
+                
+                self.info_text.insert(tk.END, "\n" + "="*35 + "\n\n")
             else:
-                self.info_text.insert(tk.END, f"[{i+1}] Error: {info.get('error', 'Error desconocido')}\n\n")
+                self.info_text.insert(tk.END, f"Error con {info.get('file_name', file_path)}: {info.get('error', 'Error desconocido')}\n\n")
     
     # =========================================================================
     # UTILIDADES
