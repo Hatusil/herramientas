@@ -458,15 +458,51 @@ def convert_audio(files: List[str], output_format: str, **options) -> Dict[str, 
         return {'success': False, 'error': 'FFmpeg no instalado', 'output_files': []}
     
     quality = options.get('quality', 192)
+    requested_bitrate = quality * 1000  # Convert to bps
     
     output_files = []
     errors = []
+    skipped = []
     
     for file_path in files:
         input_file = Path(file_path)
         
         if not input_file.exists():
             errors.append(f"No encontrado: {input_file.name}")
+            continue
+        
+        # Obtener información del archivo de entrada
+        audio_info = get_audio_info(str(input_file))
+        
+        # Determinar formato de entrada
+        input_format = None
+        
+        if audio_info.get('success'):
+            input_format = audio_info.get('format', '').lower()
+        
+        # Fallback: usar extensión
+        if not input_format:
+            input_format = input_file.suffix.lstrip('.').lower()
+        
+        # Normalizar formato de salida
+        output_format_lower = output_format.lower()
+        
+        # Verificar si necesita conversión
+        needs_conversion = input_format != output_format_lower
+        
+        # Verificar bitrate si el formato es el mismo
+        if not needs_conversion and audio_info.get('success'):
+            current_bitrate = audio_info.get('bit_rate', 0)
+            if current_bitrate > 0:
+                # Usar 10% de tolerancia
+                if abs(current_bitrate - requested_bitrate) < requested_bitrate * 0.1:
+                    needs_conversion = False
+        
+        # Si no necesita conversión, omitir
+        if not needs_conversion:
+            format_name = input_format.upper() if input_format else input_file.suffix.upper()
+            skipped.append(f"{input_file.name} - Ya está en formato {format_name}")
+            logger.info(f"Omite (mismo formato): {input_file.name}")
             continue
         
         # Nuevo formato
@@ -514,12 +550,26 @@ def convert_audio(files: List[str], output_format: str, **options) -> Dict[str, 
         except Exception as e:
             errors.append(f"Excepción: {str(e)}")
     
+    # Verificar si todos fueron omitidos
+    if not output_files and skipped:
+        return {
+            'success': False,
+            'message': f"Todos los archivos ya están en formato {output_format.upper()}",
+            'output_files': [],
+            'skipped': skipped,
+            'error': 'No hay archivos para convertir'
+        }
+    
     success = len(output_files) > 0
+    msg = f"Convertidos {len(output_files)}/{len(files)} archivos a {output_format.upper()}"
+    if skipped:
+        msg += f" ({len(skipped)} omitidos)"
     
     return {
         'success': success,
-        'message': f"Convertidos {len(output_files)}/{len(files)} archivos a {output_format.upper()}",
+        'message': msg,
         'output_files': output_files,
+        'skipped': skipped,
         'error': '; '.join(errors) if errors else None
     }
 
