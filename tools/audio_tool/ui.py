@@ -133,6 +133,7 @@ class AudioToolUI(ctk.CTkFrame):
         self.tab_convert = self.tabview.add("Convertir")
         self.tab_repair = self.tabview.add("Reparar")
         self.tab_info = self.tabview.add("Info")
+        self.tab_verify = self.tabview.add("Verificar")
         
         self._setup_normalize_tab()
         self._setup_clean_tab()
@@ -140,6 +141,7 @@ class AudioToolUI(ctk.CTkFrame):
         self._setup_convert_tab()
         self._setup_repair_tab()
         self._setup_info_tab()
+        self._setup_verify_tab()
         
         # Status
         self.status_label = ctk.CTkLabel(
@@ -611,9 +613,6 @@ class AudioToolUI(ctk.CTkFrame):
             self.status_label.configure(text=f"Reparando {len(files)} archivos...", text_color="yellow")
         
         result = self.on_process('repair', files, {})
-        self._show_result(result)
-        
-        result = self.on_process('repair', self.files, {})
         self._show_result(result)
     
     # =========================================================================
