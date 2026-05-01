@@ -235,6 +235,7 @@ def clean_audio_metadata(files: List[str]) -> Dict[str, Any]:
     
     output_files = []
     errors = []
+    skipped = []
     
     for file_path in files:
         input_file = Path(file_path)
@@ -243,15 +244,28 @@ def clean_audio_metadata(files: List[str]) -> Dict[str, Any]:
             errors.append(f"No encontrado: {input_file.name}")
             continue
         
+        audio_info = get_audio_info(str(input_file))
+        
+        if not audio_info.get('success'):
+            errors.append(f"Error leyendo: {input_file.name}")
+            continue
+        
+        metadata_fields = ['title', 'artist', 'album', 'track', 'year', 'genre']
+        has_metadata = any(audio_info.get(field) for field in metadata_fields)
+        
+        if not has_metadata:
+            skipped.append(input_file.name)
+            logger.info(f"Sin metadatos: {input_file.name} - omitido")
+            continue
+        
         output_file = get_output_path(file_path, '_clean')
         
-        # Copiar sin metadatos - opciones seguras
         cmd = [
             get_ffmpeg_path(), '-y', '-nostdin',
             '-i', str(input_file),
             '-codec:a', 'libmp3lame',
-            '-b:a', '320k',  # Alta calidad
-            '-map_metadata', '0',  # Remove all metadata
+            '-b:a', '320k',
+            '-map_metadata', '0',
             str(output_file)
         ]
         
@@ -273,11 +287,22 @@ def clean_audio_metadata(files: List[str]) -> Dict[str, Any]:
         except Exception as e:
             errors.append(f"Excepción: {str(e)}")
     
+    if skipped and not output_files:
+        return {
+            'success': False,
+            'message': f"No hay metadatos para limpiar en {len(skipped)} archivo(s)",
+            'output_files': [],
+            'error': None
+        }
+    
     success = len(output_files) > 0
+    msg = f"Limpiados {len(output_files)}/{len(files)} archivos"
+    if skipped:
+        msg += f" ({len(skipped)} sin metadatos)"
     
     return {
         'success': success,
-        'message': f"Limpiados {len(output_files)}/{len(files)} archivos",
+        'message': msg,
         'output_files': output_files,
         'error': '; '.join(errors) if errors else None
     }
