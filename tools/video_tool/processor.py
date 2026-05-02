@@ -99,29 +99,18 @@ def convert_video(files: List[str], output_format: str, **options) -> Dict[str, 
             errors.append(f"No encontrado: {Path(video_path).name}")
             continue
         
-        video_info = get_video_info(video_path)
-        
-        input_format = None
-        if video_info.get('success'):
-            input_format = video_info.get('format', '').lower()
-        
-        if not input_format:
-            input_format = Path(video_path).suffix.lstrip('.').lower()
-        
+        # Determinar formato de entrada
+        input_format = Path(video_path).suffix.lstrip('.').lower()
         output_format_lower = output_format.lower()
         
-        needs_conversion = input_format != output_format_lower
+        # Skip si mismo formato
+        if input_format == output_format_lower:
+            skipped.append(f"{Path(video_path).name} - Ya está en {input_format.upper()}")
+            logger.info(f"Omite (mismo formato): {Path(video_path).name}")
+            continue
         
-        if not needs_conversion and video_info.get('success'):
-            input_codec = video_info.get('video_codec', '').lower()
-            output_codec = video_codecs.get(output_format, 'libx264').lower()
-            
-            if input_codec == output_codec:
-                crf = options.get('crf', 23)
-                if crf == 23:
-                    skipped.append(f"{Path(video_path).name} - Ya está en formato {input_format.upper()}")
-                    logger.info(f"Omite (mismo formato): {Path(video_path).name}")
-                    continue
+        # Obtener info solo si necesita conversión
+        video_info = get_video_info(video_path)
         
         p = Path(video_path)
         output_path = p.parent / f"{p.stem}_converted.{output_format}"
