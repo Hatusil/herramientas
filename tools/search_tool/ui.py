@@ -278,10 +278,14 @@ class SearchToolUI(ctk.CTkFrame):
         if result['success']:
             self.results = result['results']
             self._show_results()
-            self.status_label.configure(
-                text=f"Encontrados: {result['count']} archivos",
-                text_color="green"
-            )
+            count = result['count']
+            content_count = len(result.get('content_matches', {}))
+            
+            msg = f"Encontrados: {count} archivos"
+            if content_count > 0:
+                msg += f" ({content_count} con contenido)"
+            
+            self.status_label.configure(text=msg, text_color="green")
         else:
             self.status_label.configure(
                 text=result.get('error', 'Error'),
