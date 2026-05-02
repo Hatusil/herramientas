@@ -284,7 +284,8 @@ class VideoToolUI(ctk.CTkFrame):
                     progress = (i + 1) / total
                     self.after(0, lambda p=progress, c=i+1: self._update_convert_progress(p, c, total))
                     
-                    result = convert_video(video_file, self.out_format.get(), crf=int(self.crf_var.get()))
+                    # Pass as list, not single string
+                    result = convert_video([video_file], self.out_format.get(), crf=int(self.crf_var.get()))
                     if result.get('skipped'):
                         skipped_files.extend(result['skipped'])
                     elif result['success']:
