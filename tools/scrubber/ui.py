@@ -261,10 +261,16 @@ class ScrubberToolUI(ctk.CTkFrame):
         
         # Mostrar resultado
         success_count = sum(1 for r in results if r.get('success'))
-        self.status_label.configure(
-            text=f"Limpiados {success_count}/{len(image_files)} archivos",
-            text_color="green" if success_count > 0 else "red"
-        )
+        total = len(image_files)
+        
+        if success_count == 0:
+            msg = f"Ninguno necesitaba limpieza"
+        elif success_count == total:
+            msg = f"✓ Limpiados {success_count} archivos"
+        else:
+            msg = f"✓ Limpiados {success_count}/{total} archivos"
+        
+        self.status_label.configure(text=msg, text_color="green")
     
     # =========================================================================
     # TAB: DOCUMENTOS
