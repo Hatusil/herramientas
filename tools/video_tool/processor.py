@@ -225,6 +225,7 @@ def get_video_info(video_path: str) -> Dict[str, Any]:
             'video_codec': video_stream.get('codec_name', 'N/A') if video_stream else 'N/A',
             'video_resolution': f"{video_stream.get('width', 0)}x{video_stream.get('height', 0)}" if video_stream else 'N/A',
             'video_fps': video_stream.get('r_frame_rate', 'N/A') if video_stream else 'N/A',
+            'video_bitrate': fmt.get('bit_rate', 'N/A') if fmt else 'N/A',
             
             'audio_codec': audio_stream.get('codec_name', 'N/A') if audio_stream else 'N/A',
             'audio_bitrate': audio_stream.get('bit_rate', 'N/A') if audio_stream else 'N/A',

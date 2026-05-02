@@ -386,6 +386,7 @@ class VideoToolUI(ctk.CTkFrame):
   💾 Tamaño:      {result['file_size'] / 1024 / 1024:.2f} MB
   ⏱️ Duración:    {result['duration']:.1f}s
   🎬 Video:       {result['video_codec'] or 'N/A'} | {res}
+  ⚡ Bitrate:     {result.get('video_bitrate', 'N/A')}
   🎞️ FPS:        {fps}
   🔊 Audio:       {result['audio_codec'] or 'N/A'}"""
                 all_info.append(info)
