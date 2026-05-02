@@ -157,7 +157,6 @@ class RenameToolUI(ctk.CTkFrame):
         result = rename_with_prefix(self.files, prefix)
         
         self._handle_result(result)
-        self._clear_files()
     
     def _setup_suffix_tab(self) -> None:
         frame = self.tab_suffix
@@ -183,7 +182,6 @@ class RenameToolUI(ctk.CTkFrame):
         result = rename_with_suffix(self.files, suffix)
         
         self._handle_result(result)
-        self._clear_files()
     
     def _setup_replace_tab(self) -> None:
         frame = self.tab_replace
@@ -221,7 +219,6 @@ class RenameToolUI(ctk.CTkFrame):
         result = rename_replace(self.files, find, replace)
         
         self._handle_result(result)
-        self._clear_files()
     
     def _setup_numbers_tab(self) -> None:
         frame = self.tab_numbers
@@ -256,7 +253,6 @@ class RenameToolUI(ctk.CTkFrame):
         result = rename_numbered(self.files, start=start, pattern=pattern)
         
         self._handle_result(result)
-        self._clear_files()
     
     def _setup_case_tab(self) -> None:
         frame = self.tab_case
@@ -281,12 +277,13 @@ class RenameToolUI(ctk.CTkFrame):
         result = rename_case(self.files, case)
         
         self._handle_result(result)
-        self._clear_files()
     
     def _handle_result(self, result: Dict) -> None:
         if result.get('success'):
             self.status_label.configure(text=result['message'], text_color="green")
             if result.get('errors'):
                 self.status_label.configure(text=f"{result['message']} - {len(result['errors'])} errores", text_color="orange")
+            # Solo limpiar si hubo éxito
+            self._clear_files()
         else:
             self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
