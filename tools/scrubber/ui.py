@@ -434,8 +434,8 @@ class ScrubberToolUI(ctk.CTkFrame):
                     from tools.scrubber.processor import get_image_metadata
                     info = get_image_metadata(file_path)
                 elif ext in {'.png', '.webp'}:
-                    self.preview_text.insert(tk.END, "Información: PNG/WebP no tienen EXIF como JPG\n")
-                    info = {'success': True, 'metadata': {'formato': ext.upper()}}
+                    self.preview_text.insert(tk.END, "Info: PNG/WebP sin EXIF estándar\n")
+                    info = {'success': True, 'metadata': {'formato': ext[1:].upper()}}
                 elif ext == '.docx':
                     from tools.scrubber.processor import get_docx_metadata
                     info = get_docx_metadata(file_path)
@@ -445,6 +445,9 @@ class ScrubberToolUI(ctk.CTkFrame):
                 elif ext == '.pdf':
                     from tools.pdf_tool.processor import get_pdf_info
                     info = get_pdf_info(file_path)
+                elif ext == '.mp3':
+                    self.preview_text.insert(tk.END, "Info: MP3 sin metadatos EXIF\n")
+                    info = {'success': True, 'metadata': {'formato': 'MP3'}}
                 else:
                     self.preview_text.insert(tk.END, "Formato no soportado\n")
                     continue
