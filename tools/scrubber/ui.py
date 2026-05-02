@@ -203,19 +203,21 @@ class ScrubberToolUI(ctk.CTkFrame):
         )
         info.pack(pady=10)
         
-        # Opciones
-        self.remove_all_var = ctk.BooleanVar(value=True)
-        ctk.CTkCheckBox(
+        # Opciones (solo una puede seleccionarse)
+        self.clean_mode_var = ctk.StringVar(value="all")
+        
+        ctk.CTkRadioButton(
             frame,
             text="Eliminar todos los metadatos (EXIF)",
-            variable=self.remove_all_var
+            variable=self.clean_mode_var,
+            value="all"
         ).pack(anchor="w", padx=20, pady=5)
         
-        self.remove_gps_var = ctk.BooleanVar(value=False)
-        ctk.CTkCheckBox(
+        ctk.CTkRadioButton(
             frame,
             text="Solo eliminar GPS (mantener otros datos)",
-            variable=self.remove_gps_var
+            variable=self.clean_mode_var,
+            value="gps"
         ).pack(anchor="w", padx=20, pady=5)
         
         # Info
@@ -255,9 +257,9 @@ class ScrubberToolUI(ctk.CTkFrame):
             self.status_label.configure(text=msg, text_color="orange")
             return
         
-        options = {
-            'remove_all': self.remove_all_var.get(),
-            'remove_gps': self.remove_gps_var.get(),
+options = {
+            'remove_all': self.clean_mode_var.get() == 'all',
+            'remove_gps': self.clean_mode_var.get() == 'gps'
         }
         
         self.status_label.configure(text="Procesando...", text_color="blue")
