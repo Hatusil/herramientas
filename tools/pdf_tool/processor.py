@@ -1130,8 +1130,8 @@ def clean_metadata(files: List[str]) -> Dict[str, Any]:
             for page in reader.pages:
                 writer.add_page(page)
             
-            # Eliminar metadatos
-            writer.add_metadata({})
+            # Eliminar metadatos completamente
+            writer.metadata = None
             
             output_path = get_output_path(file_path, '_cleaned')
             with open(output_path, 'wb') as f:
