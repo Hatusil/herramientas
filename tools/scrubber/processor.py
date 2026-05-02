@@ -50,7 +50,7 @@ def get_image_metadata(file_path: str) -> Dict[str, Any]:
             info['size'] = img.size
             info['mode'] = img.mode
             
-            #是否有EXIF
+            # Verificar si tiene EXIF
             has_exif = len(exif_data) > 0 if exif_data else False
             
             # Tratar de obtener datos específicos

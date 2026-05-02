@@ -27,7 +27,7 @@ class PDFTool(BaseTool):
         return "📄"
     
     def get_description(self) -> str:
-        return "Watermark, editar, combinar,安全的, optimizar PDFs"
+        return "Watermark, editar, combinar, encriptar, optimizar PDFs"
     
     def build_ui(self, parent_frame) -> None:
         """Construye la UI de la herramienta."""
