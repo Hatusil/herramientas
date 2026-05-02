@@ -103,11 +103,19 @@ def convert_video(files: List[str], output_format: str, **options) -> Dict[str, 
         input_format = Path(video_path).suffix.lstrip('.').lower()
         output_format_lower = output_format.lower()
         
-        # Skip si mismo formato
-        if input_format == output_format_lower:
+        # Obtener CRF elegido por usuario
+        user_crf = options.get('crf', 23)
+        default_crf = 23
+        
+        # Skip solo si mismo formato Y mismo CRF (calidad por defecto)
+        if input_format == output_format_lower and user_crf == default_crf:
             skipped.append(f"{Path(video_path).name} - Ya está en {input_format.upper()}")
             logger.info(f"Omite (mismo formato): {Path(video_path).name}")
             continue
+        
+        # Skip con formatos iguales pero diferente CRF
+        if input_format == output_format_lower:
+            logger.info(f"Convirtiendo {Path(video_path).name} con CRF {user_crf}...")
         
         # Obtener info solo si necesita conversión
         video_info = get_video_info(video_path)
