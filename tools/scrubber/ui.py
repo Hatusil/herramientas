@@ -422,11 +422,12 @@ class ScrubberToolUI(ctk.CTkFrame):
             ext = Path(file_path).suffix.lower()
             
             try:
-                if ext in {'.jpg', '.jpeg', '.png', '.webp', '.tiff', '.bmp'}:
+                if ext in {'.jpg', '.jpeg'}:
                     from tools.scrubber.processor import get_image_metadata
                     info = get_image_metadata(file_path)
-                    if not info.get('success') and 'no soportado' in info.get('error', '').lower():
-                        self.preview_text.insert(tk.END, "Nota: PNG/WebP no tienen EXIF como JPG\n")
+                elif ext in {'.png', '.webp'}:
+                    self.preview_text.insert(tk.END, "Información: PNG/WebP no tienen EXIF como JPG\n")
+                    info = {'success': True, 'metadata': {'formato': ext.upper()}}
                 elif ext == '.docx':
                     from tools.scrubber.processor import get_docx_metadata
                     info = get_docx_metadata(file_path)
