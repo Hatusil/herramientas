@@ -471,39 +471,22 @@ def convert_audio(files: List[str], output_format: str, **options) -> Dict[str, 
             errors.append(f"No encontrado: {input_file.name}")
             continue
         
-        # Obtener información del archivo de entrada
-        audio_info = get_audio_info(str(input_file))
-        
-        # Determinar formato de entrada
-        input_format = None
-        
-        if audio_info.get('success'):
-            input_format = audio_info.get('format', '').lower()
-        
-        # Fallback: usar extensión
-        if not input_format:
-            input_format = input_file.suffix.lstrip('.').lower()
-        
-        # Normalizar formato de salida
+        # Determinar formato de entrada por extensión
+        input_format = input_file.suffix.lstrip('.').lower()
         output_format_lower = output_format.lower()
         
-        # Verificar si necesita conversión
-        needs_conversion = input_format != output_format_lower
+        # Obtener calidad elegida
+        requested_quality = options.get('quality', 192)
         
-        # Verificar bitrate si el formato es el mismo
-        if not needs_conversion and audio_info.get('success'):
-            current_bitrate = audio_info.get('bit_rate', 0)
-            if current_bitrate > 0:
-                # Usar 10% de tolerancia
-                if abs(current_bitrate - requested_bitrate) < requested_bitrate * 0.1:
-                    needs_conversion = False
-        
-        # Si no necesita conversión, omitir
-        if not needs_conversion:
-            format_name = input_format.upper() if input_format else input_file.suffix.upper()
-            skipped.append(f"{input_file.name} - Ya está en formato {format_name}")
+        # Skip solo si mismo formato Y misma calidad por defecto
+        if input_format == output_format_lower and requested_quality == 192:
+            skipped.append(f"{input_file.name} - Ya está en {input_format.upper()}")
             logger.info(f"Omite (mismo formato): {input_file.name}")
             continue
+        
+        # Skip si mismo formato pero diferente calidad
+        if input_format == output_format_lower:
+            logger.info(f"Convirtiendo {input_file.name} con calidad {requested_quality}k...")
         
         # Nuevo formato
         ext = f'.{output_format}'
