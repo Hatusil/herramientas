@@ -138,10 +138,10 @@ class ScrubberToolUI(ctk.CTkFrame):
         files = filedialog.askopenfilenames(
             title="Seleccionar archivos",
             filetypes=[
-                ("Imágenes", "*.jpg *.jpeg *.png *.webp *.tiff *.bmp"),
-                ("Documentos", "*.docx *.xlsx"),
-                ("PDFs", "*.pdf"),
-                ("Todos", "*.*")
+                ("Todos los archivos", "*.*"),
+                ("Imágenes", "*.jpg;*.jpeg;*.png;*.bmp"),
+                ("Documentos", "*.docx;*.xlsx"),
+                ("PDF", "*.pdf")
             ]
         )
         
