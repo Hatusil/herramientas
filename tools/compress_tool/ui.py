@@ -189,7 +189,7 @@ class CompressToolUI(ctk.CTkFrame):
     def _setup_extract_tab(self) -> None:
         frame = self.tab_extract
         
-        ctk.CTkLabel(frame, text="Seleccionar archivo压缩ado:").pack(pady=5)
+        ctk.CTkLabel(frame, text="Seleccionar archivo comprimido:").pack(pady=5)
         
         ctk.CTkButton(frame, text="Seleccionar ZIP/TAR...", command=self._extract_file).pack(pady=10)
         
