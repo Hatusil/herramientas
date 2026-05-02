@@ -361,7 +361,7 @@ class VideoToolUI(ctk.CTkFrame):
                     try:
                         num, den = fps.split('/')
                         fps = f"{float(num)/float(den):.2f}"
-                    except:
+                    except (ValueError, ZeroDivisionError):
                         pass
                 
                 # Formato: mostrar solo el primero (ej: "mov" en lugar de "mov,mp4,m4a,3gp,3g2,mj2")
