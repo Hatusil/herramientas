@@ -28,18 +28,21 @@ class VideoToolUI(ctk.CTkFrame):
         # Panel de ayuda
         help_panel = add_help(
             self,
-            description="🎬 Procesa video (soporta múltiples archivos): extrae audio, convierte formato, muestra info",
+            description="🎬 Procesa video: extrae audio, convierte formato, muestra info (bitrate, fps)",
             usage=[
                 "1. 📥 Agregar videos (+)",
                 "2. ☑️ Seleccionar con Ctrl+click o botones 'Todos'/'Ninguno'",
                 "3. 📑 Elegir operación (Extraer Audio/Convertir/Info)",
-                "4. ⚙️ Configurar formato y calidad",
+                "4. ⚙️ Configurar formato y calidad CRF",
                 "5. ▶️ Click en ejecutar (procesa solo los seleccionados)"
             ],
             warnings=[
-                "⚠️ Conversión de video puede tardar varios minutos",
+                "⚠️ CRF: 18=mejorcalidad, 23=normal, 28=másico",
+                "⚠️ mp4→mp4 con CRF23 se omite (ya en formato)",
+                "⚠️ Cambiar CRF para forzar recodificación",
+                "⚠️ Conversión puede tardar minutos",
                 "⚠️ FFmpeg debe estar instalado",
-                "⚠️ Archivos >1GB necesitan mucho espacio temporal"
+                "⚠️ Archivos >1GB necesitan mucho espacio"
             ]
         )
         help_panel.pack(fill="x", padx=10, pady=5)
