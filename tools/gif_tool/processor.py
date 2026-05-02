@@ -23,10 +23,24 @@ def create_gif(image_paths: List[str], output_path: str = None, duration: int = 
     if not image_paths:
         return {'success': False, 'error': 'No hay imágenes', 'output_files': []}
     
-    # Skip if input is already GIF
+    # Verificar si cada imagen ya es GIF
+    skipped = []
+    valid_images = []
     for path in image_paths:
         if path.lower().endswith('.gif'):
-            return {'success': False, 'error': 'Entrada ya es GIF', 'output_files': []}
+            skipped.append(f"{Path(path).name} - Ya es GIF")
+        else:
+            valid_images.append(path)
+    
+    # Skip si todos son GIFs
+    if not valid_images:
+        return {
+            'success': True,
+            'message': f'Todas las entradas ya son GIF ({len(skipped)} omitidos)',
+            'output_files': [],
+            'skipped': skipped,
+            'error': None
+        }
     
     try:
         # Abrir todas las imágenes
@@ -71,6 +85,7 @@ def create_gif(image_paths: List[str], output_path: str = None, duration: int = 
             'success': True,
             'message': f'GIF creado: {Path(output_path).name}',
             'output_files': [output_path],
+            'skipped': skipped if skipped else None,
             'error': None
         }
         
