@@ -81,9 +81,14 @@ def rename_replace(files: List[str], find: str, replace: str) -> Dict[str, Any]:
         except Exception as e:
             errors.append(f"Error: {p.name} - {str(e)}")
     
+    success = len(renamed) > 0
+    msg = f"✓ '{find}' → '{replace}' en {len(renamed)} archivos"
+    if errors:
+        msg += f" ({len(errors)} errores)"
+    
     return {
-        'success': len(renamed) > 0,
-        'message': f"Renombrados {len(renamed)} archivos",
+        'success': success,
+        'message': msg,
         'renamed': renamed,
         'errors': errors
     }
@@ -105,9 +110,14 @@ def rename_numbered(files: List[str], start: int = 1, pattern: str = "{name}_{n}
         except Exception as e:
             errors.append(f"Error: {p.name} - {str(e)}")
     
+    success = len(renamed) > 0
+    msg = f"✓ Numerados {len(renamed)} archivos (inicio: {start})"
+    if errors:
+        msg += f" ({len(errors)} errores)"
+    
     return {
-        'success': len(renamed) > 0,
-        'message': f"Renombrados {len(renamed)} archivos",
+        'success': success,
+        'message': msg,
         'renamed': renamed,
         'errors': errors
     }
@@ -117,6 +127,8 @@ def rename_case(files: List[str], case: str) -> Dict[str, Any]:
     """Cambiar mayúsculas/minúsculas."""
     renamed = []
     errors = []
+    
+    case_labels = {'lower': 'minúsculas', 'upper': 'MAYÚSCULAS', 'title': 'Título'}
     
     for f in files:
         try:
@@ -136,9 +148,15 @@ def rename_case(files: List[str], case: str) -> Dict[str, Any]:
         except Exception as e:
             errors.append(f"Error: {p.name} - {str(e)}")
     
+    success = len(renamed) > 0
+    case_name = case_labels.get(case, case)
+    msg = f"✓ Convertidos a {case_name}: {len(renamed)} archivos"
+    if errors:
+        msg += f" ({len(errors)} errores)"
+    
     return {
-        'success': len(renamed) > 0,
-        'message': f"Renombrados {len(renamed)} archivos",
+        'success': success,
+        'message': msg,
         'renamed': renamed,
         'errors': errors
     }
@@ -165,9 +183,14 @@ def rename_regex(files: List[str], pattern: str, replace: str) -> Dict[str, Any]
     except re.error as e:
         return {'success': False, 'error': f'Expresión regular inválida: {e}'}
     
+    success = len(renamed) > 0
+    msg = f"✓ Regex '{pattern}' → '{replace}' en {len(renamed)} archivos"
+    if errors:
+        msg += f" ({len(errors)} errores)"
+    
     return {
-        'success': len(renamed) > 0,
-        'message': f"Renombrados {len(renamed)} archivos",
+        'success': success,
+        'message': msg,
         'renamed': renamed,
         'errors': errors
     }
