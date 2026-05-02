@@ -97,7 +97,7 @@ class RenameToolUI(ctk.CTkFrame):
     def _clear_files(self) -> None:
         self.files.clear()
         self.file_listbox.delete(0, tk.END)
-        self.status_label.configure(text="Lista vacía", text_color="gray")
+        # No sobreescribir mensaje de éxito si acaba de procesar
     
     def _select_all(self) -> None:
         self.file_listbox.select_set(0, tk.END)
