@@ -36,10 +36,11 @@ class CompressToolUI(ctk.CTkFrame):
             usage=[
                 "1. 📥 Agregar archivos/carpetas (+)",
                 "2. ☑️ Seleccionar con Ctrl+click o botones",
-                "3. 📦 Elegir formato y nivel de compresión",
+                "3. 📦 Elegir formato (ZIP/TAR) y nivel de compresión",
                 "4. ▶️ Click en Comprimir (procesa seleccionados)"
             ],
             warnings=[
+                "⚠️ ZIP→ZIP se omite (ya comprimido)",
                 "⚠️ ZIP límite 4GB por archivo",
                 "⚠️ TAR no abre en Windows directamente",
                 "⚠️ Archivos >1GB pueden tomar minutos"

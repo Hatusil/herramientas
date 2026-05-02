@@ -37,7 +37,7 @@ class VideoToolUI(ctk.CTkFrame):
                 "5. ▶️ Click en ejecutar (procesa solo los seleccionados)"
             ],
             warnings=[
-                "⚠️ CRF: 18=mejorcalidad, 23=normal, 28=másico",
+                "⚠️ CRF: 18=mejor calidad, 23=normal, 28=más baja",
                 "⚠️ mp4→mp4 con CRF23 se omite (ya en formato)",
                 "⚠️ Cambiar CRF para forzar recodificación",
                 "⚠️ Conversión puede tardar minutos",

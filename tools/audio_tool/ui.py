@@ -45,13 +45,15 @@ class AudioToolUI(ctk.CTkFrame):
                 "1. 📥 Agregar archivos (+)",
                 "2. ☑️ Seleccionar con Ctrl+click o botones 'Todos'/'Ninguno'",
                 "3. 📑 Elegir operación (Normalizar/Limpiar/Convertir/Reparar/Info)",
-                "4. ⚙️ Configurar opciones LUFS o formato",
+                "4. ⚙️ Configurar opciones LUFS o calidad (192k default)",
                 "5. ▶️ Click en ejecutar (procesa solo los seleccionados)"
             ],
             warnings=[
+                "⚠️ mp3→mp3 con calidad 192k se omite (ya en formato)",
+                "⚠️ Cambiar calidad para forzar conversión",
                 "⚠️ Normalización alta puede afectar calidad",
                 "⚠️ Conversión siempre crea nuevo archivo",
-                "⚠️ Reparar archivos severos puede dejar artifactos"
+                "⚠️ Reparar archivos severos puede dejar artefactos"
             ]
         )
         help_panel.pack(fill="x", padx=10, pady=5)

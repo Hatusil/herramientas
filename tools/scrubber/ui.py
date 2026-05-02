@@ -32,15 +32,16 @@ class ScrubberToolUI(ctk.CTkFrame):
         # Panel de ayuda
         help_panel = add_help(
             self,
-            description="🧹 Limpia metadatos de imágenes (EXIF/GPS), documentos (DOCX/XLSX), y PDFs. Útil para privacidad",
+            description="🧹 Limpia metadatos de imágenes (JPG), documentos (DOCX/XLSX), y PDFs. Útil para privacidad",
             usage=[
                 "1. 📥 Agregar archivos (+)",
                 "2. ☑️ Seleccionar con Ctrl+click o botones",
-                "3. 📑 Elegir tipo",
+                "3. 📑 Elegir tipo (Imágenes/Documentos)",
                 "4. 🧹 Click en limpiar (procesa seleccionados)"
             ],
             warnings=[
                 "⚠️ Metadatos se ELIMINAN PERMANENTEMENTE",
+                "⚠️ Solo JPG soporta EXIF completo, PNG/WebP sin metadatos",
                 "⚠️ Usar tab 'Preview' para ver qué se eliminará",
                 "⚠️ GPS en fotos revela ubicación"
             ]
