@@ -375,6 +375,10 @@ def search_all(folder: str, options: Dict[str, Any]) -> Dict[str, Any]:
     if SEARCH_CANCELLED:
         return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
     
+    # Si busca contenido, filtrar solo archivos con matches
+    if content_results:
+        results = list(content_results.keys())
+    
     # Preparar resultados finales
     final_results = []
     for f in results:
