@@ -277,6 +277,7 @@ class VideoToolUI(ctk.CTkFrame):
                 total = len(selected)
                 success_count = 0
                 errors = []
+                skipped_files = []
                 
                 for i, video_file in enumerate(selected):
                     # Update progress
@@ -284,13 +285,19 @@ class VideoToolUI(ctk.CTkFrame):
                     self.after(0, lambda p=progress, c=i+1: self._update_convert_progress(p, c, total))
                     
                     result = convert_video(video_file, self.out_format.get(), crf=int(self.crf_var.get()))
-                    if result['success']:
+                    if result.get('skipped'):
+                        skipped_files.extend(result['skipped'])
+                    elif result['success']:
                         success_count += 1
                     else:
                         errors.append(Path(video_file).name)
                 
                 # Final result
-                if success_count == total:
+                if skipped_files and success_count == 0:
+                    final_result = {'success': True, 'message': f'✓ {len(skipped_files)} Videos ya estaban en formato'}
+                elif skipped_files and success_count > 0:
+                    final_result = {'success': True, 'message': f'✓ {success_count} convertidos, {len(skipped_files)} omitidos'}
+                elif success_count == total:
                     final_result = {'success': True, 'message': f'✓ {total} videos convertidos'}
                 elif success_count > 0:
                     final_result = {'success': True, 'message': f'✓ {success_count}/{total} OK'}

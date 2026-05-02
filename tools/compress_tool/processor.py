@@ -35,11 +35,11 @@ def compress_to_zip(files: List[str], output_path: str = None, level: int = 6) -
     
     if not valid_files:
         return {
-            'success': False,
-            'message': f'Todos los archivos ya son ZIP ({len(skipped)})',
+            'success': True,
+            'message': f'Todos los archivos ya son ZIP ({len(skipped)} omitidos)',
             'output_files': [],
             'skipped': skipped,
-            'error': 'No hay archivos para comprimir'
+            'error': None
         }
     
     try:
@@ -104,11 +104,11 @@ def compress_to_tar(files: List[str], output_path: str = None, compression: str 
     
     if not valid_files:
         return {
-            'success': False,
-            'message': f'Todos los archivos ya son TAR ({len(skipped)})',
+            'success': True,
+            'message': f'Todos los archivos ya son TAR ({len(skipped)} omitidos)',
             'output_files': [],
             'skipped': skipped,
-            'error': 'No hay archivos para comprimir'
+            'error': None
         }
     
     try:

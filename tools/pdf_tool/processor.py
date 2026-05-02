@@ -476,13 +476,13 @@ def redact_area(files: List[str], page: int = 0, x: float = 100, y: float = 100,
         except Exception as e:
             errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
     
-    # Por ahora retornamos que sí pero el censurado real requiere más trabajo
+    # Función no implementada - requiere biblioteca de renderizado
     # Volver a esto después
     return {
-        'success': True,
-        'message': f"Área marcada para censurar en {len(files)} archivos",
-        'output_files': files,  # Retorna los mismos archivos por ahora
-        'error': None
+        'success': False,
+        'message': 'Funcionalidad no implementada',
+        'output_files': [],
+        'error': 'PDF a imágenes requiere implementación adicional (renderizado con pdf2image o similar)'
     }
 
 

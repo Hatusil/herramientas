@@ -553,11 +553,11 @@ def convert_audio(files: List[str], output_format: str, **options) -> Dict[str, 
     # Verificar si todos fueron omitidos
     if not output_files and skipped:
         return {
-            'success': False,
-            'message': f"Todos los archivos ya están en formato {output_format.upper()}",
+            'success': True,
+            'message': f"Todos los archivos ya están en formato {output_format.upper()} ({len(skipped)} omitidos)",
             'output_files': [],
             'skipped': skipped,
-            'error': 'No hay archivos para convertir'
+            'error': None
         }
     
     success = len(output_files) > 0

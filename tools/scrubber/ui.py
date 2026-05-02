@@ -441,6 +441,3 @@ class ScrubberToolUI(ctk.CTkFrame):
                     
             except Exception as e:
                 self.preview_text.insert(tk.END, f"Error: {str(e)}\n")
-
-
-import os

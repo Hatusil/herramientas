@@ -134,9 +134,9 @@ class DuplicateToolUI(ctk.CTkFrame):
         if self.img_var.get():
             exts.extend(['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'])
         if self.doc_var.get():
-            exts.extend(['.pdf', '.doc', 'docx', 'xls', 'xlsx', 'txt', 'odt'])
+            exts.extend(['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.odt'])
         if self.audio_var.get():
-            exts.extend(['.mp3', 'wav', 'flac', 'mp4', 'avi', 'mkv'])
+            exts.extend(['.mp3', '.wav', '.flac', '.mp4', '.avi', '.mkv'])
         
         if not exts:
             self.status_label.configure(text="Seleccione al menos un tipo", text_color="orange")

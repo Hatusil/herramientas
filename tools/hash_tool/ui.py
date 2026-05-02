@@ -246,7 +246,7 @@ class HashToolUI(ctk.CTkFrame):
             result = verify_hash(file_path, expected, algo)
             
             if result['success']:
-                if result['matches']:
+                if result['match']:
                     self.verify_result.insert(tk.END, f"[OK] {result['file_name']}: ✅ CORRESPIDE\n")
                 else:
                     self.verify_result.insert(tk.END, f"[FAIL] {result['file_name']}: ❌ NO CORRESPIDE\n  Esperado: {result['expected'][:20]}...\n  Actual: {result['actual'][:20]}...\n")
