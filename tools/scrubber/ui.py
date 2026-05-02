@@ -239,7 +239,8 @@ class ScrubberToolUI(ctk.CTkFrame):
             return
         
         # Filtrar solo imágenes
-        image_files = [f for f in self.files if Path(f).suffix.lower() in ['.jpg', '.jpeg']]
+        image_exts = {'.jpg', '.jpeg', '.png', '.webp', '.tiff', '.bmp'}
+        image_files = [f for f in self.files if Path(f).suffix.lower() in image_exts]
         
         if not image_files:
             self.status_label.configure(text="No hay imágenes seleccionadas", text_color="orange")
