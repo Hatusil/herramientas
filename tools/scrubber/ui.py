@@ -257,7 +257,7 @@ class ScrubberToolUI(ctk.CTkFrame):
             self.status_label.configure(text=msg, text_color="orange")
             return
         
-options = {
+        options = {
             'remove_all': self.clean_mode_var.get() == 'all',
             'remove_gps': self.clean_mode_var.get() == 'gps'
         }
