@@ -22,9 +22,14 @@ def rename_with_prefix(files: List[str], prefix: str) -> Dict[str, Any]:
         except Exception as e:
             errors.append(f"Error: {p.name} - {str(e)}")
     
+    success = len(renamed) > 0
+    msg = f"✓ Prefijo '{prefix}' agregado a {len(renamed)} archivos"
+    if errors:
+        msg += f" ({len(errors)} errores)"
+    
     return {
-        'success': len(renamed) > 0,
-        'message': f"Renombrados {len(renamed)} archivos",
+        'success': success,
+        'message': msg,
         'renamed': renamed,
         'errors': errors
     }
@@ -45,9 +50,14 @@ def rename_with_suffix(files: List[str], suffix: str) -> Dict[str, Any]:
         except Exception as e:
             errors.append(f"Error: {p.name} - {str(e)}")
     
+    success = len(renamed) > 0
+    msg = f"✓ Sufijo '{suffix}' agregado a {len(renamed)} archivos"
+    if errors:
+        msg += f" ({len(errors)} errores)"
+    
     return {
-        'success': len(renamed) > 0,
-        'message': f"Renombrados {len(renamed)} archivos",
+        'success': success,
+        'message': msg,
         'renamed': renamed,
         'errors': errors
     }
