@@ -426,9 +426,15 @@ def analyze_wordcloud(
         
         # Add mask if not rectangle
         if mask is not None:
+            logger.info(f"Adding mask to WordCloud: size={mask.size}, mode={mask.mode}")
             wc_kwargs['mask'] = mask
+            logger.info(f"wc_kwargs mask keys: {list(wc_kwargs.keys())}")
         
+        logger.info(f"Creating WordCloud with kwargs: {list(wc_kwargs.keys())}")
         wc = WordCloud(**wc_kwargs)
+        
+        # Check if WordCloud has mask
+        logger.info(f"WordCloud has mask: {hasattr(wc, 'mask_') and wc.mask_ is not None}")
         wc.generate(cleaned)
         
         # Convertir a imagen
