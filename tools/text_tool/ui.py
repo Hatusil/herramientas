@@ -349,6 +349,17 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_wc_tab(self) -> None:
         frame = self.tab_wc
         
+        # Campo para excluir palabras (después de ver la nube)
+        exclude_frame = ctk.CTkFrame(frame)
+        exclude_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(exclude_frame, text="Excluir palabras:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=5)
+        
+        self.exclude_entry = ctk.CTkEntry(exclude_frame, placeholder_text="palabra1, palabra2, ...")
+        self.exclude_entry.pack(fill="x", padx=5, pady=5)
+        
+        ctk.CTkButton(exclude_frame, text="🔄 Regenerar sin estas palabras", command=self._regenerate_wc).pack(pady=5)
+        
         self.wc_label = ctk.CTkLabel(
             frame,
             text="WordCloud aparecerá aquí",
@@ -389,6 +400,30 @@ class TextAnalyzerUI(ctk.CTkFrame):
             logger.error(f"WordCloud error: {e}")
             logger.debug(traceback.format_exc())
             self.wc_label.configure(text=f"Error: {e}")
+    
+    def _regenerate_wc(self) -> None:
+        """Regenera WordCloud sin palabras excluidas."""
+        if not self.text_content:
+            self.status_label.configure(text="No hay texto cargado", text_color="orange")
+            return
+        
+        # Obtener palabras a excluir
+        exclude_text = self.exclude_entry.get().strip()
+        exclude_words = [w.strip().lower() for w in exclude_text.split(',')] if exclude_text else []
+        
+        from tools.text_tool.processor import analyze_wordcloud, clean_text
+        
+        # Limpiar con palabras excluidas
+        cleaned = clean_text(self.text_content, remove_stopwords=True, exclude_words=exclude_words)
+        
+        # Generar nuevo WordCloud
+        result = analyze_wordcloud(cleaned)
+        
+        if result.get('success') and result.get('image_data'):
+            self._show_wordcloud(result['image_data'])
+            self.status_label.configure(text=f"WordCloud regenerado ({len(cleaned.split())} palabras)", text_color="green")
+        else:
+            self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
     
     # ============ TAB: FRECUENCIA ============
     def _setup_freq_tab(self) -> None:

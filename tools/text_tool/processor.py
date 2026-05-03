@@ -172,7 +172,7 @@ def extract_text_from_url(url: str) -> Dict[str, Any]:
         return {'success': False, 'error': str(e)}
 
 
-def clean_text(text: str, remove_stopwords: bool = True, languages: List[str] = ['es', 'en']) -> str:
+def clean_text(text: str, remove_stopwords: bool = True, languages: List[str] = ['es', 'en'], exclude_words: List[str] = None) -> str:
     """Limpia el texto: minúsculas, remove signos, stopwords."""
     # Minúsculas
     text = text.lower()
@@ -192,6 +192,12 @@ def clean_text(text: str, remove_stopwords: bool = True, languages: List[str] = 
             stop.update(STOP_WORDS.get(lang, set()))
         words = text.split()
         text = ' '.join(w for w in words if w not in stop and len(w) > 2)
+    
+    # Excluir palabras custom
+    if exclude_words:
+        exclude_set = set(w.lower() for w in exclude_words)
+        words = text.split()
+        text = ' '.join(w for w in words if w not in exclude_set)
     
     return text
 
