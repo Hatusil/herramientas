@@ -136,22 +136,28 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         self.selected_file: Optional[str] = None
         
-        # Frame para URL (oculto por defecto)
+        # Frame para URLs (dinámico)
         self.url_frame = ctk.CTkFrame(frame)
         self.url_frame.pack(fill="x", padx=10, pady=10)
         self.url_frame.pack_forget()
         
-        ctk.CTkLabel(self.url_frame, text="URL:").pack(anchor="w")
+        # Título
+        ctk.CTkLabel(self.url_frame, text="URLs:").pack(anchor="w")
         
-        url_input_frame = ctk.CTkFrame(self.url_frame, fg_color="transparent")
-        url_input_frame.pack(fill="x", pady=5)
+        # Contenedor de URLs
+        self.urls_container = ctk.CTkFrame(self.url_frame)
+        self.urls_container.pack(fill="both", expand=True, pady=5)
         
-        self.url_entry = ctk.CTkEntry(url_input_frame, placeholder_text="https://...")
-        self.url_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        # Botones para agregar/quitar
+        url_btns = ctk.CTkFrame(self.url_frame, fg_color="transparent")
+        url_btns.pack(fill="x", pady=5)
+        ctk.CTkButton(url_btns, text="➕ Agregar URL", command=self._add_url_field).pack(side="left", padx=5)
+        self.url_count_label = ctk.CTkLabel(url_btns, text="1 URL", text_color="gray")
+        self.url_count_label.pack(side="left", padx=10)
         
-        ctk.CTkButton(
-            url_input_frame,
-            text="🗑️",
+        # Primer campo URL
+        self.url_entries = []
+        self._add_url_field()
             width=40,
             command=lambda: self.url_entry.delete(0, tk.END),
             fg_color="transparent",
@@ -234,6 +240,27 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.url_frame.pack(fill="x", padx=10, pady=10)
             self.load_btn.configure(text="🔗 Scrapear Múltiples")
     
+    def _add_url_field(self) -> None:
+        """Agrega un nuevo campo de URL."""
+        row = ctk.CTkFrame(self.urls_container, fg_color="transparent")
+        row.pack(fill="x", pady=2)
+        
+        entry = ctk.CTkEntry(row, placeholder_text="https://...")
+        entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        
+        btn = ctk.CTkButton(row, text="❌", width=30, command=lambda: self._remove_url_field(row, entry))
+        btn.pack(side="left")
+        
+        self.url_entries.append((row, entry))
+        self.url_count_label.configure(text=f"{len(self.url_entries)} URLs")
+    
+    def _remove_url_field(self, row, entry) -> None:
+        """Elimina un campo de URL."""
+        if len(self.url_entries) > 1:
+            row.pack_forget()
+            self.url_entries = [(r, e) for r, e in self.url_entries if r != row]
+            self.url_count_label.configure(text=f"{len(self.url_entries)} URLs")
+    
     def _select_file(self) -> None:
         """Seleccionar archivo."""
         file_path = filedialog.askopenfilename(
@@ -301,7 +328,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 self.status_label.configure(text=f"{len(files)} archivos: {len(self.text_content)} caracteres", text_color="green")
             
             elif tipo == "url":
-                url = self.url_entry.get().strip()
+                url = self.url_entries[0][1].get().strip() if self.url_entries else ""
                 if not url:
                     self.status_label.configure(text="Ingresá URL", text_color="orange")
                     return
@@ -315,12 +342,11 @@ class TextAnalyzerUI(ctk.CTkFrame):
                     return
             
             elif tipo == "urls":
-                urls_text = self.url_entry.get().strip()
-                if not urls_text:
-                    self.status_label.configure(text="Ingresá URLs (separadas por coma)", text_color="orange")
+                urls = [e.get().strip() for r, e in self.url_entries if e.get().strip()]
+                if not urls:
+                    self.status_label.configure(text="Agregá al menos una URL", text_color="orange")
                     return
                 
-                urls = [u.strip() for u in urls_text.split(',') if u.strip()]
                 self.status_label.configure(text=f"Scrapenado {len(urls)} URLs...", text_color="yellow")
                 self.update()
                 
