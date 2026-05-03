@@ -37,6 +37,9 @@ class App(ctk.CTk):
         self.geometry(f"{constants.APP_WIDTH}x{constants.APP_HEIGHT}")
         self.minsize(800, 500)
         
+        # Centrar ventana en pantalla
+        self._center_window()
+        
         # Estilo de ventana
         self.configure(fg_color=constants.COLORS["bg_dark"])
         
@@ -61,6 +64,21 @@ class App(ctk.CTk):
         
         # Protocolo para cerrar con X
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
+    
+    def _center_window(self) -> None:
+        """Centra la ventana en la pantalla."""
+        self.update_idletasks()
+        
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        window_width = constants.APP_WIDTH
+        window_height = constants.APP_HEIGHT
+        
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2 - 30  # Un poco más arriba
+        
+        self.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
     def _on_resize(self, event: Any) -> None:
         """Maneja cuando se redimensiona la ventana."""
