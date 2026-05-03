@@ -182,6 +182,24 @@ class TextAnalyzerUI(ctk.CTkFrame):
         )
         self.load_btn.pack(fill="x")
         
+        # ============ OPCIONES (antes de visualizaciones) ============
+        opts_frame = ctk.CTkFrame(self)
+        opts_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(opts_frame, text="⚙️ Opciones de limpieza:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=5)
+        
+        # Stopwords
+        self.remove_stopwords = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(opts_frame, text="Quitar conectores (stopwords)", variable=self.remove_stopwords).pack(anchor="w", padx=5)
+        
+        # Excluir palabras custom
+        ctk.CTkLabel(opts_frame, text="Excluir palabras:", font=ctk.CTkFont(size=11)).pack(anchor="w", padx=5, pady=(5, 0))
+        self.exclude_entry = ctk.CTkEntry(opts_frame, placeholder_text="que, como, pero, ... (separadas por coma)")
+        self.exclude_entry.pack(fill="x", padx=5, pady=5)
+        
+        # Botón aplicar opciones
+        ctk.CTkButton(opts_frame, text="🔄 Aplicar opciones", command=self._apply_options).pack(pady=5)
+        
         # Status
         self.status_label = ctk.CTkLabel(
             self, 
@@ -189,6 +207,20 @@ class TextAnalyzerUI(ctk.CTkFrame):
             text_color="gray"
         )
         self.status_label.pack(pady=5)
+        
+        # Texto limpio para visualizaciones
+        self.cleaned_content = None
+    
+    def _apply_options(self) -> None:
+        """Aplica opciones de limpieza y regenera visualizaciones."""
+        if not self.text_content:
+            self.status_label.configure(text="Primero cargá texto", text_color="orange")
+            return
+        
+        if self.cleaned_content:
+            self.status_label.configure(text="Aplicando opciones...", text_color="yellow")
+            self._run_all_analysis()
+            self.status_label.configure(text="Visualizaciones actualizadas", text_color="green")
     
     def _on_input_type_change(self) -> None:
         """Cambia visibilidad según tipo de input."""
@@ -299,41 +331,60 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 analyze_ngrams,
                 analyze_trends,
                 analyze_correlations,
-                analyze_scatter
+                analyze_scatter,
+                clean_text
             )
             
+            # Obtener opciones de limpieza
+            exclude_text = self.exclude_entry.get().strip()
+            exclude_words = [w.strip().lower() for w in exclude_text.split(',')] if exclude_text else []
+            
+            # Limpiar texto con opciones
+            cleaned = clean_text(
+                self.text_content,
+                remove_stopwords=self.remove_stopwords.get(),
+                exclude_words=exclude_words
+            )
+            
+            if not cleaned.strip():
+                self.status_label.configure(text="Texto vacío después de limpiar", text_color="orange")
+                return
+            
+            # Guardar texto limpio para visualizaciones
+            self.cleaned_content = cleaned
+            
             # WordCloud
-            wc_result = analyze_wordcloud(self.text_content)
+            wc_result = analyze_wordcloud(cleaned)
             if wc_result.get('success') and wc_result.get('image_data'):
                 self._show_wordcloud(wc_result['image_data'])
             
             # Frecuencia
-            freq_result = analyze_frequency(self.text_content)
+            freq_result = analyze_frequency(cleaned)
             if freq_result.get('success'):
                 self._show_frequency(freq_result['frequencies'])
             
             # Stats
-            stats_result = analyze_stats(self.text_content)
+            stats_result = analyze_stats(cleaned)
             if stats_result.get('success'):
                 self._show_stats(stats_result)
             
             # N-grams
-            ngram_result = analyze_ngrams(self.text_content, n=2)
+            ngram_result = analyze_ngrams(cleaned, n=2)
             if ngram_result.get('success'):
                 self._show_ngrams(ngram_result['ngrams'])
             
             # Trends
-            trends_result = analyze_trends(self.text_content)
+            trends_result = analyze_trends(cleaned)
             if trends_result.get('success') and trends_result.get('image_data'):
                 self._show_trends(trends_result['image_data'])
             
             # Correlations
-            corr_result = analyze_correlations(self.text_content)
+            corr_result = analyze_correlations(cleaned)
             if corr_result.get('success') and corr_result.get('image_data'):
                 self._show_correlations(corr_result['image_data'])
             
             # Scatter
-            scatter_result = analyze_scatter(self.text_content)
+            scatter_result = analyze_scatter(cleaned)
             if scatter_result.get('success') and scatter_result.get('image_data'):
                 self._show_scatter(scatter_result['image_data'])
             

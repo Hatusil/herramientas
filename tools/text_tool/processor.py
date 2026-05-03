@@ -236,9 +236,9 @@ def analyze_wordcloud(text: str, n_words: int = 100, width: int = 800, height: i
         return {'success': False, 'error': str(e)}
 
 
-def analyze_frequency(text: str, n: int = 20, remove_stopwords: bool = True) -> Dict[str, Any]:
+def analyze_frequency(text: str, n: int = 20, remove_stopwords: bool = True, exclude_words: List[str] = None, already_cleaned: bool = False) -> Dict[str, Any]:
     """Analiza frecuencia de palabras."""
-    cleaned = clean_text(text, remove_stopwords=remove_stopwords)
+    cleaned = text if already_cleaned else clean_text(text, remove_stopwords=remove_stopwords, exclude_words=exclude_words)
     words = cleaned.split()
     
     # Contar
