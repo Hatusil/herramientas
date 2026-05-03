@@ -730,7 +730,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.wc_label.configure(image=ctk_img, text="")
             self.wc_label.image = ctk_img
             
-            # Add click binding to open modal
+            # Add click binding to open modal (unbind first to prevent duplicates)
+            self.wc_label.unbind("<Button-1>")
             self.wc_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "WordCloud"))
             
             # Add tooltip
@@ -1045,7 +1046,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.trends_label.configure(image=ctk_img, text="")
             self.trends_label.image = ctk_img
             
-            # Add click binding to open modal
+            # Add click binding to open modal (unbind first to prevent duplicates)
+            self.trends_label.unbind("<Button-1>")
             self.trends_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "Tendencias"))
             
             # Add tooltip
@@ -1092,7 +1094,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.corr_label.configure(image=ctk_img, text="")
             self.corr_label.image = ctk_img
             
-            # Add click binding to open modal
+            # Add click binding to open modal (unbind first to prevent duplicates)
+            self.corr_label.unbind("<Button-1>")
             self.corr_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "Correlaciones"))
             
             # Add tooltip
@@ -1139,7 +1142,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.scatter_label.configure(image=ctk_img, text="")
             self.scatter_label.image = ctk_img
             
-            # Add click binding to open modal
+            # Add click binding to open modal (unbind first to prevent duplicates)
+            self.scatter_label.unbind("<Button-1>")
             self.scatter_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "Scatter Plot"))
             
             # Add tooltip
