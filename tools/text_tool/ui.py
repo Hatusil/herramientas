@@ -263,9 +263,10 @@ class TextAnalyzerUI(ctk.CTkFrame):
         file_path = filedialog.askopenfilename(
             title="Seleccionar archivo",
             filetypes=[
-                ("Texto", "*.txt *.md *.py *.js *.html"),
                 ("PDF", "*.pdf"),
                 ("Word", "*.docx *.doc"),
+                ("Excel", "*.xlsx *.xls"),
+                ("Texto", "*.txt *.md"),
                 ("Todos", "*.*")
             ]
         )
@@ -405,7 +406,11 @@ class TextAnalyzerUI(ctk.CTkFrame):
             )
             
             if not cleaned.strip():
-                self.status_label.configure(text="Texto vacío después de limpiar", text_color="orange")
+                # Verificar si hay texto antes de limpiar
+                if self.text_content.strip():
+                    self.status_label.configure(text="Solo stopwords después de limpiar", text_color="orange")
+                else:
+                    self.status_label.configure(text="PDF sin texto o vacío", text_color="orange")
                 return
             
             # Guardar texto limpio para visualizaciones
