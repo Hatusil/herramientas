@@ -1001,7 +1001,9 @@ def analyze_kwic(text: str, keyword: str, context: int = 5, max_results: int = 2
     }
 
 
-def analyze_topics(text: str, n_topics: int = 5, max_iter: int = 10) -> Dict[str, Any]:
+def analyze_topics(text: str, n_topics: int = 5, max_iter: int = 10,
+                   remove_stopwords: bool = True, exclude_words: List[str] = None,
+                   already_cleaned: bool = False) -> Dict[str, Any]:
     """
     Análisis de Tópicos usando LDA (Latent Dirichlet Allocation).
     
@@ -1009,12 +1011,16 @@ def analyze_topics(text: str, n_topics: int = 5, max_iter: int = 10) -> Dict[str
         text: Texto de entrada
         n_topics: Número de tópicos a extraer (default: 5, rango: 3-10)
         max_iter: Máximo de iteraciones para LDA (default: 10)
+        remove_stopwords: Eliminar stopwords español/inglés
+        exclude_words: Palabras adicionales a excluir
+        already_cleaned: Si True, usar texto directamente
         
     Returns:
         Dict con 'success', 'data' ([{'topic_id': int, 'words': [{'word': str, 'weight': float}]}]), 'error': str
         
     Note:
         Implementa LDA estilo Voyant - extrae tópicos latentes del texto.
+        Aplica filtros de limpieza (stopwords, palabras excluidas).
     """
     if not SKLEARN_AVAILABLE:
         return {'success': False, 'error': 'scikit-learn no instalado', 'data': None}
@@ -1022,14 +1028,24 @@ def analyze_topics(text: str, n_topics: int = 5, max_iter: int = 10) -> Dict[str
     if not text or not text.strip():
         return {'success': False, 'error': 'Ingrese texto para analizar', 'data': None}
     
+    # Apply cleaning filters if not already cleaned
+    if not already_cleaned:
+        cleaned = clean_text(
+            text,
+            remove_stopwords=remove_stopwords,
+            exclude_words=exclude_words
+        )
+    else:
+        cleaned = text
+    
     # Dividir texto en párrafos (separados por líneas en blanco o múltiples saltos)
-    paragraphs = re.split(r'\n\s*\n|\n{2,}', text.strip())
+    paragraphs = re.split(r'\n\s*\n|\n{2,}', cleaned)
     paragraphs = [p.strip() for p in paragraphs if p.strip()]
     
     # Si no hay suficientes párrafos, intentar dividir por oraciones
     if len(paragraphs) < 3:
         # Dividir en oraciones (aproximadamente 5-10 oraciones por "párrafo")
-        sentences = re.split(r'[.!?]+', text.strip())
+        sentences = re.split(r'[.!?]+', cleaned)
         sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 20]
         
         if len(sentences) >= 6:

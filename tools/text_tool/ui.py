@@ -1562,9 +1562,25 @@ class TextAnalyzerUI(ctk.CTkFrame):
         n_topics = int(self.topics_count_slider.get())
         
         try:
-            from tools.text_tool.processor import analyze_topics
+            from tools.text_tool.processor import analyze_topics, clean_text
             
-            result = analyze_topics(self.text_content, n_topics=n_topics)
+            # Get cleaning options from Clean tab
+            exclude_text = self.exclude_entry.get().strip()
+            exclude_words = [w.strip().lower() for w in exclude_text.split(',')] if exclude_text else []
+            remove_stopwords = self.remove_stopwords.get()
+            
+            # Apply cleaning to text
+            cleaned = clean_text(
+                self.text_content,
+                remove_stopwords=remove_stopwords,
+                exclude_words=exclude_words if exclude_words else None
+            )
+            
+            result = analyze_topics(
+                cleaned,
+                n_topics=n_topics,
+                already_cleaned=True
+            )
             
             if result.get('success'):
                 self._show_topics_results(result.get('data', []))
@@ -1771,18 +1787,18 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         # Create a canvas with scroll for the tree
         if not hasattr(self, 'wordtree_canvas'):
-            # Create canvas frame if not exists
-            self.wordtree_canvas_frame = ctk.CTkFrame(self.tab_wordtree)
+            # Create canvas frame - darker background, more space
+            self.wordtree_canvas_frame = ctk.CTkFrame(self.tab_wordtree, fg_color="#1a1a1a")
             self.wordtree_canvas_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
             
-            self.wordtree_canvas = ctk.CTkCanvas(self.wordtree_canvas_frame, highlightthickness=0)
+            self.wordtree_canvas = ctk.CTkCanvas(self.wordtree_canvas_frame, bg="#1a1a1a", highlightthickness=0)
             self.wordtree_scrollbar = ctk.CTkScrollbar(self.wordtree_canvas_frame, command=self.wordtree_canvas.yview)
             self.wordtree_canvas.configure(yscrollcommand=self.wordtree_scrollbar.set)
             
             self.wordtree_scrollbar.pack(side="right", fill="y")
             self.wordtree_canvas.pack(side="left", fill="both", expand=True)
             
-            self.wordtree_inner_frame = ctk.CTkFrame(self.wordtree_canvas, fg_color="transparent")
+            self.wordtree_inner_frame = ctk.CTkFrame(self.wordtree_canvas, fg_color="#1a1a1a")
             self.wordtree_canvas.create_window((0, 0), window=self.wordtree_inner_frame, anchor="nw")
             
             self.wordtree_inner_frame.bind("<Configure>", 
@@ -1795,28 +1811,30 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Build the tree
         root_phrase = tree_data.get('root', '')
         
-        # Root label (clickable to change root)
-        root_frame = ctk.CTkFrame(self.wordtree_inner_frame, fg_color="transparent")
-        root_frame.pack(pady=(10, 5))
+        # Root label (clickable to change root) - larger and more visible
+        root_frame = ctk.CTkFrame(self.wordtree_inner_frame, fg_color="#1a1a1a")
+        root_frame.pack(pady=(15, 10), fill="x")
         
         root_btn = ctk.CTkButton(
             root_frame,
             text=f"🌳 {root_phrase}",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            fg_color="#ADD8E6",
-            hover_color="#87CEEB",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            fg_color="#4A90D9",
+            hover_color="#6BA8E0",
+            text_color="white",
             command=lambda: self._expand_wordtree_node(root_phrase),
-            width=300,
-            height=40
+            width=350,
+            height=45,
+            corner_radius=8
         )
         root_btn.pack()
         
         ctk.CTkLabel(
             root_frame,
-            text=f"(click para re-centrar)",
-            font=ctk.CTkFont(size=10),
-            text_color="gray"
-        ).pack(pady=(2, 10))
+            text="(click para re-centrar)",
+            font=ctk.CTkFont(size=11),
+            text_color="#888888"
+        ).pack(pady=(5, 15))
         
         # Show children
         children = tree_data.get('children', [])
@@ -1824,62 +1842,73 @@ class TextAnalyzerUI(ctk.CTkFrame):
             ctk.CTkLabel(
                 self.wordtree_inner_frame,
                 text="No se encontraron palabras relacionadas",
-                text_color="gray"
+                text_color="#888888"
             ).pack()
             return
         
-        # Container for children (horizontal scroll)
-        children_frame = ctk.CTkFrame(self.wordtree_inner_frame, fg_color="transparent")
-        children_frame.pack(fill="x", padx=20)
+        # Container for children - wider cards
+        children_frame = ctk.CTkFrame(self.wordtree_inner_frame, fg_color="#1a1a1a")
+        children_frame.pack(fill="x", padx=15, pady=10)
         
-        # Draw each child as a card
+        # Draw each child as a card with solid colors
         for child in children:
             word = child.get('word', '')
             count = child.get('count', 0)
             subchildren = child.get('children', [])
             
-            # Card frame
-            card = ctk.CTkFrame(children_frame, fg_color="#f0f0f0")
-            card.pack(side="left", padx=5, pady=5, fill="both")
+            # Card frame - solid dark background
+            card = ctk.CTkFrame(children_frame, fg_color="#2d2d2d", corner_radius=10)
+            card.pack(side="left", padx=8, pady=8, fill="both", expand=True)
             
-            # Word button (click to expand)
+            # Word button - solid color
             word_btn = ctk.CTkButton(
                 card,
-                text=word,
-                font=ctk.CTkFont(size=14, weight="bold"),
-                fg_color="#E8E8E8",
-                hover_color="#D0D0D0",
+                text=word.title(),
+                font=ctk.CTkFont(size=15, weight="bold"),
+                fg_color="#3A3A3A",
+                hover_color="#505050",
+                text_color="white",
                 command=lambda w=word: self._expand_wordtree_node(w),
-                width=120,
-                height=35
+                width=140,
+                height=40,
+                corner_radius=6
             )
-            word_btn.pack(padx=5, pady=(5, 0))
+            word_btn.pack(padx=8, pady=(8, 4))
             
-            # Count label
+            # Count label - more visible
             ctk.CTkLabel(
                 card,
-                text=f"({count})",
-                font=ctk.CTkFont(size=11),
-                text_color="gray"
-            ).pack(pady=(0, 5))
+                text=f"🔢 {count} veces",
+                font=ctk.CTkFont(size=12),
+                text_color="#AAAAAA"
+            ).pack(pady=(0, 8))
             
-            # Sub-children (second level)
+            # Sub-children - show more clearly
             if subchildren:
                 sub_frame = ctk.CTkFrame(card, fg_color="transparent")
-                sub_frame.pack(padx=5, pady=(0, 5))
+                sub_frame.pack(padx=8, pady=(0, 8))
                 
-                for sub in subchildren[:3]:
+                ctk.CTkLabel(
+                    sub_frame,
+                    text="Continúa:",
+                    font=ctk.CTkFont(size=10),
+                    text_color="#666666"
+                ).pack(pady=(4, 4))
+                
+                for sub in subchildren[:4]:
                     sub_btn = ctk.CTkButton(
                         sub_frame,
                         text=f"→ {sub['word']} ({sub['count']})",
-                        font=ctk.CTkFont(size=10),
-                        fg_color="transparent",
-                        hover_color="#E0E0E0",
+                        font=ctk.CTkFont(size=11),
+                        fg_color="#252525",
+                        hover_color="#404040",
+                        text_color="#BBBBBB",
                         command=lambda w=sub['word']: self._expand_wordtree_node(w),
-                        height=22,
-                        width=100
+                        height=26,
+                        width=120,
+                        corner_radius=4
                     )
-                    sub_btn.pack(pady=1)
+                    sub_btn.pack(pady=2)
     
     def _expand_wordtree_node(self, word: str) -> None:
         """Expand tree from a specific word as new root."""
