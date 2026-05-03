@@ -130,14 +130,16 @@ class HelpPopup:
                     wraplength=420
                 ).pack(anchor="w", padx=20, pady=1, fill="x")
         
-        # Botón cerrar
+        # Botón cerrar - con margen
         close_btn = ctk.CTkButton(
             self.window,
             text="Cerrar",
             command=self.close,
-            width=100
+            width=100,
+            fg_color="#4A90D9",
+            hover_color="#6BA8E0"
         )
-        close_btn.pack(pady=(10, 0))
+        close_btn.pack(pady=(15, 20))
         
         # Cerrar con Escape
         self.window.bind("<Escape>", lambda e: self.close())
