@@ -257,6 +257,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
             row.pack_forget()
             self.url_entries = [(r, e) for r, e in self.url_entries if r != row]
             self.url_count_label.configure(text=f"{len(self.url_entries)} URLs")
+        else:
+            # Si es el único, limpiar el contenido
+            entry.delete(0, tk.END)
     
     def _select_file(self) -> None:
         """Seleccionar archivo."""
