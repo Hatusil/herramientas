@@ -14,11 +14,13 @@ class HelpPanel(ctk.CTkFrame):
     def __init__(self, parent, title: str = "Ayuda", 
                  description: str = "", 
                  usage: list = None,
+                 tips: list = None,
                  warnings: list = None,
                  **kwargs):
         super().__init__(parent, **kwargs)
         
         self._usage = usage or []
+        self._tips = tips or []
         self._warnings = warnings or []
         
         # Frame del título (clickeable)
@@ -72,6 +74,25 @@ class HelpPanel(ctk.CTkFrame):
                 )
                 item_label.pack(anchor="w", padx=20, pady=1, fill="x")
         
+        if self._tips:
+            ctk.CTkLabel(
+                self.content_frame,
+                text="💡 Tips:",
+                font=ctk.CTkFont(size=15, weight="bold")
+            ).pack(anchor="w", padx=10, pady=(10, 0))
+            
+            for tip in self._tips:
+                tip_label = ctk.CTkLabel(
+                    self.content_frame,
+                    text=f"• {tip}",
+                    font=ctk.CTkFont(size=14),
+                    text_color="green",
+                    justify="left",
+                    anchor="w",
+                    wraplength=500
+                )
+                tip_label.pack(anchor="w", padx=20, pady=1, fill="x")
+        
         if self._warnings:
             ctk.CTkLabel(
                 self.content_frame,
@@ -106,16 +127,18 @@ class HelpPanel(ctk.CTkFrame):
 def add_help(parent, title: str = "Ayuda",
              description: str = "",
              usage: list = None,
+             tips: list = None,
              warnings: list = None) -> HelpPanel:
     """
     Helper para agregar un panel de ayuda fácilmente.
-    El textosemuestra conwrappara evitarque salar de lapantalla.
+    El texto se muestra con wrap para evitar que salga de la pantalla.
     
     Args:
         parent: Frame padre
         title: Título del panel  
         description: Descripción breve
         usage: Lista de pasos de uso
+        tips: Lista de tips
         warnings: Lista de advertencias
     
     Returns:
@@ -126,6 +149,7 @@ def add_help(parent, title: str = "Ayuda",
         title=title,
         description=description,
         usage=usage,
+        tips=tips,
         warnings=warnings,
         fg_color="transparent"
     )
