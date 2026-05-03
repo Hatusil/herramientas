@@ -1282,8 +1282,48 @@ class ChartModal(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
     
     def _on_scroll(self, event) -> str:
-        """Handle scroll events to prevent propagation to parent window."""
-        return "break"  # This prevents event propagation
+        """Handle scroll events - zoom with Ctrl+scroll, prevent propagation otherwise."""
+        # Ctrl+scroll = zoom
+        if event.state & 0x4:  # Ctrl key pressed
+            try:
+                from PIL import Image, ImageTk
+                from io import BytesIO
+                
+                # Determine zoom factor
+                if event.delta > 0:
+                    zoom_factor = 1.2  # Zoom in
+                else:
+                    zoom_factor = 0.8  # Zoom out
+                
+                # Get current image
+                if hasattr(self, 'full_image') and self.full_image:
+                    orig_width, orig_height = self.full_image.size
+                    
+                    # Calculate new size
+                    new_width = int(orig_width * zoom_factor)
+                    new_height = int(orig_height * zoom_factor)
+                    
+                    # Limit zoom range
+                    if new_width < 200 or new_width > 4000:
+                        return "break"
+                    
+                    # Resize
+                    img_display = self.full_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                    
+                    # Update canvas
+                    self.photo_img = ImageTk.PhotoImage(img_display)
+                    self.canvas.delete("all")
+                    self.canvas.create_image(0, 0, anchor="nw", image=self.photo_img)
+                    self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+                    
+                    # Update window size
+                    self.geometry(f"{new_width + 40}x{new_height + 120}")
+            except Exception as e:
+                logger.error(f"Zoom error: {e}")
+            return "break"
+        
+        # Otherwise prevent propagation to parent
+        return "break"
     
     def _center_window(self) -> None:
         """Center the modal on screen."""
