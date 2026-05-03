@@ -167,7 +167,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Botón Preview (ligero)
         ctk.CTkButton(
             action_frame,
-            text="🔍 Preview Frecuencia",
+            text="🔍 Preview (texto limpio)",
             command=self._preview_frequency,
             width=180,
             fg_color="#4a4",
@@ -243,17 +243,21 @@ class TextAnalyzerUI(ctk.CTkFrame):
             
             if result.get('success'):
                 freqs = result['frequencies']
-                texto = "📊 Frecuencia de palabras (top 20):\n"
-                texto += "=" * 35 + "\n\n"
+                texto = "📊 Frecuencia de palabras (top 20) - Texto limpio:\n"
+                texto += "=" * 45 + "\n\n"
                 
                 for i, (word, count) in enumerate(freqs.items(), 1):
                     bar = "█" * min(int(count / max(freqs.values()) * 20), 20)
                     texto += f"{i:2}. {word:<20} {count:>4} {bar}\n"
                 
+                # Also show cleaned text preview
+                self.clean_text.delete("1.0", tk.END)
+                self.clean_text.insert("1.0", cleaned[:2000])
+                
                 self.clean_freq_text.delete("1.0", tk.END)
                 self.clean_freq_text.insert("1.0", texto)
                 
-                self.status_label.configure(text="Preview de frecuencia actualizado", text_color="green")
+                self.status_label.configure(text="Preview: opciones aplicadas sobre texto limpio", text_color="green")
             else:
                 self.status_label.configure(text="Error en análisis", text_color="red")
                 
