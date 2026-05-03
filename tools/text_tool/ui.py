@@ -158,9 +158,6 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.url_entries = []
         self._add_url_field()
         
-        # Initialize input view
-        self._on_input_type_change()
-        
         # Botón cargar/procesar
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
         btn_frame.pack(fill="x", padx=10, pady=10)
@@ -172,6 +169,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
             height=40
         )
         self.load_btn.pack(fill="x")
+        
+        # Initialize input view (después de crear botón)
+        self._on_input_type_change()
         
         # ============ OPCIONES (antes de visualizaciones) ============
         opts_frame = ctk.CTkFrame(self)
