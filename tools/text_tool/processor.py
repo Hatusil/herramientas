@@ -403,13 +403,18 @@ def analyze_wordcloud(
         return {'success': False, 'error': 'wordcloud no instalado'}
     
     try:
-        # Validate colormap - fallback to viridis if invalid
-        valid_colormaps = [
-            'viridis', 'plasma', 'inferno', 'magma', 'cividis',
-            'blues', 'greens', 'reds', 'oranges', 'purples',
-            'coolwarm', 'RdYlGn', 'seismic', 'terrain', 'ocean'
-        ]
-        if colormap.lower() not in valid_colormaps:
+        # Validate colormap - convert to proper case or fallback
+        # Map lowercase to proper colormap names
+        colormap_map = {
+            'viridis': 'viridis', 'plasma': 'plasma', 'inferno': 'inferno',
+            'magma': 'magma', 'cividis': 'cividis', 'blues': 'Blues',
+            'greens': 'Greens', 'reds': 'Reds', 'oranges': 'Oranges',
+            'purples': 'Purples', 'coolwarm': 'coolwarm', 'rdygn': 'RdYlGn',
+            'seismic': 'seismic', 'terrain': 'terrain', 'ocean': 'ocean'
+        }
+        if colormap.lower() in colormap_map:
+            colormap = colormap_map[colormap.lower()]
+        else:
             logger.warning(f"Invalid colormap '{colormap}', falling back to 'viridis'")
             colormap = 'viridis'
         
