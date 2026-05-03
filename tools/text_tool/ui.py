@@ -1440,7 +1440,7 @@ class ChartModal(ctk.CTkToplevel):
     def _on_image_click(self, event) -> None:
         """Handle click on image - expand to full size."""
         try:
-            from PIL import Image
+            from PIL import Image, ImageTk
             from io import BytesIO
             
             # Open original image at full size
