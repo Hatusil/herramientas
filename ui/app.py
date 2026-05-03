@@ -300,6 +300,14 @@ class App(ctk.CTk):
         Args:
             tool_name: Nombre de la tool seleccionada
         """
+        # Caso especial: volver a pantalla de bienvenida
+        if tool_name == "__welcome__":
+            self.sidebar._highlight_tool(None)
+            tools = self.plugin_manager.get_tools_list()
+            self._show_welcome_screen(tools)
+            self.current_tool = None
+            return
+        
         if tool_name == self.current_tool:
             return
         

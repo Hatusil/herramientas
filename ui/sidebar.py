@@ -110,6 +110,17 @@ class Sidebar(ctk.CTkFrame):
             )
             title.pack(pady=(5, 2))
         
+        # Botón Inicio para volver a pantalla de bienvenida
+        self.inicio_btn = ctk.CTkButton(
+            self,
+            text="🏠 Inicio",
+            command=self._on_inicio,
+            fg_color="#2b2b2b",
+            hover_color="#4A90D9",
+            height=30
+        )
+        self.inicio_btn.pack(fill="x", padx=10, pady=(8, 5))
+        
         # Scrollable frame para las tools - expande
         self.scroll_frame = ctk.CTkScrollableFrame(
             self, 
@@ -231,13 +242,13 @@ class Sidebar(ctk.CTkFrame):
         if tools:
             self._highlight_tool(tools[0]['name'])
     
-    def _highlight_tool(self, tool_name: str) -> None:
-        """Resalta el botón seleccionado."""
+    def _highlight_tool(self, tool_name: str = None) -> None:
+        """Resalta el botón seleccionado. Si tool_name es None, deselecciona todos."""
         selected_color = constants.COLORS["primary"]
         normal_color = constants.COLORS["bg_light"]
         
         for name, btn in self.tool_buttons.items():
-            if name == tool_name:
+            if tool_name is not None and name == tool_name:
                 btn.configure(fg_color=selected_color, text_color="white")
             else:
                 btn.configure(fg_color=normal_color, text_color=constants.COLORS["text_secondary"])
@@ -252,6 +263,11 @@ class Sidebar(ctk.CTkFrame):
                 self.master.quit()
             except Exception as e:
                 logger.warning(f"Error quitting app: {e}")
+    
+    def _on_inicio(self) -> None:
+        """Vuelve a la pantalla de bienvenida."""
+        # Notificar al app para que muestre la pantalla de inicio
+        self.on_tool_select("__welcome__")
     
     def _on_acerca_de(self) -> None:
         """Muestra diálogo Acerca de - estilo profesional."""
