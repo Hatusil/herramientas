@@ -428,7 +428,7 @@ def analyze_wordcloud(
         
         # Add mask if not rectangle
         if mask is not None:
-            logger.info(f"Adding mask to WordCloud: size={mask.size}, mode={mask.mode}")
+            logger.info(f"Adding mask to WordCloud: shape={mask.shape}, dtype={mask.dtype}")
             wc_kwargs['mask'] = mask
             logger.info(f"wc_kwargs mask keys: {list(wc_kwargs.keys())}")
         
