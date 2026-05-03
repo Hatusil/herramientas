@@ -338,7 +338,8 @@ def _generate_shape_mask(shape: str, width: int, height: int) -> Optional[Any]:
             outer_radius = min(width, height) // 2 - 5
             inner_radius = outer_radius * 0.4
             
-            angles = np.linspace(0, 2 * np.pi, 10, endpoint=False)
+            # Start from -pi/2 (top = 12 o'clock) and create 10 points
+            angles = np.linspace(-np.pi/2, -np.pi/2 + 2 * np.pi, 10, endpoint=False)
             
             # Create polygon points
             points = []
@@ -357,13 +358,11 @@ def _generate_shape_mask(shape: str, width: int, height: int) -> Optional[Any]:
             draw = ImageDraw.Draw(mask_img)
             draw.polygon([(p[0], p[1]) for p in points], fill=255)
             
-            # Convert to numpy array for wordcloud - invert and flip horizontally
+            # Convert to numpy array for wordcloud - invert
             import numpy as np
             mask_array = np.array(mask_img)
             # Invert: 0 where shape is (words go there), 255 for background
-            mask_array = (255 - mask_array)
-            # Flip horizontally to correct orientation
-            return np.fliplr(mask_array)
+            return (255 - mask_array)
             
         else:
             return None  # Unknown shape, fallback to rectangle
