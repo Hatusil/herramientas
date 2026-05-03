@@ -81,8 +81,12 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Tab: Scatter
         self.tab_scatter = self.tabview.add("⬡ Scatter")
         
+        # Tab: Limpieza (antes de visualizaciones)
+        self.tab_clean = self.tabview.add("⚙️ Limpieza")
+        
         # Set up cada tab
         self._setup_input_tab()
+        self._setup_clean_tab()
         self._setup_wc_tab()
         self._setup_freq_tab()
         self._setup_stats_tab()
@@ -90,6 +94,69 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self._setup_trends_tab()
         self._setup_corr_tab()
         self._setup_scatter_tab()
+    
+    # ============ TAB: LIMPIEZA ============
+    def _setup_clean_tab(self) -> None:
+        frame = self.tab_clean
+        
+        # Texto crudo (sin limpiar)
+        raw_label = ctk.CTkLabel(frame, text="📄 Texto crudo:", font=ctk.CTkFont(weight="bold"))
+        raw_label.pack(anchor="w", padx=10, pady=(10, 5))
+        
+        self.raw_text = ctk.CTkTextbox(frame, wrap="word", height=80)
+        self.raw_text.pack(fill="x", padx=10, pady=5)
+        
+        # Opciones de limpieza
+        opts_label = ctk.CTkLabel(frame, text="⚙️ Opciones:", font=ctk.CTkFont(weight="bold"))
+        opts_label.pack(anchor="w", padx=10, pady=10)
+        
+        opts_frame = ctk.CTkFrame(frame)
+        opts_frame.pack(fill="x", padx=10, pady=5)
+        
+        self.remove_stopwords = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(opts_frame, text="Quitar conectores (stopwords)", variable=self.remove_stopwords).pack(anchor="w", padx=5)
+        
+        ctk.CTkLabel(opts_frame, text="Excluir palabras:").pack(anchor="w", padx=5, pady=(5, 0))
+        self.exclude_entry = ctk.CTkEntry(opts_frame, placeholder_text="que, como, pero, ...")
+        self.exclude_entry.pack(fill="x", padx=5, pady=5)
+        
+        # Botón aplicar
+        ctk.CTkButton(frame, text="🔄 Aplicar Limpieza", command=self._apply_clean).pack(pady=10)
+        
+        # Preview limpio
+        preview_label = ctk.CTkLabel(frame, text="✅ Texto limpio (preview):", font=ctk.CTkFont(weight="bold"))
+        preview_label.pack(anchor="w", padx=10, pady=(10, 5))
+        
+        self.clean_text = ctk.CTkTextbox(frame, wrap="word", height=80)
+        self.clean_text.pack(fill="x", padx=10, pady=5)
+        
+        # Botón generar visualizaciones
+        ctk.CTkButton(frame, text="📊 Generar Visualizaciones", command=self._run_all_analysis).pack(pady=10)
+    
+    def _apply_clean(self) -> None:
+        """Aplica limpieza y muestra preview."""
+        if not self.text_content:
+            self.status_label.configure(text="Primero cargá texto", text_color="orange")
+            return
+        
+        from tools.text_tool.processor import clean_text
+        
+        exclude_text = self.exclude_entry.get().strip()
+        exclude_words = [w.strip().lower() for w in exclude_text.split(',')] if exclude_text else []
+        
+        cleaned = clean_text(
+            self.text_content,
+            remove_stopwords=self.remove_stopwords.get(),
+            exclude_words=exclude_words
+        )
+        
+        # Mostrar en preview
+        self.clean_text.delete("1.0", tk.END)
+        self.clean_text.insert("1.0", cleaned[:2000])  # Preview primeros 2000 chars
+        
+        # Guardar para visualizaciones
+        self.cleaned_content = cleaned
+        self.status_label.configure(text=f"Limpieza aplicada: {len(cleaned.split())} palabras", text_color="green")
     
     # ============ TAB: ENTRADA ============
     def _setup_input_tab(self) -> None:
