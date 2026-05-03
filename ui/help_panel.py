@@ -1,155 +1,229 @@
 """
 HelpPanel: Componente reutilizable para mostrar ayuda/descripción en las herramientas.
+Muestra la ayuda como un popup flotante (CTkToplevel) que no desplaza el contenido.
 """
 import customtkinter as ctk
+from tkinter import ttk
 
 
-class HelpPanel(ctk.CTkFrame):
+class HelpPopup:
     """
-    Panelcollapsible de ayuda paramostrar descripción,uso y advertencias.
-    
-    El contenido se expande/colapsa sin afectar el scroll de la herramienta.
+    Popup flotante de ayuda que aparece sobre la herramienta.
+    No desplaza el contenido de la herramienta.
     """
     
-    def __init__(self, parent, title: str = "Ayuda", 
-                 description: str = "", 
+    def __init__(self, parent, title: str = "Ayuda",
+                 description: str = "",
                  usage: list = None,
                  tips: list = None,
-                 warnings: list = None,
-                 **kwargs):
-        super().__init__(parent, **kwargs)
-        
+                 warnings: list = None):
+        self._parent = parent
         self._usage = usage or []
         self._tips = tips or []
         self._warnings = warnings or []
         
-        # Frame del título (clickeable)
-        self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.header_frame.pack(fill="x", padx=5, pady=2)
+        # Crear ventana Toplevel
+        self.window = ctk.CTkToplevel(parent)
+        self.window.title(title)
+        self.window.geometry("500x450")
+        self.window.resizable(False, False)
         
-        self.toggle_btn = ctk.CTkButton(
-            self.header_frame,
-            text="📖 Ayuda",
-            command=self._toggle,
-            width=80,
-            height=28,
-            fg_color="gray",
-            hover_color="darkgray"
+        # Centrar respecto al padre
+        self.window.transient(parent)
+        parent.update_idletasks()
+        
+        parent_x = parent.winfo_x()
+        parent_y = parent.winfo_y()
+        parent_w = parent.winfo_width()
+        parent_h = parent.winfo_height()
+        
+        win_w = 500
+        win_h = 450
+        
+        x = parent_x + (parent_w - win_w) // 2
+        y = parent_y + (parent_h - win_h) // 2
+        
+        self.window.geometry(f"+{x}+{y}")
+        
+        # Bloquear interacción con la ventana padre
+        self.window.grab_set()
+        
+        # Frame principal con scroll
+        main_frame = ctk.CTkFrame(self.window, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=15, pady=15)
+        
+        # Canvas con scrollbar
+        canvas = ctk.CTkCanvas(main_frame, highlightthickness=0)
+        scrollbar = ctk.CTkScrollbar(main_frame, command=canvas.yview)
+        self.scrollable_frame = ctk.CTkFrame(canvas, fg_color="transparent")
+        
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-        self.toggle_btn.pack(side="left")
         
-        # Frame del contenido (expandible) - sin scroll
-        self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
-        # Initially hidden
-        self._is_expanded = False
+        canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
         
-        # Contenido - todos los textos con wraplength para que no salgan de la pantalla
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Contenido con wraplength
         if description:
             desc_label = ctk.CTkLabel(
-                self.content_frame,
+                self.scrollable_frame,
                 text=description,
                 font=ctk.CTkFont(size=14),
                 justify="left",
                 anchor="w",
-                wraplength=550  # Ancho máximo antes de salto
+                wraplength=450
             )
-            desc_label.pack(anchor="w", padx=10, pady=(5, 2), fill="x")
+            desc_label.pack(anchor="w", padx=10, pady=(5, 10), fill="x")
         
         if self._usage:
             ctk.CTkLabel(
-                self.content_frame,
+                self.scrollable_frame,
                 text="📌 Uso:",
                 font=ctk.CTkFont(size=15, weight="bold")
-            ).pack(anchor="w", padx=10, pady=(5, 0))
+            ).pack(anchor="w", padx=10, pady=(10, 0))
             
             for item in self._usage:
-                item_label = ctk.CTkLabel(
-                    self.content_frame,
+                ctk.CTkLabel(
+                    self.scrollable_frame,
                     text=f"• {item}",
                     font=ctk.CTkFont(size=14),
                     text_color="gray",
                     justify="left",
                     anchor="w",
-                    wraplength=500
-                )
-                item_label.pack(anchor="w", padx=20, pady=1, fill="x")
+                    wraplength=420
+                ).pack(anchor="w", padx=20, pady=1, fill="x")
         
         if self._tips:
             ctk.CTkLabel(
-                self.content_frame,
+                self.scrollable_frame,
                 text="💡 Tips:",
                 font=ctk.CTkFont(size=15, weight="bold")
-            ).pack(anchor="w", padx=10, pady=(10, 0))
+            ).pack(anchor="w", padx=10, pady=(15, 0))
             
             for tip in self._tips:
-                tip_label = ctk.CTkLabel(
-                    self.content_frame,
+                ctk.CTkLabel(
+                    self.scrollable_frame,
                     text=f"• {tip}",
                     font=ctk.CTkFont(size=14),
                     text_color="green",
                     justify="left",
                     anchor="w",
-                    wraplength=500
-                )
-                tip_label.pack(anchor="w", padx=20, pady=1, fill="x")
+                    wraplength=420
+                ).pack(anchor="w", padx=20, pady=1, fill="x")
         
         if self._warnings:
             ctk.CTkLabel(
-                self.content_frame,
+                self.scrollable_frame,
                 text="⚠️ Advertencias:",
                 font=ctk.CTkFont(size=15, weight="bold")
-            ).pack(anchor="w", padx=10, pady=(10, 0))
+            ).pack(anchor="w", padx=10, pady=(15, 0))
             
             for warn in self._warnings:
-                warn_label = ctk.CTkLabel(
-                    self.content_frame,
+                ctk.CTkLabel(
+                    self.scrollable_frame,
                     text=f"• {warn}",
                     font=ctk.CTkFont(size=14),
                     text_color="orange",
                     justify="left",
                     anchor="w",
-                    wraplength=500
-                )
-                warn_label.pack(anchor="w", padx=20, pady=1, fill="x")
-    
-    def _toggle(self) -> None:
-        """Expande/colapsa el contenido."""
-        if self._is_expanded:
-            self.content_frame.pack_forget()
-            self.toggle_btn.configure(text="📖 Ayuda")
-        else:
-            self.content_frame.pack(fill="x", padx=5, pady=2)
-            self.toggle_btn.configure(text="🔼 Ocultar")
+                    wraplength=420
+                ).pack(anchor="w", padx=20, pady=1, fill="x")
         
-        self._is_expanded = not self._is_expanded
+        # Botón cerrar
+        close_btn = ctk.CTkButton(
+            self.window,
+            text="Cerrar",
+            command=self.close,
+            width=100
+        )
+        close_btn.pack(pady=(10, 0))
+        
+        # Cerrar con Escape
+        self.window.bind("<Escape>", lambda e: self.close())
+    
+    def close(self) -> None:
+        """Cierra el popup."""
+        self.window.grab_release()
+        self.window.destroy()
+
+
+# Botón estático para abrir ayuda
+class HelpButton(ctk.CTkButton):
+    """Botón que abre un popup de ayuda."""
+    
+    def __init__(self, parent, **kwargs):
+        super().__init__(
+            parent,
+            text="📖 Ayuda",
+            command=self._open_help,
+            width=80,
+            height=28,
+            fg_color="gray",
+            hover_color="darkgray",
+            **kwargs
+        )
+        
+        self._parent = parent
+        self._title = "Ayuda"
+        self._description = ""
+        self._usage = []
+        self._tips = []
+        self._warnings = []
+    
+    def configure_help(self, title: str = "Ayuda",
+                      description: str = "",
+                      usage: list = None,
+                      tips: list = None,
+                      warnings: list = None) -> None:
+        """Configura el contenido de la ayuda."""
+        self._title = title
+        self._description = description
+        self._usage = usage or []
+        self._tips = tips or []
+        self._warnings = warnings or []
+    
+    def _open_help(self) -> None:
+        """Abre el popup de ayuda."""
+        HelpPopup(
+            self._parent,
+            title=self._title,
+            description=self._description,
+            usage=self._usage,
+            tips=self._tips,
+            warnings=self._warnings
+        )
 
 
 def add_help(parent, title: str = "Ayuda",
              description: str = "",
              usage: list = None,
              tips: list = None,
-             warnings: list = None) -> HelpPanel:
+             warnings: list = None):
     """
-    Helper para agregar un panel de ayuda fácilmente.
-    El texto se muestra con wrap para evitar que salga de la pantalla.
+    Helper para agregar un botón de ayuda que abre un popup.
     
     Args:
         parent: Frame padre
-        title: Título del panel  
+        title: Título del popup
         description: Descripción breve
         usage: Lista de pasos de uso
         tips: Lista de tips
         warnings: Lista de advertencias
     
     Returns:
-        HelpPanel instance
+        HelpButton instance (configurable)
     """
-    return HelpPanel(
-        parent,
+    btn = HelpButton(parent)
+    btn.configure_help(
         title=title,
         description=description,
         usage=usage,
         tips=tips,
-        warnings=warnings,
-        fg_color="transparent"
+        warnings=warnings
     )
+    return btn
