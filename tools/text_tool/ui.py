@@ -150,7 +150,10 @@ class TextAnalyzerUI(ctk.CTkFrame):
             exclude_words=exclude_words
         )
         
-        # Mostrar en preview
+        # Mostrar texto crudo y limpio
+        self.raw_text.delete("1.0", tk.END)
+        self.raw_text.insert("1.0", self.text_content[:2000])
+        
         self.clean_text.delete("1.0", tk.END)
         self.clean_text.insert("1.0", cleaned[:2000])  # Preview primeros 2000 chars
         
@@ -181,25 +184,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.file_frame.pack(fill="x", padx=10, pady=10)
         self.file_frame.pack_forget()
         
-        ctk.CTkLabel(self.file_frame, text="Archivo:").pack(anchor="w")
-        
-        file_btn_frame = ctk.CTkFrame(self.file_frame, fg_color="transparent")
-        file_btn_frame.pack(fill="x", pady=5)
-        
-        self.file_label = ctk.CTkLabel(
-            file_btn_frame, 
-            text="Ningún archivo seleccionado",
-            text_color="gray"
-        )
-        self.file_label.pack(side="left", padx=10)
-        
-        ctk.CTkButton(
-            file_btn_frame, 
-            text="Seleccionar...", 
-            command=self._select_file
-        ).pack(side="left", padx=5)
-        
-        self.selected_file: Optional[str] = None
+        ctk.CTkLabel(self.file_frame, text="📄 Agregar Archivos", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=5)
         
         # Frame para URLs (dinámico)
         self.url_frame = ctk.CTkFrame(frame)
@@ -239,24 +224,6 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Initialize input view (después de crear botón)
         self._on_input_type_change()
         
-        # ============ OPCIONES (antes de visualizaciones) ============
-        opts_frame = ctk.CTkFrame(self)
-        opts_frame.pack(fill="x", padx=10, pady=5)
-        
-        ctk.CTkLabel(opts_frame, text="⚙️ Opciones de limpieza:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=5)
-        
-        # Stopwords
-        self.remove_stopwords = ctk.BooleanVar(value=True)
-        ctk.CTkCheckBox(opts_frame, text="Quitar conectores (stopwords)", variable=self.remove_stopwords).pack(anchor="w", padx=5)
-        
-        # Excluir palabras custom
-        ctk.CTkLabel(opts_frame, text="Excluir palabras:", font=ctk.CTkFont(size=11)).pack(anchor="w", padx=5, pady=(5, 0))
-        self.exclude_entry = ctk.CTkEntry(opts_frame, placeholder_text="que, como, pero, ... (separadas por coma)")
-        self.exclude_entry.pack(fill="x", padx=5, pady=5)
-        
-        # Botón aplicar opciones
-        ctk.CTkButton(opts_frame, text="🔄 Aplicar opciones", command=self._apply_options).pack(pady=5)
-        
         # Status
         self.status_label = ctk.CTkLabel(
             self, 
@@ -267,17 +234,6 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         # Texto limpio para visualizaciones
         self.cleaned_content = None
-    
-    def _apply_options(self) -> None:
-        """Aplica opciones de limpieza y regenera visualizaciones."""
-        if not self.text_content:
-            self.status_label.configure(text="Primero cargá texto", text_color="orange")
-            return
-        
-        if self.cleaned_content:
-            self.status_label.configure(text="Aplicando opciones...", text_color="yellow")
-            self._run_all_analysis()
-            self.status_label.configure(text="Visualizaciones actualizadas", text_color="green")
     
     def _on_input_type_change(self) -> None:
         """Cambia visibilidad según tipo de input."""
@@ -320,23 +276,6 @@ class TextAnalyzerUI(ctk.CTkFrame):
         else:
             # Si es el único, limpiar el contenido
             entry.delete(0, tk.END)
-    
-    def _select_file(self) -> None:
-        """Seleccionar archivo."""
-        file_path = filedialog.askopenfilename(
-            title="Seleccionar archivo",
-            filetypes=[
-                ("PDF", "*.pdf"),
-                ("Word", "*.docx *.doc"),
-                ("Excel", "*.xlsx *.xls"),
-                ("Texto", "*.txt *.md"),
-                ("Todos", "*.*")
-            ]
-        )
-        
-        if file_path:
-            self.selected_file = file_path
-            self.file_label.configure(text=Path(file_path).name)
     
     def _load_and_analyze(self) -> None:
         """Carga texto y ejecuta análisis."""
@@ -449,11 +388,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 else:
                     self.text_content = new_text
                 self.cleaned_content = None
-                self.status_label.configure(text=f"{len(urls)} URLs: {len(self.text_content)} caracteres", text_color="green")
+                self.status_label.configure(text=f"{len(urls)} URLs: {len(self.text_content)} caracteres - andá a Limpieza", text_color="green")
             
-            # Ejecutar análisis si hay texto
-            if self.text_content:
-                self._run_all_analysis()
+            # No ejecutar análisis automáticamente - usuario debe ir a Limpieza
         
         except ImportError:
             self.status_label.configure(
@@ -553,8 +490,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         ctk.CTkLabel(exclude_frame, text="Excluir palabras:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=5)
         
-        self.exclude_entry = ctk.CTkEntry(exclude_frame, placeholder_text="palabra1, palabra2, ...")
-        self.exclude_entry.pack(fill="x", padx=5, pady=5)
+        self.wc_exclude_entry = ctk.CTkEntry(exclude_frame, placeholder_text="palabra1, palabra2, ...")
+        self.wc_exclude_entry.pack(fill="x", padx=5, pady=5)
         
         ctk.CTkButton(exclude_frame, text="🔄 Regenerar sin estas palabras", command=self._regenerate_wc).pack(pady=5)
         
@@ -606,7 +543,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
             return
         
         # Obtener palabras a excluir
-        exclude_text = self.exclude_entry.get().strip()
+        exclude_text = self.wc_exclude_entry.get().strip()
         exclude_words = [w.strip().lower() for w in exclude_text.split(',')] if exclude_text else []
         
         from tools.text_tool.processor import analyze_wordcloud, clean_text
