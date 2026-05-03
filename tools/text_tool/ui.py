@@ -695,11 +695,18 @@ class TextAnalyzerUI(ctk.CTkFrame):
         m = int(value)
         self.wc_margin_label.configure(text=f"{m}px")
     
-    def _show_wordcloud(self, image_data: bytes) -> None:
+    def _show_wordcloud(self, image_data) -> None:
         """Muestra WordCloud."""
         try:
             from PIL import Image
             from io import BytesIO
+            
+            # Debug: log image_data type and size
+            logger.info(f"WordCloud: image_data type={type(image_data)}, len={len(image_data) if isinstance(image_data, (bytes, bytearray)) else 'N/A'}")
+            
+            # Validate input
+            if not isinstance(image_data, (bytes, bytearray)):
+                raise ValueError(f"image_data debe ser bytes, recibido: {type(image_data)}")
             
             # Abrir imagen desde bytes
             img = Image.open(BytesIO(image_data))
@@ -1010,11 +1017,17 @@ class TextAnalyzerUI(ctk.CTkFrame):
         )
         self.trends_label.pack(expand=True)
     
-    def _show_trends(self, image_data: bytes) -> None:
+    def _show_trends(self, image_data) -> None:
         """Muestra gráfico de tendencias."""
         try:
             from PIL import Image
             from io import BytesIO
+            
+            # Debug
+            logger.info(f"Trends: image_data type={type(image_data)}, len={len(image_data) if isinstance(image_data, (bytes, bytearray)) else 'N/A'}")
+            
+            if not isinstance(image_data, (bytes, bytearray)):
+                raise ValueError(f"image_data debe ser bytes, recibido: {type(image_data)}")
             
             img = Image.open(BytesIO(image_data))
             img.thumbnail((700, 350))
@@ -1051,11 +1064,17 @@ class TextAnalyzerUI(ctk.CTkFrame):
         )
         self.corr_label.pack(expand=True)
     
-    def _show_correlations(self, image_data: bytes) -> None:
+    def _show_correlations(self, image_data) -> None:
         """Muestra heatmap de correlaciones."""
         try:
             from PIL import Image
             from io import BytesIO
+            
+            # Debug
+            logger.info(f"Correlations: image_data type={type(image_data)}, len={len(image_data) if isinstance(image_data, (bytes, bytearray)) else 'N/A'}")
+            
+            if not isinstance(image_data, (bytes, bytearray)):
+                raise ValueError(f"image_data debe ser bytes, recibido: {type(image_data)}")
             
             img = Image.open(BytesIO(image_data))
             img.thumbnail((700, 500))
@@ -1092,11 +1111,17 @@ class TextAnalyzerUI(ctk.CTkFrame):
         )
         self.scatter_label.pack(expand=True)
     
-    def _show_scatter(self, image_data: bytes) -> None:
+    def _show_scatter(self, image_data) -> None:
         """Muestra scatter plot."""
         try:
             from PIL import Image
             from io import BytesIO
+            
+            # Debug
+            logger.info(f"Scatter: image_data type={type(image_data)}, len={len(image_data) if isinstance(image_data, (bytes, bytearray)) else 'N/A'}")
+            
+            if not isinstance(image_data, (bytes, bytearray)):
+                raise ValueError(f"image_data debe ser bytes, recibido: {type(image_data)}")
             
             img = Image.open(BytesIO(image_data))
             img.thumbnail((700, 400))
