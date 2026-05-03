@@ -932,6 +932,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
         """Handle frequency slider change - update display after release."""
         n = int(value)
         self.freq_label.configure(text=f"{n} palabras")
+        
+        # Regenerate frequency display when slider changes
+        self._update_frequency_display(n)
     
     def _update_frequency_display(self, n: int = None) -> None:
         """Update frequency display with specified n value."""
@@ -1044,9 +1047,12 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.ngram_text.pack(fill="both", expand=True, padx=10, pady=(5, 10))
     
     def _on_ngram_slider_change(self, value: float) -> None:
-        """Handle n-gram slider change - update label."""
+        """Handle n-gram slider change - update label and display."""
         top_k = int(value)
         self.ngram_label.configure(text=f"{top_k} resultados")
+        
+        # Regenerate n-grams display when slider changes
+        self._update_ngrams_display(top_k)
     
     def _update_ngrams_display(self, top_k: int = None) -> None:
         """Update n-grams display with specified top_k value."""
