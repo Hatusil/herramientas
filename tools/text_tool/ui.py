@@ -1282,7 +1282,7 @@ class ChartModal(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
     
     def _on_scroll(self, event) -> str:
-        """Handle scroll events - zoom in/out, prevent propagation to parent."""
+        """Handle scroll events - zoom in/out without changing window size."""
         try:
             from PIL import Image, ImageTk
             
@@ -1294,31 +1294,28 @@ class ChartModal(ctk.CTkToplevel):
             
             # Get current image
             if hasattr(self, 'full_image') and self.full_image:
-                orig_width, orig_height = self.full_image.size
+                # Get current canvas size from scrollregion or use default
+                current_width = 800
+                current_height = 600
                 
                 # Calculate new size
-                new_width = int(orig_width * zoom_factor)
-                new_height = int(orig_height * zoom_factor)
+                new_width = int(current_width * zoom_factor)
+                new_height = int(current_height * zoom_factor)
                 
-                # Limit zoom range (200-4000px)
-                if new_width < 200:
+                # Limit zoom range
+                if new_width < 400:
                     return "break"
-                if new_width > 4000:
+                if new_width > 2400:
                     return "break"
                 
-                # Resize
+                # Resize the original image to new size
                 img_display = self.full_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
                 
-                # Update canvas
+                # Update canvas - keep same window size, just scale image
                 self.photo_img = ImageTk.PhotoImage(img_display)
                 self.canvas.delete("all")
                 self.canvas.create_image(0, 0, anchor="nw", image=self.photo_img)
-                self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-                
-                # Update window size
-                self.geometry(f"{new_width + 40}x{new_height + 120}")
-                self._current_width = new_width + 40
-                self._current_height = new_height + 120
+                self.canvas.configure(scrollregion=(0, 0, new_width, new_height))
                 
         except Exception as e:
             logger.error(f"Zoom error: {e}")
