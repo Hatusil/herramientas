@@ -1126,10 +1126,13 @@ def analyze_wordtree(text: str, phrase: str, max_depth: int = 5) -> Dict[str, An
     
     # Buscar todas las ocurrencias de la frase y collectar siguientes palabras
     # Usar n-grams para encontrar siguiente palabra después de la frase
-    from collections import Counter, defaultdict
+    from collections import Counter
     
-    # Construir árbol: phrase -> [siguiente_palabra] -> [más_siguiente] -> ...
-    tree = defaultdict(lambda: {'count': 0, 'children': defaultdict(lambda: {'count': 0, 'children': {}})})
+    # Construir árbol usando una función helper en lugar de defaultdict anidado
+    def make_node():
+        return {'count': 0, 'children': {}}
+    
+    tree = make_node()
     
     # Encontrar ocurrencias de la frase y colectar palabras siguientes
     phrase_as_tuple = tuple(phrase_words)
@@ -1146,14 +1149,14 @@ def analyze_wordtree(text: str, phrase: str, max_depth: int = 5) -> Dict[str, An
                 next_idx = i + phrase_len + depth
                 if next_idx >= len(words):
                     break
-                    
+                
                 next_word = words[next_idx]
                 
                 # Solo añadir si no es empty y no es solo punctiation
                 if next_word and len(next_word) > 0:
                     # Add to children
                     if next_word not in current_level['children']:
-                        current_level['children'][next_word] = {'count': 0, 'children': {}}
+                        current_level['children'][next_word] = make_node()
                     current_level['children'][next_word]['count'] += 1
                     
                     # Move to next level for next iteration
