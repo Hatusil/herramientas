@@ -104,8 +104,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         ctk.CTkRadioButton(tipo_frame, text="📝 Texto", variable=self.input_type, value="text", command=self._on_input_type_change).pack(side="left", padx=5)
         ctk.CTkRadioButton(tipo_frame, text="📄 Archivo", variable=self.input_type, value="file", command=self._on_input_type_change).pack(side="left", padx=5)
         ctk.CTkRadioButton(tipo_frame, text="📁 Multi", variable=self.input_type, value="files", command=self._on_input_type_change).pack(side="left", padx=5)
-        ctk.CTkRadioButton(tipo_frame, text="🌐 URL", variable=self.input_type, value="url", command=self._on_input_type_change).pack(side="left", padx=5)
-        ctk.CTkRadioButton(tipo_frame, text="🔗 URLs", variable=self.input_type, value="urls", command=self._on_input_type_change).pack(side="left", padx=5)
+        ctk.CTkRadioButton(tipo_frame, text="🌐 URLs", variable=self.input_type, value="url", command=self._on_input_type_change).pack(side="left", padx=5)
         
         # Área de texto (para input directo)
         self.text_input_area = ctk.CTkTextbox(frame, wrap="word")
@@ -308,7 +307,14 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 self.status_label.configure(text=f"Archivo cargado: {len(self.text_content)} caracteres", text_color="green")
             
             elif tipo == "files":
-                files = filedialog.askopenfilenames(title="Seleccionar archivos", filetypes=[("Todos", "*.*")])
+                files = filedialog.askopenfilenames(
+                    title="Seleccionar archivos",
+                    filetypes=[
+                        ("Documentos", "*.pdf *.docx *.doc"),
+                        ("Texto", "*.txt *.md"),
+                        ("Todos", "*.*")
+                    ]
+                )
                 if not files:
                     self.status_label.configure(text="Seleccioná archivos", text_color="orange")
                     return

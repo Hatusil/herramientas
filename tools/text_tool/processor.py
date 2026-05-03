@@ -39,6 +39,12 @@ except ImportError:
     DOCX_AVAILABLE = False
 
 try:
+    from openpyxl import load_workbook
+    XLXS_AVAILABLE = True
+except ImportError:
+    XLXS_AVAILABLE = False
+
+try:
     import requests
     from bs4 import BeautifulSoup
     REQUESTS_AVAILABLE = True
@@ -71,7 +77,7 @@ STOP_WORDS = {
 
 
 def extract_text_from_file(file_path: str) -> Dict[str, Any]:
-    """Extrae texto de archivos .txt, .pdf, .docx."""
+    """Extrae texto de archivos .txt, .pdf, .docx, .xlsx, .csv."""
     if not os.path.exists(file_path):
         return {'success': False, 'error': 'Archivo no encontrado'}
     
@@ -100,6 +106,29 @@ def extract_text_from_file(file_path: str) -> Dict[str, Any]:
             
             doc = DocxDocument(file_path)
             text = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+            return {'success': True, 'text': text, 'source': file_path}
+        
+        elif ext in ['.xlsx', '.xls']:
+            if not XLXS_AVAILABLE:
+                return {'success': False, 'error': 'openpyxl no instalado'}
+            
+            wb = load_workbook(file_path, data_only=True)
+            text = ""
+            for sheet in wb.sheetnames:
+                ws = wb[sheet]
+                for row in ws.iter_rows(values_only=True):
+                    row_text = " ".join([str(cell) if cell else "" for cell in row])
+                    if row_text.strip():
+                        text += row_text + "\n"
+            return {'success': True, 'text': text, 'source': file_path}
+        
+        elif ext == '.csv':
+            import csv
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                reader = csv.reader(f)
+                text = ""
+                for row in reader:
+                    text += " ".join([str(cell) for cell in row if cell]) + "\n"
             return {'success': True, 'text': text, 'source': file_path}
         
         else:
