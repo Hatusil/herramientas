@@ -409,7 +409,9 @@ def analyze_wordcloud(
         cleaned = clean_text(text, remove_stopwords=True)
         
         # Generate shape mask if needed
+        logger.info(f"Generating WordCloud with shape: {shape}, width: {width}, height: {height}")
         mask = _generate_shape_mask(shape, width, height)
+        logger.info(f"Mask generated: {type(mask)}")
         
         # Build WordCloud kwargs
         wc_kwargs = {

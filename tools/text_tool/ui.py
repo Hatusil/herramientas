@@ -789,6 +789,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         # Generate WordCloud with all customization params
         try:
+            logger.info(f"WordCloud params: n_words={n_words}, colormap={colormap}, margin={margin}, shape={shape}")
             result = analyze_wordcloud(
                 cleaned,
                 n_words=n_words,
@@ -1387,15 +1388,11 @@ class ChartModal(ctk.CTkToplevel):
             # Resize for display
             img_display = img.resize((display_width, display_height), Image.Resampling.LANCZOS)
             
-            # Create CTkImage
-            self.ctk_img = ctk.CTkImage(
-                light_image=img_display,
-                dark_image=img_display,
-                size=img_display.size
-            )
+            # Create PhotoImage for tkinter canvas (NOT CTkImage)
+            self.photo_img = ImageTk.PhotoImage(img_display)
             
             # Display on canvas
-            self.canvas.create_image(0, 0, anchor="nw", image=self.ctk_img)
+            self.canvas.create_image(0, 0, anchor="nw", image=self.photo_img)
             self.canvas.configure(scrollregion=self.canvas.bbox("all"))
             
             # Make canvas clickable for expand
