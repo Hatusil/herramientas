@@ -1013,6 +1013,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         self.ngram_size = ctk.IntVar(value=2)
         
+        # Add trace to update display when n-gram size changes
+        self.ngram_size.trace_add("write", self._on_ngram_size_change)
+        
         for n in [2, 3]:
             ctk.CTkRadioButton(
                 opts, 
@@ -1054,6 +1057,10 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Regenerate n-grams display when slider changes
         self._update_ngrams_display(top_k)
     
+    def _on_ngram_size_change(self, *args) -> None:
+        """Handle n-gram size (2 vs 3) change - regenerate display."""
+        self._update_ngrams_display()
+    
     def _update_ngrams_display(self, top_k: int = None) -> None:
         """Update n-grams display with specified top_k value."""
         if top_k is None:
@@ -1088,11 +1095,23 @@ class TextAnalyzerUI(ctk.CTkFrame):
         else:
             self.ngram_label.configure(text=f"{slider_top_k} resultados")
         
-        texto = f"🔗 N-grams ({self.ngram_size.get()})\n"
-        texto += "=" * 30 + "\n\n"
+        n = self.ngram_size.get()
+        
+        # Calculate max n-gram length for proper alignment
+        max_ng_len = max(len(ng) for ng in ngrams) if ngrams else 10
+        # Use larger width for 3-grams (more words = longer text)
+        # Minimum width of 25, plus extra space based on n-gram size
+        text_width = max(25, max_ng_len + 2)
+        
+        # Header
+        texto = f"🔗 N-grams ({n})\n"
+        texto += "=" * (text_width + 8) + "\n"
+        # Header line with aligned numbers
+        texto += f"{'#':>3} {'N-gram':<{text_width}} {'Count':>4}\n"
+        texto += "-" * (text_width + 8) + "\n"
         
         for i, (ng, count) in enumerate(ngrams.items(), 1):
-            texto += f"{i:2}. {ng:<30} {count:>4}\n"
+            texto += f"{i:>3}. {ng:<{text_width}} {count:>4}\n"
         
         self.ngram_text.insert("1.0", texto)
     
