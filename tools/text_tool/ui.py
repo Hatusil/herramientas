@@ -1281,6 +1281,10 @@ class ChartModal(ctk.CTkToplevel):
         # Handle window close button
         self.protocol("WM_DELETE_WINDOW", self.destroy)
     
+    def _on_scroll(self, event) -> str:
+        """Handle scroll events to prevent propagation to parent window."""
+        return "break"  # This prevents event propagation
+    
     def _center_window(self) -> None:
         """Center the modal on screen."""
         self.update_idletasks()
@@ -1356,6 +1360,10 @@ class ChartModal(ctk.CTkToplevel):
         h_scrollbar.pack(fill="x")
         
         self.canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        
+        # Bind scroll events to prevent propagation to parent
+        self.canvas.bind("<MouseWheel>", self._on_scroll)
+        self.bind("<MouseWheel>", self._on_scroll)
         
         # Display image
         try:
