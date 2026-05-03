@@ -263,9 +263,23 @@ class Sidebar(ctk.CTkFrame):
         dialog.geometry("450x620")
         dialog.resizable(False, False)
         
-        # Centrar
+        # Centrar respecto a la ventana padre
         dialog.transient(self)
-        dialog.geometry("+100+100")
+        self.update_idletasks()
+        
+        # Calcular posición centrada
+        parent_x = self.winfo_x()
+        parent_y = self.winfo_y()
+        parent_w = self.winfo_width()
+        parent_h = self.winfo_height()
+        
+        dialog_w = 450
+        dialog_h = 620
+        
+        x = parent_x + (parent_w - dialog_w) // 2
+        y = parent_y + (parent_h - dialog_h) // 2
+        
+        dialog.geometry(f"+{x}+{y}")
         
         # Aplicar grab después de que renderice
         dialog.after(100, lambda: dialog.grab_set())
