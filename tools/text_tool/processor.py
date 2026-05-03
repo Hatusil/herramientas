@@ -1193,7 +1193,31 @@ def analyze_wordtree(text: str, phrase: str, max_depth: int = 5) -> Dict[str, An
     
     tree_data = tree_to_dict(tree)
     
-    # Crear visualización de árbol
+    # Preparar datos para UI interactiva
+    # Estructura más simple y usable para el UI
+    tree_data = {
+        'root': phrase,
+        'count': tree['count'],
+        'children': []
+    }
+    
+    # Convertir hijos a lista ordenada
+    sorted_children = sorted(tree['children'].items(), key=lambda x: x[1]['count'], reverse=True)[:10]
+    for word, data in sorted_children:
+        child = {
+            'word': word,
+            'count': data['count'],
+            'children': []
+        }
+        # Incluir segundo nivel para interacción
+        for subword, subdata in sorted(data['children'].items(), key=lambda x: x[1]['count'], reverse=True)[:5]:
+            child['children'].append({
+                'word': subword,
+                'count': subdata['count']
+            })
+        tree_data['children'].append(child)
+    
+    # Crear visualización de árbol (para compatibilidad hacia atrás)
     try:
         fig, ax = plt.subplots(figsize=(10, 12))
         ax.set_xlim(-0.5, 10.5)
