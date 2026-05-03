@@ -318,6 +318,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.sources = {"text": [], "files": [], "urls": []}
         
         self._update_sources_summary()
+        self._update_files_display()
         self.status_label.configure(text=f"Contenido reseteado", text_color="gray")
     
     def _update_sources_summary(self) -> None:
@@ -342,6 +343,29 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         summary = " + ".join(parts) + f" = {total} total"
         self.sources_summary.configure(text=summary)
+    
+    def _update_files_display(self) -> None:
+        """Actualiza el label de archivos seleccionados."""
+        if not hasattr(self, 'files_label'):
+            return
+            
+        files = self.sources.get("files", [])
+        
+        if not files:
+            self.files_label.configure(text="No hay archivos seleccionados", text_color="gray")
+            return
+        
+        # Show file names (just the filenames, not full path)
+        file_names = [f.split('/')[-1].split('\\')[-1] for f in files]
+        
+        if len(file_names) <= 5:
+            text = "📄 " + " • ".join(file_names)
+        else:
+            text = f"📄 {len(file_names)} archivos:\n• " + "\n• ".join(file_names[:5])
+            if len(file_names) > 5:
+                text += f"\n... y {len(file_names) - 5} más"
+        
+        self.files_label.configure(text=text, text_color="white")
     
     def _check_text_size(self, show_warning: bool = True) -> bool:
         """
@@ -400,7 +424,18 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.file_frame.pack(fill="x", padx=10, pady=10)
         self.file_frame.pack_forget()
         
-        ctk.CTkLabel(self.file_frame, text="📄 Agregar Archivos", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=5)
+        ctk.CTkLabel(self.file_frame, text="📄 Archivos Seleccionados:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=5)
+        
+        # Label to show selected files
+        self.files_label = ctk.CTkLabel(
+            self.file_frame,
+            text="No hay archivos seleccionados",
+            font=ctk.CTkFont(size=12),
+            text_color="gray",
+            anchor="w",
+            justify="left"
+        )
+        self.files_label.pack(fill="x", padx=5, pady=5)
         
         # Frame para URLs (dinámico)
         self.url_frame = ctk.CTkFrame(frame)
@@ -549,6 +584,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 self.sources["files"].extend(files)
                 self.cleaned_content = None
                 self._update_sources_summary()
+                self._update_files_display()
                 self.status_label.configure(text=f"{len(files)} archivos: {len(self.text_content)} caracteres", text_color="green")
             
             elif tipo == "url":
@@ -1909,6 +1945,47 @@ class TextAnalyzerUI(ctk.CTkFrame):
                         corner_radius=4
                     )
                     sub_btn.pack(pady=2)
+        
+        # Add export/zoom button at bottom
+        export_frame = ctk.CTkFrame(self.wordtree_inner_frame, fg_color="#1a1a1a")
+        export_frame.pack(fill="x", pady=(15, 10), padx=10)
+        
+        ctk.CTkButton(
+            export_frame,
+            text="🔍 Ver en detalle + Exportar",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            fg_color="#4A90D9",
+            hover_color="#6BA8E0",
+            text_color="white",
+            command=self._open_wordtree_modal,
+            height=35,
+            corner_radius=6
+        ).pack(pady=5)
+    
+    def _open_wordtree_modal(self) -> None:
+        """Open WordTree in modal with zoom/pan and export options."""
+        # Get the current tree image data from processor
+        phrase = self.wordtree_phrase.get().strip()
+        if not phrase:
+            return
+        
+        try:
+            from tools.text_tool.processor import analyze_wordtree
+            from PIL import Image
+            from io import BytesIO
+            
+            max_depth = int(self.wordtree_depth_slider.get())
+            result = analyze_wordtree(self.text_content, phrase, max_depth=max_depth)
+            
+            if result.get('success') and result.get('image_data'):
+                image_data = result['image_data']
+                self._open_chart_modal(image_data, f"Árbol de Palabras: {phrase}")
+            else:
+                self.status_label.configure(text="No hay imagen para mostrar", text_color="orange")
+                
+        except Exception as e:
+            logger.error(f"Error opening WordTree modal: {e}")
+            self.status_label.configure(text=f"Error: {e}", text_color="red")
     
     def _expand_wordtree_node(self, word: str) -> None:
         """Expand tree from a specific word as new root."""
