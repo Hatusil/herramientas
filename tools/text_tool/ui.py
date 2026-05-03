@@ -102,8 +102,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.input_type = ctk.StringVar(value="text")
         
         ctk.CTkRadioButton(tipo_frame, text="📝 Texto", variable=self.input_type, value="text", command=self._on_input_type_change).pack(side="left", padx=5)
-        ctk.CTkRadioButton(tipo_frame, text="📄 Archivo", variable=self.input_type, value="file", command=self._on_input_type_change).pack(side="left", padx=5)
-        ctk.CTkRadioButton(tipo_frame, text="📁 Multi", variable=self.input_type, value="files", command=self._on_input_type_change).pack(side="left", padx=5)
+        ctk.CTkRadioButton(tipo_frame, text="📄 Archivos", variable=self.input_type, value="files", command=self._on_input_type_change).pack(side="left", padx=5)
         ctk.CTkRadioButton(tipo_frame, text="🌐 URLs", variable=self.input_type, value="url", command=self._on_input_type_change).pack(side="left", padx=5)
         
         # Área de texto (para input directo)
@@ -223,19 +222,13 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         if tipo == "text":
             self.text_input_area.pack(fill="both", expand=True, padx=10, pady=10)
-            self.load_btn.configure(text="📥 Analizar Texto")
-        elif tipo == "file":
-            self.file_frame.pack(fill="x", padx=10, pady=10)
-            self.load_btn.configure(text="📄 Cargar y Analizar")
+            self.load_btn.configure(text="📥 Agregar Texto")
         elif tipo == "files":
             self.file_frame.pack(fill="x", padx=10, pady=10)
-            self.load_btn.configure(text="📁 Cargar Múltiples")
+            self.load_btn.configure(text="📄 Agregar Archivos")
         elif tipo == "url":
             self.url_frame.pack(fill="x", padx=10, pady=10)
-            self.load_btn.configure(text="🌐 Scrapear y Analizar")
-        elif tipo == "urls":
-            self.url_frame.pack(fill="x", padx=10, pady=10)
-            self.load_btn.configure(text="🔗 Scrapear Múltiples")
+            self.load_btn.configure(text="🌐 Agregar URLs")
     
     def _add_url_field(self) -> None:
         """Agrega un nuevo campo de URL."""
