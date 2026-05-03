@@ -343,6 +343,40 @@ class TextAnalyzerUI(ctk.CTkFrame):
         summary = " + ".join(parts) + f" = {total} total"
         self.sources_summary.configure(text=summary)
     
+    def _check_text_size(self, show_warning: bool = True) -> bool:
+        """
+        Verifica el tamaño del texto y muestra warnings si es necesario.
+        
+        Returns:
+            bool: True si el texto es aceptable, False si es muy grande
+        """
+        if not self.text_content:
+            self.status_label.configure(text="Primero cargá texto", text_color="orange")
+            return False
+        
+        try:
+            from tools.text_tool.processor import check_text_size
+            size_info = check_text_size(self.text_content)
+            
+            if size_info['is_too_large']:
+                self.status_label.configure(
+                    text=f"⚠️ Texto muy grande ({size_info['size_mb']}MB). Máximo 0.5MB.",
+                    text_color="red"
+                )
+                return False
+            
+            if show_warning and size_info['needs_warning']:
+                self.status_label.configure(
+                    text=f"⚠️ Texto grande ({size_info['size_mb']}MB). Tiempo: {size_info['estimated_time']}",
+                    text_color="yellow"
+                )
+                return True
+            
+            return True
+        except Exception as e:
+            logger.warning(f"Error checking text size: {e}")
+            return True  # Allow processing if check fails
+    
     # ============ TAB: ENTRADA ============
     def _setup_input_tab(self) -> None:
         frame = self.tab_input
@@ -574,7 +608,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
     
     def _run_all_analysis(self) -> None:
         """Ejecuta todos los análisis."""
-        if not self.text_content:
+        # Check text size first
+        if not self._check_text_size(show_warning=True):
             return
         
         try:
@@ -586,8 +621,13 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 analyze_trends,
                 analyze_correlations,
                 analyze_scatter,
-                clean_text
+                clean_text,
+                check_text_size
             )
+            
+            # Show progress feedback
+            self.status_label.configure(text="🔄 Procesando... (puede tomar unos segundos)", text_color="blue")
+            self.update()
             
             # Obtener opciones de limpieza
             exclude_text = self.exclude_entry.get().strip()
@@ -832,8 +872,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
     
     def _regenerate_wc(self) -> None:
         """Regenera WordCloud con opciones de personalización."""
-        if not self.text_content:
-            self.status_label.configure(text="No hay texto cargado", text_color="orange")
+        # Check text size first
+        if not self._check_text_size(show_warning=True):
             return
         
         # Get text content - check if cleaned content exists
@@ -1375,6 +1415,10 @@ class TextAnalyzerUI(ctk.CTkFrame):
     
     def _run_kwic_search(self) -> None:
         """Run KWIC search."""
+        # Check text size first
+        if not self._check_text_size(show_warning=True):
+            return
+        
         if not self.text_content:
             self.status_label.configure(text="No hay texto cargado", text_color="orange")
             return
@@ -1506,6 +1550,10 @@ class TextAnalyzerUI(ctk.CTkFrame):
     
     def _run_topics_analysis(self) -> None:
         """Run LDA topics analysis."""
+        # Check text size first
+        if not self._check_text_size(show_warning=True):
+            return
+        
         if not self.text_content:
             self.status_label.configure(text="No hay texto cargado", text_color="orange")
             return
@@ -1646,6 +1694,10 @@ class TextAnalyzerUI(ctk.CTkFrame):
     
     def _run_wordtree_analysis(self) -> None:
         """Run WordTree analysis."""
+        # Check text size first
+        if not self._check_text_size(show_warning=True):
+            return
+        
         if not self.text_content:
             self.status_label.configure(text="No hay texto cargado", text_color="orange")
             return
