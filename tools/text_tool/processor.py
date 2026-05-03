@@ -671,31 +671,37 @@ def analyze_trends(text: str, n_terms: int = 5, n_sections: int = 10) -> Dict[st
         for word in top_words:
             trends_data[word].append(section_freq.get(word, 0))
     
-    # Crear gráfico
-    fig, ax = plt.subplots(figsize=(10, 5))
-    
-    x = range(n_sections)
-    for word in top_words:
-        ax.plot(x, trends_data[word], marker='o', label=word, linewidth=2)
-    
-    ax.set_xlabel('Sección del texto')
-    ax.set_ylabel('Frecuencia')
-    ax.set_title('Tendencias de palabras en el texto')
-    ax.legend(loc='upper right', fontsize=8)
-    ax.grid(True, alpha=0.3)
-    
-    # Convertir a imagen
-    img_buffer = BytesIO()
-    plt.tight_layout()
-    plt.savefig(img_buffer, format='PNG', dpi=100)
-    img_buffer.seek(0)
-    
-    return {
-        'success': True,
-        'image_data': img_buffer.getvalue(),
-        'top_words': top_words,
-        'trends': trends_data
-    }
+    # Crear gráfico con protección
+    try:
+        fig, ax = plt.subplots(figsize=(10, 5))
+        
+        x = range(n_sections)
+        for word in top_words:
+            ax.plot(x, trends_data[word], marker='o', label=word, linewidth=2)
+        
+        ax.set_xlabel('Sección del texto')
+        ax.set_ylabel('Frecuencia')
+        ax.set_title('Tendencias de palabras en el texto')
+        ax.legend(loc='upper right', fontsize=8)
+        ax.grid(True, alpha=0.3)
+        
+        # Convertir a imagen
+        img_buffer = BytesIO()
+        plt.tight_layout()
+        plt.savefig(img_buffer, format='PNG', dpi=100)
+        img_buffer.seek(0)
+        
+        plt.close(fig)
+        
+        return {
+            'success': True,
+            'image_data': img_buffer.getvalue(),
+            'top_words': top_words,
+            'trends': trends_data
+        }
+    except Exception as e:
+        logger.error(f"Error generating trends chart: {e}")
+        return {'success': False, 'error': f'Error al generar gráfico: {str(e)}'}
 
 
 def analyze_correlations(text: str, n_terms: int = 15) -> Dict[str, Any]:
@@ -756,18 +762,23 @@ def analyze_correlations(text: str, n_terms: int = 15) -> Dict[str, Any]:
     cbar = plt.colorbar(im, ax=ax)
     cbar.set_label('Co-ocurrencia')
     
-    # Convertir a imagen
-    img_buffer = BytesIO()
-    plt.tight_layout()
-    plt.savefig(img_buffer, format='PNG', dpi=100)
-    img_buffer.seek(0)
-    
-    return {
-        'success': True,
-        'image_data': img_buffer.getvalue(),
-        'terms': top_words,
-        'matrix': cooccur.tolist()
-    }
+    # Convertir a imagen con protección
+    try:
+        img_buffer = BytesIO()
+        plt.tight_layout()
+        plt.savefig(img_buffer, format='PNG', dpi=100)
+        img_buffer.seek(0)
+        plt.close(fig)
+        
+        return {
+            'success': True,
+            'image_data': img_buffer.getvalue(),
+            'terms': top_words,
+            'matrix': cooccur.tolist()
+        }
+    except Exception as e:
+        logger.error(f"Error generating correlations chart: {e}")
+        return {'success': False, 'error': f'Error al generar gráfico: {str(e)}'}
 
 
 def analyze_scatter(text: str, n_terms: int = 30) -> Dict[str, Any]:
@@ -818,37 +829,42 @@ def analyze_scatter(text: str, n_terms: int = 30) -> Dict[str, Any]:
     # Ordenar por frecuencia y tomar top
     data = sorted(data, key=lambda x: x['frequency'], reverse=True)[:n_terms]
     
-    # Crear scatter plot
-    fig, ax = plt.subplots(figsize=(10, 6))
-    
-    freqs = [d['frequency'] for d in data]
-    positions = [d['avg_position'] for d in data]
-    labels = [d['word'] for d in data]
-    
-    sizes = [f * 20 + 50 for f in freqs]  # Tamaño según frecuencia
-    
-    scatter = ax.scatter(positions, freqs, s=sizes, alpha=0.6, c=freqs, cmap='viridis')
-    
-    # Labels
-    for i, label in enumerate(labels):
-        ax.annotate(label, (positions[i], freqs[i]), fontsize=8, alpha=0.8)
-    
-    ax.set_xlabel('Posición promedio en el texto (inicio → fin)')
-    ax.set_ylabel('Frecuencia')
-    ax.set_title('Distribución de términos en el texto')
-    ax.grid(True, alpha=0.3)
-    
-    # Convertir a imagen
-    img_buffer = BytesIO()
-    plt.tight_layout()
-    plt.savefig(img_buffer, format='PNG', dpi=100)
-    img_buffer.seek(0)
-    
-    return {
-        'success': True,
-        'image_data': img_buffer.getvalue(),
-        'data': data
-    }
+    # Crear scatter plot con protección
+    try:
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        freqs = [d['frequency'] for d in data]
+        positions = [d['avg_position'] for d in data]
+        labels = [d['word'] for d in data]
+        
+        sizes = [f * 20 + 50 for f in freqs]  # Tamaño según frecuencia
+        
+        scatter = ax.scatter(positions, freqs, s=sizes, alpha=0.6, c=freqs, cmap='viridis')
+        
+        # Labels
+        for i, label in enumerate(labels):
+            ax.annotate(label, (positions[i], freqs[i]), fontsize=8, alpha=0.8)
+        
+        ax.set_xlabel('Posición promedio en el texto (inicio → fin)')
+        ax.set_ylabel('Frecuencia')
+        ax.set_title('Distribución de términos en el texto')
+        ax.grid(True, alpha=0.3)
+        
+        # Convertir a imagen
+        img_buffer = BytesIO()
+        plt.tight_layout()
+        plt.savefig(img_buffer, format='PNG', dpi=100)
+        img_buffer.seek(0)
+        plt.close(fig)
+        
+        return {
+            'success': True,
+            'image_data': img_buffer.getvalue(),
+            'data': data
+        }
+    except Exception as e:
+        logger.error(f"Error generating scatter chart: {e}")
+        return {'success': False, 'error': f'Error al generar gráfico: {str(e)}'}
 
 
 def analyze_stats(text: str) -> Dict[str, Any]:
