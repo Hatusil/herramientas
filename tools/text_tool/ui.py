@@ -1470,15 +1470,15 @@ class ChartModal(ctk.CTkToplevel):
             if img_full.mode != 'RGBA':
                 img_full = img_full.convert('RGBA')
             
-            ctk_img = ctk.CTkImage(
-                light_image=img_full,
-                dark_image=img_full,
-                size=img_full.size
-            )
+            # Use PhotoImage for canvas (NOT CTkImage)
+            photo_img = ImageTk.PhotoImage(img_full)
             
             # Clear and redraw
             self.canvas.delete("all")
-            self.canvas.create_image(0, 0, anchor="nw", image=ctk_img)
+            self.canvas.create_image(0, 0, anchor="nw", image=photo_img)
+            
+            # Keep reference to prevent garbage collection
+            self.photo_img = photo_img
             self.canvas.configure(scrollregion=self.canvas.bbox("all"))
             
             # Resize window to fit image
