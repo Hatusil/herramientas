@@ -3,7 +3,6 @@ HelpPanel: Componente reutilizable para mostrar ayuda/descripción en las herram
 Muestra la ayuda como un popup flotante (CTkToplevel) que no desplaza el contenido.
 """
 import customtkinter as ctk
-from tkinter import ttk
 
 
 class HelpPopup:
@@ -48,51 +47,46 @@ class HelpPopup:
         # Bloquear interacción con la ventana padre
         self.window.grab_set()
         
-        # Frame principal con scroll
-        main_frame = ctk.CTkFrame(self.window, fg_color="transparent")
-        main_frame.pack(fill="both", expand=True, padx=15, pady=15)
+        # Frame principal - fondo oscuro
+        main_frame = ctk.CTkFrame(self.window, fg_color="#1a1a1a")
+        main_frame.pack(fill="both", expand=True, padx=0, pady=0)
         
-        # Canvas con scrollbar
-        canvas = ctk.CTkCanvas(main_frame, highlightthickness=0)
-        scrollbar = ctk.CTkScrollbar(main_frame, command=canvas.yview)
-        self.scrollable_frame = ctk.CTkFrame(canvas, fg_color="transparent")
-        
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        # Usar CTkScrollableFrame que maneja el scroll correctamente
+        scrollable = ctk.CTkScrollableFrame(
+            main_frame,
+            fg_color="#1a1a1a",
+            label_text="",
+            label_fg_color="#1a1a1a"
         )
+        scrollable.pack(fill="both", expand=True, padx=15, pady=15)
         
-        canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        
-        # Contenido con wraplength
+        # Contenido con wraplength - colores contrasts
         if description:
             desc_label = ctk.CTkLabel(
-                self.scrollable_frame,
+                scrollable,
                 text=description,
                 font=ctk.CTkFont(size=14),
                 justify="left",
                 anchor="w",
-                wraplength=450
+                wraplength=450,
+                text_color="white"
             )
             desc_label.pack(anchor="w", padx=10, pady=(5, 10), fill="x")
         
         if self._usage:
             ctk.CTkLabel(
-                self.scrollable_frame,
+                scrollable,
                 text="📌 Uso:",
-                font=ctk.CTkFont(size=15, weight="bold")
+                font=ctk.CTkFont(size=15, weight="bold"),
+                text_color="#4A90D9"
             ).pack(anchor="w", padx=10, pady=(10, 0))
             
             for item in self._usage:
                 ctk.CTkLabel(
-                    self.scrollable_frame,
+                    scrollable,
                     text=f"• {item}",
                     font=ctk.CTkFont(size=14),
-                    text_color="gray",
+                    text_color="#BBBBBB",
                     justify="left",
                     anchor="w",
                     wraplength=420
@@ -100,17 +94,18 @@ class HelpPopup:
         
         if self._tips:
             ctk.CTkLabel(
-                self.scrollable_frame,
+                scrollable,
                 text="💡 Tips:",
-                font=ctk.CTkFont(size=15, weight="bold")
+                font=ctk.CTkFont(size=15, weight="bold"),
+                text_color="#4A90D9"
             ).pack(anchor="w", padx=10, pady=(15, 0))
             
             for tip in self._tips:
                 ctk.CTkLabel(
-                    self.scrollable_frame,
+                    scrollable,
                     text=f"• {tip}",
                     font=ctk.CTkFont(size=14),
-                    text_color="green",
+                    text_color="#7CFC00",
                     justify="left",
                     anchor="w",
                     wraplength=420
@@ -118,17 +113,18 @@ class HelpPopup:
         
         if self._warnings:
             ctk.CTkLabel(
-                self.scrollable_frame,
+                scrollable,
                 text="⚠️ Advertencias:",
-                font=ctk.CTkFont(size=15, weight="bold")
+                font=ctk.CTkFont(size=15, weight="bold"),
+                text_color="#4A90D9"
             ).pack(anchor="w", padx=10, pady=(15, 0))
             
             for warn in self._warnings:
                 ctk.CTkLabel(
-                    self.scrollable_frame,
+                    scrollable,
                     text=f"• {warn}",
                     font=ctk.CTkFont(size=14),
-                    text_color="orange",
+                    text_color="#FFA500",
                     justify="left",
                     anchor="w",
                     wraplength=420
