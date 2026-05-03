@@ -1123,10 +1123,21 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.scatter_label.configure(text=f"Error: {e}")
     
     # ============ CHART MODAL ============
-    def _open_chart_modal(self, image_data: bytes, title: str) -> None:
+    def _open_chart_modal(self, image_data, title: str) -> None:
         """Opens expanded chart view in modal window."""
+        # Validate image_data - could be bytes or could be something else
         if image_data is None:
             self.status_label.configure(text="No hay imagen para mostrar", text_color="orange")
+            return
+        
+        # Check if it's bytes
+        if not isinstance(image_data, (bytes, bytearray)):
+            logger.warning(f"image_data is not bytes, it's: {type(image_data)}")
+            self.status_label.configure(text="Error: datos de imagen inválidos", text_color="orange")
+            return
+        
+        if len(image_data) == 0:
+            self.status_label.configure(text="Imagen vacía", text_color="orange")
             return
         
         # Create modal window
@@ -1316,6 +1327,13 @@ class ChartModal(ctk.CTkToplevel):
         try:
             from PIL import Image, ImageTk
             from io import BytesIO
+            
+            # Validate image_data before processing
+            if not isinstance(self.image_data, (bytes, bytearray)):
+                raise ValueError(f"image_data debe ser bytes, recibido: {type(self.image_data)}")
+            
+            if len(self.image_data) == 0:
+                raise ValueError("image_data está vacío")
             
             # Open image
             img = Image.open(BytesIO(self.image_data))
