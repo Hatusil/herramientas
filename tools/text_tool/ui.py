@@ -1033,8 +1033,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
         stats_frame = ctk.CTkFrame(frame)
         stats_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
-        self.stats_text = ctk.CTkTextbox(stats_frame, font=("Courier New", 15))
-        self.stats_text.pack(fill="both", expand=True, padx=10, pady=10)
+        # Fixed height to show all stats without scrolling
+        self.stats_text = ctk.CTkTextbox(stats_frame, font=("Courier New", 15), height=200)
+        self.stats_text.pack(fill="x", padx=10, pady=10)
     
     def _show_stats(self, stats: Dict[str, Any]) -> None:
         """Muestra estadísticas."""
