@@ -111,7 +111,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_clean_tab(self) -> None:
         frame = self.tab_clean
         
-        # Fuentes summary
+        # ==================== SECCIÓN: FUENTES ====================
         self.sources_summary = ctk.CTkLabel(
             frame,
             text="📁 Sin contenido cargado",
@@ -144,46 +144,122 @@ class TextAnalyzerUI(ctk.CTkFrame):
             fg_color="#c44"
         ).pack(side="left", padx=2)
         
-        # Frequency preview (antes de generar charts)
-        freq_preview_label = ctk.CTkLabel(frame, text="🔍 Preview Frecuencia (top 20):", font=ctk.CTkFont(weight="bold"))
-        freq_preview_label.pack(anchor="w", padx=10, pady=(10, 5))
-        
-        self.freq_preview_text = ctk.CTkTextbox(frame, wrap="word", height=100, font=("Courier New", 12))
-        self.freq_preview_text.pack(fill="x", padx=10, pady=5)
-        
-        # Texto crudo (sin limpiar)
-        raw_label = ctk.CTkLabel(frame, text="📄 Texto crudo:", font=ctk.CTkFont(weight="bold"))
-        raw_label.pack(anchor="w", padx=10, pady=(10, 5))
-        
-        self.raw_text = ctk.CTkTextbox(frame, wrap="word", height=80)
-        self.raw_text.pack(fill="x", padx=10, pady=5)
-        
-        # Opciones de limpieza
-        opts_label = ctk.CTkLabel(frame, text="⚙️ Opciones:", font=ctk.CTkFont(weight="bold"))
-        opts_label.pack(anchor="w", padx=10, pady=10)
+        # ==================== SECCIÓN: OPCIONES DE LIMPIEZA ====================
+        opts_section = ctk.CTkLabel(frame, text="⚙️ OPCIONES DE LIMPIEZA", font=ctk.CTkFont(size=14, weight="bold"))
+        opts_section.pack(anchor="w", padx=10, pady=(15, 5))
         
         opts_frame = ctk.CTkFrame(frame)
         opts_frame.pack(fill="x", padx=10, pady=5)
         
+        # Checkbox stopwords
         self.remove_stopwords = ctk.BooleanVar(value=True)
-        ctk.CTkCheckBox(opts_frame, text="Quitar conectores (stopwords)", variable=self.remove_stopwords).pack(anchor="w", padx=5)
+        ctk.CTkCheckBox(opts_frame, text="Quitar conectores (stopwords)", variable=self.remove_stopwords).pack(anchor="w", padx=5, pady=3)
         
-        ctk.CTkLabel(opts_frame, text="Excluir palabras:").pack(anchor="w", padx=5, pady=(5, 0))
-        self.exclude_entry = ctk.CTkEntry(opts_frame, placeholder_text="que, como, pero, ...")
+        # Entry excluir palabras
+        ctk.CTkLabel(opts_frame, text="Excluir palabras (separadas por coma):").pack(anchor="w", padx=5, pady=(5, 0))
+        self.exclude_entry = ctk.CTkEntry(opts_frame, placeholder_text="ej: palabra1, palabra2, palabra3")
         self.exclude_entry.pack(fill="x", padx=5, pady=5)
         
-        # Botón aplicar
-        ctk.CTkButton(frame, text="🔄 Aplicar Limpieza", command=self._apply_clean).pack(pady=10)
+        # Botones de acción
+        action_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        action_frame.pack(fill="x", padx=10, pady=10)
         
-        # Preview limpio
-        preview_label = ctk.CTkLabel(frame, text="✅ Texto limpio (preview):", font=ctk.CTkFont(weight="bold"))
-        preview_label.pack(anchor="w", padx=10, pady=(10, 5))
+        # Botón Preview (ligero)
+        ctk.CTkButton(
+            action_frame,
+            text="🔍 Preview Frecuencia",
+            command=self._preview_frequency,
+            width=180,
+            fg_color="#4a4",
+            hover_color="#383"
+        ).pack(side="left", padx=5)
         
-        self.clean_text = ctk.CTkTextbox(frame, wrap="word", height=80)
+        # Botón Aplicar Limpieza
+        ctk.CTkButton(
+            action_frame,
+            text="🔄 Aplicar Limpieza",
+            command=self._apply_clean,
+            width=180,
+            fg_color="#48a",
+            hover_color="#386"
+        ).pack(side="left", padx=5)
+        
+        # ==================== SECCIÓN: RESULTADOS ====================
+        results_section = ctk.CTkLabel(frame, text="✅ RESULTADOS", font=ctk.CTkFont(size=14, weight="bold"))
+        results_section.pack(anchor="w", padx=10, pady=(15, 5))
+        
+        # Preview texto limpio
+        clean_label = ctk.CTkLabel(frame, text="Texto limpio (preview):", font=ctk.CTkFont(size=12))
+        clean_label.pack(anchor="w", padx=10, pady=(5, 0))
+        
+        self.clean_text = ctk.CTkTextbox(frame, wrap="word", height=100)
         self.clean_text.pack(fill="x", padx=10, pady=5)
         
-        # Botón generar visualizaciones
-        ctk.CTkButton(frame, text="📊 Generar Visualizaciones", command=self._run_all_analysis).pack(pady=10)
+        # Top 20 palabras
+        top_words_label = ctk.CTkLabel(frame, text="Top 20 palabras:", font=ctk.CTkFont(size=12))
+        top_words_label.pack(anchor="w", padx=10, pady=(10, 0))
+        
+        self.clean_freq_text = ctk.CTkTextbox(frame, wrap="word", height=150, font=("Courier New", 11))
+        self.clean_freq_text.pack(fill="x", padx=10, pady=5)
+        
+        # ==================== BOTÓN PRINCIPAL ====================
+        # Destacado y visible
+        ctk.CTkButton(
+            frame,
+            text="📊 GENERAR VISUALIZACIONES Y ANÁLISIS",
+            command=self._run_all_analysis,
+            height=45,
+            font=ctk.CTkFont(size=16, weight="bold"),
+            fg_color="#e62",
+            hover_color="#c50"
+        ).pack(fill="x", padx=10, pady=(20, 10))
+    
+    def _preview_frequency(self) -> None:
+        """Muestra preview de frecuencia sin aplicar limpieza completa."""
+        if not self.text_content:
+            self.status_label.configure(text="Primero cargá texto", text_color="orange")
+            return
+        
+        try:
+            from tools.text_tool.processor import analyze_frequency
+            
+            # Get exclude words if any
+            exclude_text = self.exclude_entry.get().strip()
+            exclude_words = [w.strip().lower() for w in exclude_text.split(',')] if exclude_text else []
+            
+            # Apply cleaning options for preview
+            remove_stopwords = self.remove_stopwords.get()
+            
+            # Get cleaned text for preview
+            from tools.text_tool.processor import clean_text
+            cleaned = clean_text(
+                self.text_content,
+                remove_stopwords=remove_stopwords,
+                exclude_words=exclude_words if exclude_words else None
+            )
+            
+            # Get frequency top 20
+            result = analyze_frequency(cleaned, n=20, already_cleaned=True)
+            
+            if result.get('success'):
+                freqs = result['frequencies']
+                texto = "📊 Frecuencia de palabras (top 20):\n"
+                texto += "=" * 35 + "\n\n"
+                
+                for i, (word, count) in enumerate(freqs.items(), 1):
+                    bar = "█" * min(int(count / max(freqs.values()) * 20), 20)
+                    texto += f"{i:2}. {word:<20} {count:>4} {bar}\n"
+                
+                self.clean_freq_text.delete("1.0", tk.END)
+                self.clean_freq_text.insert("1.0", texto)
+                
+                self.status_label.configure(text="Preview de frecuencia actualizado", text_color="green")
+            else:
+                self.status_label.configure(text="Error en análisis", text_color="red")
+                
+        except Exception as e:
+            logger.error(f"Preview frequency error: {e}")
+            self.status_label.configure(text=f"Error: {e}", text_color="red")
     
     def _apply_clean(self) -> None:
         """Aplica limpieza y muestra preview."""
