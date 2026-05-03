@@ -431,11 +431,23 @@ def analyze_wordcloud(
             logger.info(f"wc_kwargs mask keys: {list(wc_kwargs.keys())}")
         
         logger.info(f"Creating WordCloud with kwargs: {list(wc_kwargs.keys())}")
-        wc = WordCloud(**wc_kwargs)
+        
+        try:
+            wc = WordCloud(**wc_kwargs)
+            logger.info(f"WordCloud created successfully")
+        except Exception as e:
+            logger.error(f"Error creating WordCloud: {e}")
+            return {'success': False, 'error': f'Error creating WordCloud: {e}'}
         
         # Check if WordCloud has mask
-        logger.info(f"WordCloud has mask: {hasattr(wc, 'mask_') and wc.mask_ is not None}")
-        wc.generate(cleaned)
+        has_mask = hasattr(wc, 'mask_') and wc.mask_ is not None
+        logger.info(f"WordCloud has mask: {has_mask}")
+        
+        try:
+            wc.generate(cleaned)
+        except Exception as e:
+            logger.error(f"Error generating WordCloud: {e}")
+            return {'success': False, 'error': f'Error generating WordCloud: {e}'}
         
         # Convertir a imagen
         img_buffer = BytesIO()
