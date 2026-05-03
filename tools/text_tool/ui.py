@@ -158,11 +158,6 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Primer campo URL
         self.url_entries = []
         self._add_url_field()
-            width=40,
-            command=lambda: self.url_entry.delete(0, tk.END),
-            fg_color="transparent",
-            border_width=1
-        ).pack(side="left")
         
         # Botón cargar/procesar
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
