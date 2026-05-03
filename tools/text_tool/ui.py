@@ -294,8 +294,13 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 if not text:
                     self.status_label.configure(text="Ingresá texto", text_color="orange")
                     return
-                self.text_content = text
-                self.status_label.configure(text=f"Texto cargado: {len(text)} caracteres", text_color="green")
+                # Agregar al contenido anterior
+                if self.text_content:
+                    self.text_content += '\n\n' + text
+                else:
+                    self.text_content = text
+                self.cleaned_content = None
+                self.status_label.configure(text=f"Texto cargado: {len(self.text_content)} caracteres", text_color="green")
             
             elif tipo == "file":
                 if not self.selected_file:
@@ -308,6 +313,12 @@ class TextAnalyzerUI(ctk.CTkFrame):
                     return
                 
                 self.text_content = result['text']
+                # Agregar al contenido anterior
+                if self.text_content:
+                    self.text_content += '\n\n' + result['text']
+                else:
+                    self.text_content = result['text']
+                self.cleaned_content = None
                 self.status_label.configure(text=f"Archivo cargado: {len(self.text_content)} caracteres", text_color="green")
             
             elif tipo == "files":
@@ -329,7 +340,14 @@ class TextAnalyzerUI(ctk.CTkFrame):
                     result = extract_text_from_file(f)
                     if result.get('success'):
                         all_text.append(result['text'])
-                self.text_content = '\n\n'.join(all_text)
+                
+                new_text = '\n\n'.join(all_text)
+                # Agregar al contenido anterior
+                if self.text_content:
+                    self.text_content += '\n\n' + new_text
+                else:
+                    self.text_content = new_text
+                self.cleaned_content = None
                 self.status_label.configure(text=f"{len(files)} archivos: {len(self.text_content)} caracteres", text_color="green")
             
             elif tipo == "url":
@@ -361,11 +379,14 @@ class TextAnalyzerUI(ctk.CTkFrame):
                     if result.get('success'):
                         all_text.append(result['text'])
                 
-                self.text_content = '\n\n'.join(all_text)
+                new_text = '\n\n'.join(all_text)
+                # Agregar al contenido anterior
+                if self.text_content:
+                    self.text_content += '\n\n' + new_text
+                else:
+                    self.text_content = new_text
+                self.cleaned_content = None
                 self.status_label.configure(text=f"{len(urls)} URLs: {len(self.text_content)} caracteres", text_color="green")
-                
-                self.text_content = result['text']
-                self.status_label.configure(text=f"URL scrapeada: {len(self.text_content)} caracteres", text_color="green")
             
             # Ejecutar análisis si hay texto
             if self.text_content:
