@@ -300,6 +300,10 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         self.cleaned_content = cleaned
         self.status_label.configure(text=f"Limpieza aplicada: {len(cleaned.split())} palabras", text_color="green")
+        
+        # Auto-update all analysis tabs when cleaning is applied
+        self._update_frequency_display()
+        self._update_ngrams_display()
     
     def _remove_source(self, source_type: str) -> None:
         """Quita un tipo de fuente y resetea todo el contenido."""
@@ -966,11 +970,18 @@ class TextAnalyzerUI(ctk.CTkFrame):
         else:
             self.freq_label.configure(text=f"{slider_n} palabras")
         
+        # Calculate max word length for proper alignment
+        max_word_len = max(len(word) for word in frequencies) if frequencies else 10
+        text_width = max(20, max_word_len + 2)
+        
+        # Header with aligned columns
         texto = "📈 Palabras más frecuentes\n"
-        texto += "=" * 30 + "\n\n"
+        texto += "=" * (text_width + 10) + "\n"
+        texto += f"{'#':>3} {'Palabra':<{text_width}} {'Count':>5}\n"
+        texto += "-" * (text_width + 10) + "\n"
         
         for i, (word, count) in enumerate(frequencies.items(), 1):
-            texto += f"{i:2}. {word:<20} {count:>5}\n"
+            texto += f"{i:>3}. {word:<{text_width}} {count:>5}\n"
         
         self.freq_text.insert("1.0", texto)
     
