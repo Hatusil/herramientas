@@ -1324,14 +1324,13 @@ class ChartModal(ctk.CTkToplevel):
         self._drag_start_y = event.y
         
     def _on_drag_motion(self, event) -> None:
-        """Pan the canvas during drag."""
+        """Pan the canvas during drag - smooth movement."""
         if hasattr(self, '_drag_start_x'):
             dx = event.x - self._drag_start_x
             dy = event.y - self._drag_start_y
             
-            # Pan the canvas view
-            self.canvas.xview("scroll", -dx, "units")
-            self.canvas.yview("scroll", -dy, "units")
+            # Move the canvas content directly (smoother than scroll)
+            self.canvas.move("all", dx, dy)
             
             self._drag_start_x = event.x
             self._drag_start_y = event.y
