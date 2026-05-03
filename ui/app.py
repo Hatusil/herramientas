@@ -278,20 +278,6 @@ class App(ctk.CTk):
                     wraplength=150
                 )
                 desc_label.pack(padx=10, pady=(0, 10))
-        
-        # Botón "Comenzar con la primera" opcional
-        first_tool = tools[0]['name']
-        first_title = tools[0].get('title', first_tool)
-        
-        ctk.CTkButton(
-            welcome_frame,
-            text=f"Comenzar con {first_title} →",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#4A90D9",
-            hover_color="#6BA8E0",
-            command=lambda: self._on_tool_selected(first_tool),
-            height=40
-        ).pack(pady=20)
     
     def _on_tool_selected(self, tool_name: str) -> None:
         """
