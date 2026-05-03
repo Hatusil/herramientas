@@ -127,7 +127,7 @@ class DuplicateToolUI(ctk.CTkFrame):
     def _find_duplicates(self) -> None:
         folder = self.folder_entry.get().strip()
         if not folder or not Path(folder).exists():
-            self.status_label.configure(text="Seleccione una carpeta válida", text_color="orange")
+            self.status_label.configure(text="Seleccione una carpeta válida", text_color="#FFA500")
             return
         
         exts = []
@@ -139,10 +139,10 @@ class DuplicateToolUI(ctk.CTkFrame):
             exts.extend(['.mp3', '.wav', '.flac', '.mp4', '.avi', '.mkv'])
         
         if not exts:
-            self.status_label.configure(text="Seleccione al menos un tipo", text_color="orange")
+            self.status_label.configure(text="Seleccione al menos un tipo", text_color="#FFA500")
             return
         
-        self.status_label.configure(text="Escaneando...", text_color="yellow")
+        self.status_label.configure(text="Escaneando...", text_color="#FFD700")
         self.update()
         
         from tools.duplicate_tool.processor import find_duplicates_by_size, find_duplicates_by_hash

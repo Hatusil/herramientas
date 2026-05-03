@@ -209,7 +209,7 @@ class AudioToolUI(ctk.CTkFrame):
     def _check_files(self) -> bool:
         """Verifica que haya archivos seleccionados."""
         if not self.files:
-            self.status_label.configure(text="No hay archivos seleccionados", text_color="orange")
+            self.status_label.configure(text="No hay archivos seleccionados", text_color="#FFA500")
             return False
         return True
     
@@ -412,7 +412,7 @@ class AudioToolUI(ctk.CTkFrame):
         options = {k: v.get() for k, v in self.meta_vars.items() if v.get().strip()}
         
         if not options:
-            self.status_label.configure(text="Ingresa al menos un campo", text_color="orange")
+            self.status_label.configure(text="Ingresa al menos un campo", text_color="#FFA500")
             return
         
         self.status_label.configure(text="Procesando...", text_color="blue")
@@ -555,10 +555,10 @@ class AudioToolUI(ctk.CTkFrame):
     def _verify_before_repair(self) -> None:
         selected = self._get_selected_files()
         if not selected:
-            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
+            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="#FFA500")
             return
         
-        self.status_label.configure(text="Verificando...", text_color="yellow")
+        self.status_label.configure(text="Verificando...", text_color="#FFD700")
         self.repair_verify_text.configure(state="normal")
         self.repair_verify_text.delete("1.0", tk.END)
         self.update()
@@ -594,7 +594,7 @@ class AudioToolUI(ctk.CTkFrame):
             # Habilitar botones
             if len(corrupt_files) > 0:
                 self.btn_repair_corrupt.configure(state="normal")
-                self.status_label.configure(text=f"{len(corrupt_files)} corruptos", text_color="orange")
+                self.status_label.configure(text=f"{len(corrupt_files)} corruptos", text_color="#FFA500")
             else:
                 self.btn_repair_corrupt.configure(state="disabled")
                 self.status_label.configure(text="Todos OK", text_color="green")
@@ -609,10 +609,10 @@ class AudioToolUI(ctk.CTkFrame):
             files = self.verify_state['corrupt']
             if not files:
                 return
-            self.status_label.configure(text=f"Reparando {len(files)} corruptos...", text_color="yellow")
+            self.status_label.configure(text=f"Reparando {len(files)} corruptos...", text_color="#FFD700")
         else:
             files = self._get_selected_files()
-            self.status_label.configure(text=f"Reparando {len(files)} archivos...", text_color="yellow")
+            self.status_label.configure(text=f"Reparando {len(files)} archivos...", text_color="#FFD700")
         
         result = self.on_process('repair', files, {})
         self._show_result(result)
@@ -653,10 +653,10 @@ class AudioToolUI(ctk.CTkFrame):
     def _verify_audio(self) -> None:
         selected = self._get_selected_files()
         if not selected:
-            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
+            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="#FFA500")
             return
         
-        self.status_label.configure(text="Verificando archivos...", text_color="yellow")
+        self.status_label.configure(text="Verificando archivos...", text_color="#FFD700")
         self.update()
         
         try:
@@ -693,7 +693,7 @@ class AudioToolUI(ctk.CTkFrame):
             if result['corrupt'] == 0:
                 self.status_label.configure(text=f"Todos OK ({result['ok']} archivos)", text_color="green")
             else:
-                self.status_label.configure(text=f"{result['ok']} OK, {result['corrupt']} corruptos", text_color="orange")
+                self.status_label.configure(text=f"{result['ok']} OK, {result['corrupt']} corruptos", text_color="#FFA500")
                 
         except Exception as e:
             self.status_label.configure(text=f"Error: {str(e)}", text_color="red")
@@ -723,7 +723,7 @@ class AudioToolUI(ctk.CTkFrame):
     def _show_info(self) -> None:
         selected = self._get_selected_files()
         if not selected:
-            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
+            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="#FFA500")
             return
         
         # Enable textbox to write
@@ -775,7 +775,7 @@ class AudioToolUI(ctk.CTkFrame):
         
         # Update status
         status = f"Mostrando {len(all_info)}/{len(selected)} archivos"
-        self.status_label.configure(text=status, text_color="green" if not errors else "orange")
+        self.status_label.configure(text=status, text_color="green" if not errors else "#FFA500")
     
     # =========================================================================
     # UTILIDADES

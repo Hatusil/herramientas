@@ -145,7 +145,7 @@ class VideoToolUI(ctk.CTkFrame):
     def _check_files(self) -> bool:
         selected = self._get_selected_files()
         if not selected:
-            self.status_label.configure(text="Seleccioná al menos un video", text_color="orange")
+            self.status_label.configure(text="Seleccioná al menos un video", text_color="#FFA500")
             return False
         return True
     
@@ -180,7 +180,7 @@ class VideoToolUI(ctk.CTkFrame):
         # Show progress
         self.extract_progress.pack()
         self.extract_progress.set(0.1)
-        self.status_label.configure(text="Extrayendo audio...", text_color="yellow")
+        self.status_label.configure(text="Extrayendo audio...", text_color="#FFD700")
         self.update()
         
         # Run in thread
@@ -269,7 +269,7 @@ class VideoToolUI(ctk.CTkFrame):
         self.convert_progress.pack()
         self.convert_progress.set(0.1)
         selected = self._get_selected_files()
-        self.status_label.configure(text=f"Convirtiendo 0/{len(selected)}...", text_color="yellow")
+        self.status_label.configure(text=f"Convirtiendo 0/{len(selected)}...", text_color="#FFD700")
         self.update()
         
         # Run conversion in thread
@@ -316,7 +316,7 @@ class VideoToolUI(ctk.CTkFrame):
     
     def _update_convert_progress(self, progress: float, current: int, total: int) -> None:
         self.convert_progress.set(progress)
-        self.status_label.configure(text=f"Convirtiendo {current}/{total}...", text_color="yellow")
+        self.status_label.configure(text=f"Convirtiendo {current}/{total}...", text_color="#FFD700")
     
     def _on_convert_done(self, result: dict) -> None:
         self.convert_progress.set(1)
@@ -342,17 +342,17 @@ class VideoToolUI(ctk.CTkFrame):
     
     def _show_info(self) -> None:
         if not self._check_files():
-            self.status_label.configure(text="Seleccioná un video primero", text_color="orange")
+            self.status_label.configure(text="Seleccioná un video primero", text_color="#FFA500")
             return
         
         from tools.video_tool.processor import get_video_info
         
-        self.status_label.configure(text="Cargando info...", text_color="yellow")
+        self.status_label.configure(text="Cargando info...", text_color="#FFD700")
         self.update()
         
         selected = self._get_selected_files()
         if not selected:
-            self.status_label.configure(text="Seleccioná un video", text_color="orange")
+            self.status_label.configure(text="Seleccioná un video", text_color="#FFA500")
             return
         
         # Enable textbox to write

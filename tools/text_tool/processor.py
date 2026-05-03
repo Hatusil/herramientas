@@ -1,11 +1,25 @@
 """
 TextAnalyzerProcessor: Procesamiento de análisis de texto.
+
+Arquitectura modular para análisis de texto con soporte para múltiples formatos
+y plugin architecture para analizadores.
+
+Modules:
+    - extractors: Extracción de texto de archivos y URLs
+    - cleaners: Limpieza y normalización de texto
+    - analyzers: Analizadores de texto (frecuencia, wordcloud, n-grams, etc.)
+
+Para agregar un nuevo analizador:
+    1. Crear función en processor.py o nuevo módulo
+    2. seguir patrón: analyzeNombre(text, **kwargs) -> Dict[str, Any]
+    3. Retornar {'success': bool, 'data': Any, 'error': str}
 """
+
 import os
 import re
 import logging
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, Callable
 from io import BytesIO
 from collections import Counter
 
@@ -50,6 +64,40 @@ try:
     REQUESTS_AVAILABLE = True
 except ImportError:
     REQUESTS_AVAILABLE = False
+
+
+# =============================================================================
+# PLUGIN ARCHITECTURE - Registry para analizadores
+# =============================================================================
+# Patrón para agregar nuevos analizadores:
+#   1. Definir función: analyzeNombre(text, **kwargs) -> Dict[str, Any]
+#   2. Registrar: ANALYZER_REGISTRY['nombre'] = {'func': Callable, 'requires': List[str], 'returns': str}
+#   3. returns puede ser: 'image', 'text', 'data', 'stats'
+#
+# Ejemplo de analizador futuro:
+#   def analyze_sentiment(text: str) -> Dict[str, Any]:
+#       '''Análisis de sentimiento.'''
+#       # Retorna: {'success': True, 'data': {'positive': 0.6, 'negative': 0.2, 'neutral': 0.2}}
+#       pass
+#   ANALYZER_REGISTRY['sentiment'] = {'func': analyze_sentiment, 'returns': 'data'}
+
+ANALYZER_REGISTRY: Dict[str, Dict[str, Any]] = {}
+"""Registro central de analizadores disponibles."""
+
+
+def get_analyzer(name: str) -> Optional[Callable]:
+    """Obtiene función de análisis por nombre."""
+    return ANALYZER_REGISTRY.get(name, {}).get('func')
+
+
+def list_analyzers() -> List[str]:
+    """Lista todos los analizadores registrados."""
+    return list(ANALYZER_REGISTRY.keys())
+
+
+def get_analyzer_info(name: str) -> Optional[Dict[str, Any]]:
+    """Obtiene metadata de un analizador."""
+    return ANALYZER_REGISTRY.get(name)
 
 
 # Stop words comunes (español + inglés)
@@ -171,10 +219,12 @@ def extract_text_from_url(url: str) -> Dict[str, Any]:
         }
         
         logger.info(f"Haciendo request a: {url}")
-        response = requests.get(url, headers=headers, timeout=30, allow_redirects=True)
+        response = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
         response.raise_for_status()
         
         logger.info(f"Response received, status: {response.status_code}")
+        # Force UTF-8 encoding to avoid garbled characters
+        response.encoding = 'utf-8'
         soup = BeautifulSoup(response.text, 'html.parser')
         
         # Extraer texto visible
@@ -555,3 +605,139 @@ def analyze_ngrams(text: str, n: int = 2, top_k: int = 20) -> Dict[str, Any]:
         'n': n,
         'total': len(ngram_list)
     }
+
+
+# =============================================================================
+# ANALYZER REGISTRATIONS - Registrar analizadores en el registry
+# =============================================================================
+def _register_analyzers():
+    """Registra todos los analizadores disponibles."""
+    global ANALYZER_REGISTRY
+    
+    ANALYZER_REGISTRY.update({
+        'wordcloud': {
+            'func': analyze_wordcloud,
+            'requires': ['wordcloud'],
+            'returns': 'image',
+            'description': 'Genera nube de palabras',
+            'min_words': 10
+        },
+        'frequency': {
+            'func': analyze_frequency,
+            'requires': [],
+            'returns': 'text',
+            'description': 'Palabras más frecuentes',
+            'min_words': 5
+        },
+        'stats': {
+            'func': analyze_stats,
+            'requires': [],
+            'returns': 'stats',
+            'description': 'Estadísticas del corpus',
+            'min_words': 1
+        },
+        'ngrams': {
+            'func': analyze_ngrams,
+            'requires': [],
+            'returns': 'text',
+            'description': 'N-grams (bigramas, trigramas)',
+            'min_words': 3
+        },
+        'trends': {
+            'func': analyze_trends,
+            'requires': ['matplotlib'],
+            'returns': 'image',
+            'description': 'Tendencia de términos por secciones',
+            'min_words': 50
+        },
+        'correlations': {
+            'func': analyze_correlations,
+            'requires': ['matplotlib', 'numpy'],
+            'returns': 'image',
+            'description': 'Co-ocurrencia de términos',
+            'min_words': 20
+        },
+        'scatter': {
+            'func': analyze_scatter,
+            'requires': ['matplotlib'],
+            'returns': 'image',
+            'description': 'Distribución término-posición',
+            'min_words': 20
+        }
+    })
+
+
+# Inicializar registry al importar
+_register_analyzers()
+
+
+# =============================================================================
+# UTILIDADES - Funciones helper para analizadores
+# =============================================================================
+
+def check_dependencies(requires: List[str]) -> Dict[str, Any]:
+    """
+    Verifica si las dependencias están disponibles.
+    
+    Args:
+        requires: Lista de librerías requeridas
+        
+    Returns:
+        {'success': bool, 'missing': List[str], 'error': str}
+    """
+    missing = []
+    
+    dep_map = {
+        'wordcloud': WORDCLOUD_AVAILABLE,
+        'matplotlib': 'matplotlib',
+        'numpy': 'numpy',
+        'pdfplumber': PDFPLUMBER_AVAILABLE,
+        'docx': DOCX_AVAILABLE,
+        'requests': REQUESTS_AVAILABLE
+    }
+    
+    for req in requires:
+        if req in dep_map and not dep_map[req]:
+            missing.append(req)
+    
+    if missing:
+        return {'success': False, 'missing': missing, 'error': f'Faltan librerías: {", ".join(missing)}'}
+    
+    return {'success': True, 'missing': [], 'error': ''}
+
+
+def get_text_stats(text: str) -> Dict[str, Any]:
+    """Obtiene estadísticas básicas del texto sin limpiar."""
+    words = text.split()
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s for s in sentences if s.strip()]
+    
+    return {
+        'chars': len(text),
+        'words': len(words),
+        'unique': len(set(words)),
+        'sentences': len(sentences),
+        'avg_word_len': sum(len(w) for w in words) / len(words) if words else 0
+    }
+
+
+def validate_text(text: str, min_words: int = 1) -> Dict[str, Any]:
+    """
+    Valida que el texto tenga suficiente contenido.
+    
+    Args:
+        text: Texto a validar
+        min_words: Mínimo de palabras requeridas
+        
+    Returns:
+        {'valid': bool, 'error': str, 'word_count': int}
+    """
+    if not text or not text.strip():
+        return {'valid': False, 'error': 'Texto vacío', 'word_count': 0}
+    
+    words = len(text.split())
+    
+    if words < min_words:
+        return {'valid': False, 'error': f'Texto muy corto (mínimo {min_words} palabras)', 'word_count': words}
+    
+    return {'valid': True, 'error': '', 'word_count': words}

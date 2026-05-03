@@ -142,7 +142,7 @@ class HashToolUI(ctk.CTkFrame):
     def _check_files(self) -> bool:
         selected = self._get_selected_files()
         if not selected:
-            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
+            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="#FFA500")
             return False
         return True
     
@@ -232,7 +232,7 @@ class HashToolUI(ctk.CTkFrame):
         
         expected = self.expected_hash.get().strip()
         if not expected:
-            self.status_label.configure(text="Ingrese el hash esperado", text_color="orange")
+            self.status_label.configure(text="Ingrese el hash esperado", text_color="#FFA500")
             return
         
         algo = self.verify_algo.get()

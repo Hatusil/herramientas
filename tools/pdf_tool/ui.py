@@ -172,7 +172,7 @@ class PDFToolUI(ctk.CTkFrame):
     def _check_files(self) -> bool:
         """Verifica que haya archivos seleccionados."""
         if not self.files:
-            self.status_label.configure(text="No hay archivos seleccionados", text_color="orange")
+            self.status_label.configure(text="No hay archivos seleccionados", text_color="#FFA500")
             return False
         return True
     
@@ -448,7 +448,7 @@ class PDFToolUI(ctk.CTkFrame):
         
         order_str = self.reorder_input.get().strip()
         if not order_str:
-            self.status_label.configure(text="Ingrese el orden de páginas", text_color="orange")
+            self.status_label.configure(text="Ingrese el orden de páginas", text_color="#FFA500")
             return
         
         try:
@@ -508,7 +508,7 @@ class PDFToolUI(ctk.CTkFrame):
     
     def _merge_pdfs(self) -> None:
         if not self._check_files() or len(self.files) < 2:
-            self.status_label.configure(text="Seleccione al menos 2 PDFs", text_color="orange")
+            self.status_label.configure(text="Seleccione al menos 2 PDFs", text_color="#FFA500")
             return
         
         self.status_label.configure(text="Procesando...", text_color="blue")
@@ -523,7 +523,7 @@ class PDFToolUI(ctk.CTkFrame):
         
         pages_str = self.extract_pages.get().strip()
         if not pages_str:
-            self.status_label.configure(text="Ingrese las páginas a extraer", text_color="orange")
+            self.status_label.configure(text="Ingrese las páginas a extraer", text_color="#FFA500")
             return
         
         # Parsear páginas (soporta: "1,3,5" o "1-5")
@@ -650,7 +650,7 @@ class PDFToolUI(ctk.CTkFrame):
         
         password = self.lock_password.get()
         if not password:
-            self.status_label.configure(text="Ingrese una contraseña", text_color="orange")
+            self.status_label.configure(text="Ingrese una contraseña", text_color="#FFA500")
             return
         
         self.status_label.configure(text="Procesando...", text_color="blue")
@@ -665,7 +665,7 @@ class PDFToolUI(ctk.CTkFrame):
         
         password = self.unlock_password.get()
         if not password:
-            self.status_label.configure(text="Ingrese la contraseña", text_color="orange")
+            self.status_label.configure(text="Ingrese la contraseña", text_color="#FFA500")
             return
         
         self.status_label.configure(text="Procesando...", text_color="blue")
@@ -762,7 +762,7 @@ class PDFToolUI(ctk.CTkFrame):
             return
         
         if not self.files:
-            self.status_label.configure(text="Seleccione un PDF", text_color="orange")
+            self.status_label.configure(text="Seleccione un PDF", text_color="#FFA500")
             return
         
         from tools.pdf_tool.processor import get_pdf_info

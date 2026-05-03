@@ -126,7 +126,7 @@ class RenameToolUI(ctk.CTkFrame):
     def _check_files(self) -> bool:
         selected = self._get_selected_files()
         if not selected:
-            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="orange")
+            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="#FFA500")
             return False
         return True
     
@@ -150,7 +150,7 @@ class RenameToolUI(ctk.CTkFrame):
         
         prefix = self.prefix_entry.get()
         if not prefix:
-            self.status_label.configure(text="Ingrese un prefijo", text_color="orange")
+            self.status_label.configure(text="Ingrese un prefijo", text_color="#FFA500")
             return
         
         from tools.rename_tool.processor import rename_with_prefix
@@ -210,7 +210,7 @@ class RenameToolUI(ctk.CTkFrame):
         
         find = self.find_entry.get()
         if not find:
-            self.status_label.configure(text="Ingrese texto a buscar", text_color="orange")
+            self.status_label.configure(text="Ingrese texto a buscar", text_color="#FFA500")
             return
         
         replace = self.replace_entry.get()
@@ -282,7 +282,7 @@ class RenameToolUI(ctk.CTkFrame):
         if result.get('success'):
             self.status_label.configure(text=result['message'], text_color="green")
             if result.get('errors'):
-                self.status_label.configure(text=f"{result['message']} - {len(result['errors'])} errores", text_color="orange")
+                self.status_label.configure(text=f"{result['message']} - {len(result['errors'])} errores", text_color="#FFA500")
             # Solo limpiar si hubo éxito
             self._clear_files()
         else:

@@ -212,7 +212,7 @@ class SearchToolUI(ctk.CTkFrame):
     
     def _do_search(self) -> None:
         if not self.folder:
-            self.status_label.configure(text="Seleccione una carpeta", text_color="orange")
+            self.status_label.configure(text="Seleccione una carpeta", text_color="#FFA500")
             return
         
         # Preparar opciones
@@ -235,7 +235,7 @@ class SearchToolUI(ctk.CTkFrame):
         self.search_btn.configure(state="disabled")
         self.stop_btn.pack()  # Mostrar botón detener
         self._search_cancelled = False
-        self.status_label.configure(text="Buscando...", text_color="yellow")
+        self.status_label.configure(text="Buscando...", text_color="#FFD700")
         
         # Ejecutar en thread separado
         thread = threading.Thread(target=self._search_worker, args=(options,))
@@ -248,7 +248,7 @@ class SearchToolUI(ctk.CTkFrame):
         # También llamar a la función del processor para interrumpir el background worker
         from tools.search_tool.processor import cancel_search
         cancel_search()
-        self.status_label.configure(text="Deteniendo...", text_color="orange")
+        self.status_label.configure(text="Deteniendo...", text_color="#FFA500")
     
     def _search_worker(self, options: Dict[str, Any]) -> None:
         """Worker que ejecuta la búsqueda en background."""
@@ -272,7 +272,7 @@ class SearchToolUI(ctk.CTkFrame):
         
         # Verificar si fue cancelado
         if result.get('cancelled'):
-            self.status_label.configure(text="Búsqueda cancelada", text_color="orange")
+            self.status_label.configure(text="Búsqueda cancelada", text_color="#FFA500")
             return
         
         if result['success']:

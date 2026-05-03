@@ -7,6 +7,8 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Dict, Any
 
 logger = logging.getLogger(__name__)
@@ -17,6 +19,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         super().__init__(master)
         self.on_process = on_process
         self.text_content: str = ""
+        self.sources: Dict[str, Any] = {"text": [], "files": [], "urls": []}
         self._setup_ui()
     
     def _setup_ui(self) -> None:
@@ -60,6 +63,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Tab: Entrada
         self.tab_input = self.tabview.add("📥 Entrada")
         
+        # Tab: Limpieza (move UP to be second)
+        self.tab_clean = self.tabview.add("⚙️ Limpieza")
+        
         # Tab: WordCloud
         self.tab_wc = self.tabview.add("☁️ WordCloud")
         
@@ -81,9 +87,6 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Tab: Scatter
         self.tab_scatter = self.tabview.add("⬡ Scatter")
         
-        # Tab: Limpieza (antes de visualizaciones)
-        self.tab_clean = self.tabview.add("⚙️ Limpieza")
-        
         # Set up cada tab
         self._setup_input_tab()
         self._setup_clean_tab()
@@ -98,6 +101,46 @@ class TextAnalyzerUI(ctk.CTkFrame):
     # ============ TAB: LIMPIEZA ============
     def _setup_clean_tab(self) -> None:
         frame = self.tab_clean
+        
+        # Fuentes summary
+        self.sources_summary = ctk.CTkLabel(
+            frame,
+            text="📁 Sin contenido cargado",
+            font=ctk.CTkFont(size=14)
+        )
+        self.sources_summary.pack(anchor="w", padx=10, pady=(10, 5))
+        
+        # Botones para quitar fuentes
+        remove_frame = ctk.CTkFrame(frame)
+        remove_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkButton(
+            remove_frame,
+            text="❌ Quitar Textos",
+            command=lambda: self._remove_source("text"),
+            fg_color="#c44"
+        ).pack(side="left", padx=2)
+        
+        ctk.CTkButton(
+            remove_frame,
+            text="❌ Quitar Archivos",
+            command=lambda: self._remove_source("files"),
+            fg_color="#c44"
+        ).pack(side="left", padx=2)
+        
+        ctk.CTkButton(
+            remove_frame,
+            text="❌ Quitar URLs",
+            command=lambda: self._remove_source("urls"),
+            fg_color="#c44"
+        ).pack(side="left", padx=2)
+        
+        # Frequency preview (antes de generar charts)
+        freq_preview_label = ctk.CTkLabel(frame, text="🔍 Preview Frecuencia (top 20):", font=ctk.CTkFont(weight="bold"))
+        freq_preview_label.pack(anchor="w", padx=10, pady=(10, 5))
+        
+        self.freq_preview_text = ctk.CTkTextbox(frame, wrap="word", height=100, font=("Courier New", 12))
+        self.freq_preview_text.pack(fill="x", padx=10, pady=5)
         
         # Texto crudo (sin limpiar)
         raw_label = ctk.CTkLabel(frame, text="📄 Texto crudo:", font=ctk.CTkFont(weight="bold"))
@@ -157,9 +200,58 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.clean_text.delete("1.0", tk.END)
         self.clean_text.insert("1.0", cleaned[:2000])  # Preview primeros 2000 chars
         
-        # Guardar para visualizaciones
+        from collections import Counter
+        words = cleaned.lower().split()
+        word_freq = Counter(words)
+        top_20 = word_freq.most_common(20)
+        
+        preview = "Top 20 palabras:\n" + "=" * 25 + "\n"
+        for i, (word, count) in enumerate(top_20, 1):
+            preview += f"{i:2}. {word:<15} {count:>4}\n"
+        
+        self.freq_preview_text.delete("1.0", tk.END)
+        self.freq_preview_text.insert("1.0", preview)
+        
         self.cleaned_content = cleaned
         self.status_label.configure(text=f"Limpieza aplicada: {len(cleaned.split())} palabras", text_color="green")
+    
+    def _remove_source(self, source_type: str) -> None:
+        """Quita un tipo de fuente y resetea todo el contenido."""
+        if not self.text_content and not self.sources[source_type]:
+            return
+        
+        self.text_content = ""
+        self.cleaned_content = None
+        self.raw_text.delete("1.0", tk.END)
+        self.clean_text.delete("1.0", tk.END)
+        self.freq_preview_text.delete("1.0", tk.END)
+        self.sources = {"text": [], "files": [], "urls": []}
+        
+        self._update_sources_summary()
+        self.status_label.configure(text=f"Contenido reseteado", text_color="gray")
+    
+    def _update_sources_summary(self) -> None:
+        """Actualiza el label de resumen de fuentes."""
+        text_count = len(self.sources.get("text", []))
+        file_count = len(self.sources.get("files", []))
+        url_count = len(self.sources.get("urls", []))
+        
+        if not text_count and not file_count and not url_count:
+            self.sources_summary.configure(text="📁 Sin contenido cargado")
+            return
+        
+        total = text_count + file_count + url_count
+        
+        parts = []
+        if text_count:
+            parts.append(f"📝 Txt({text_count})")
+        if file_count:
+            parts.append(f"📁 Arch({file_count})")
+        if url_count:
+            parts.append(f"🌐 URLs({url_count})")
+        
+        summary = " + ".join(parts) + f" = {total} total"
+        self.sources_summary.configure(text=summary)
     
     # ============ TAB: ENTRADA ============
     def _setup_input_tab(self) -> None:
@@ -296,32 +388,14 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 if not text:
                     self.status_label.configure(text="Ingresá texto", text_color="orange")
                     return
-                # Agregar al contenido anterior
                 if self.text_content:
                     self.text_content += '\n\n' + text
                 else:
                     self.text_content = text
+                self.sources["text"].append(text[:100])
                 self.cleaned_content = None
+                self._update_sources_summary()
                 self.status_label.configure(text=f"Texto cargado: {len(self.text_content)} caracteres", text_color="green")
-            
-            elif tipo == "file":
-                if not self.selected_file:
-                    self.status_label.configure(text="Seleccioná archivo", text_color="orange")
-                    return
-                
-                result = extract_text_from_file(self.selected_file)
-                if not result['success']:
-                    self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
-                    return
-                
-                self.text_content = result['text']
-                # Agregar al contenido anterior
-                if self.text_content:
-                    self.text_content += '\n\n' + result['text']
-                else:
-                    self.text_content = result['text']
-                self.cleaned_content = None
-                self.status_label.configure(text=f"Archivo cargado: {len(self.text_content)} caracteres", text_color="green")
             
             elif tipo == "files":
                 files = filedialog.askopenfilenames(
@@ -344,51 +418,64 @@ class TextAnalyzerUI(ctk.CTkFrame):
                         all_text.append(result['text'])
                 
                 new_text = '\n\n'.join(all_text)
-                # Agregar al contenido anterior
                 if self.text_content:
                     self.text_content += '\n\n' + new_text
                 else:
                     self.text_content = new_text
+                self.sources["files"].extend(files)
                 self.cleaned_content = None
+                self._update_sources_summary()
                 self.status_label.configure(text=f"{len(files)} archivos: {len(self.text_content)} caracteres", text_color="green")
             
             elif tipo == "url":
-                url = self.url_entries[0][1].get().strip() if self.url_entries else ""
-                if not url:
-                    self.status_label.configure(text="Ingresá URL", text_color="orange")
-                    return
-                
-                self.status_label.configure(text="Scapeando...", text_color="yellow")
-                self.update()
-                
-                result = extract_text_from_url(url)
-                if not result['success']:
-                    self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
-                    return
-            
-            elif tipo == "urls":
                 urls = [e.get().strip() for r, e in self.url_entries if e.get().strip()]
                 if not urls:
-                    self.status_label.configure(text="Agregá al menos una URL", text_color="orange")
+                    self.status_label.configure(text="Agregá al menos una URL", text_color="#FFA500")
                     return
                 
-                self.status_label.configure(text=f"Scrapenado {len(urls)} URLs...", text_color="yellow")
-                self.update()
+                logger.info(f"URL SCRAPER: Found {len(urls)} URLs to process: {urls}")
+                self.status_label.configure(text=f"Procesando {len(urls)} URLs...", text_color="#FFD700")
+                self.update_idletasks()
                 
                 all_text = []
-                for url in urls:
-                    result = extract_text_from_url(url)
-                    if result.get('success'):
-                        all_text.append(result['text'])
+                for idx, url in enumerate(urls, 1):
+                    logger.info(f"URL SCRAPER: Processing {idx}/{len(urls)}: {url}")
+                    self.status_label.configure(text=f"Procesando {idx}/{len(urls)}: {url[:30]}...", text_color="#FFD700")
+                    self.update_idletasks()
+                    
+                    try:
+                        result = extract_text_from_url(url)
+                        if result.get('success'):
+                            all_text.append(result['text'])
+                            logger.info(f"URL SCRAPER: Success - {len(result['text'])} chars from {url}")
+                        else:
+                            logger.warning(f"URL SCRAPER: Failed - {result.get('error')} for {url}")
+                    except Exception as e:
+                        logger.error(f"URL SCRAPER: Error - {e} for {url}")
+                    
+                    self.status_label.configure(text=f"Listo {idx}/{len(urls)}", text_color="#FFD700")
+                    self.update_idletasks()
                 
                 new_text = '\n\n'.join(all_text)
-                # Agregar al contenido anterior
+                logger.info(f"URL SCRAPER: Total collected {len(new_text)} chars")
+                
                 if self.text_content:
                     self.text_content += '\n\n' + new_text
                 else:
                     self.text_content = new_text
+                
+                self.sources["urls"].extend(urls)
                 self.cleaned_content = None
-                self.status_label.configure(text=f"{len(urls)} URLs: {len(self.text_content)} caracteres - andá a Limpieza", text_color="green")
+                self._update_sources_summary()
+                self.status_label.configure(
+                    text=f"{len(urls)} URLs: {len(self.text_content)} caracteres - andá a Limpieza",
+                    text_color="green"
+                )
+                if hasattr(self, 'raw_text'):
+                    self.raw_text.delete("1.0", tk.END)
+                    self.raw_text.insert("1.0", self.text_content[:5000])
+                
+                logger.info(f"URL SCRAPER: Done - final text_content is {len(self.text_content)} chars")
             
             # No ejecutar análisis automáticamente - usuario debe ir a Limpieza
         

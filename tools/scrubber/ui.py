@@ -186,7 +186,7 @@ class ScrubberToolUI(ctk.CTkFrame):
     def _check_files(self) -> bool:
         """Verifica que haya archivos seleccionados."""
         if not self.files:
-            self.status_label.configure(text="No hay archivos seleccionados", text_color="orange")
+            self.status_label.configure(text="No hay archivos seleccionados", text_color="#FFA500")
             return False
         return True
     
@@ -254,7 +254,7 @@ class ScrubberToolUI(ctk.CTkFrame):
             msg = "No hay imágenes seleccionadas"
             if non_images > 0:
                 msg += f" ({non_images} docs/PDFs omitidos)"
-            self.status_label.configure(text=msg, text_color="orange")
+            self.status_label.configure(text=msg, text_color="#FFA500")
             return
         
         options = {
@@ -335,7 +335,7 @@ class ScrubberToolUI(ctk.CTkFrame):
         docx_files = [f for f in self.files if f.lower().endswith('.docx')]
         
         if not docx_files:
-            self.status_label.configure(text="No hay archivos DOCX", text_color="orange")
+            self.status_label.configure(text="No hay archivos DOCX", text_color="#FFA500")
             return
         
         self.status_label.configure(text="Procesando...", text_color="blue")
@@ -358,7 +358,7 @@ class ScrubberToolUI(ctk.CTkFrame):
         xlsx_files = [f for f in self.files if f.lower().endswith('.xlsx')]
         
         if not xlsx_files:
-            self.status_label.configure(text="No hay archivos XLSX", text_color="orange")
+            self.status_label.configure(text="No hay archivos XLSX", text_color="#FFA500")
             return
         
         self.status_label.configure(text="Procesando...", text_color="blue")
@@ -381,7 +381,7 @@ class ScrubberToolUI(ctk.CTkFrame):
         pdf_files = [f for f in self.files if f.lower().endswith('.pdf')]
         
         if not pdf_files:
-            self.status_label.configure(text="No hay archivos PDF", text_color="orange")
+            self.status_label.configure(text="No hay archivos PDF", text_color="#FFA500")
             return
         
         self.status_label.configure(text="Procesando...", text_color="blue")

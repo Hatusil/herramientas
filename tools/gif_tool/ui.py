@@ -157,7 +157,7 @@ class GifToolUI(ctk.CTkFrame):
     
     def _create_gif(self) -> None:
         if len(self.images) < 2:
-            self.status_label.configure(text="Necesitas al menos 2 imágenes", text_color="orange")
+            self.status_label.configure(text="Necesitas al menos 2 imágenes", text_color="#FFA500")
             return
         
         duration = int(self.duration_var.get())
