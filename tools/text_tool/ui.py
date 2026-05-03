@@ -524,25 +524,39 @@ class TextAnalyzerUI(ctk.CTkFrame):
             # Guardar texto limpio para visualizaciones
             self.cleaned_content = cleaned
             
-            # WordCloud
-            wc_result = analyze_wordcloud(cleaned)
+            # WordCloud with customization params
+            wc_n_words = int(self.wc_count_slider.get()) if hasattr(self, 'wc_count_slider') else 100
+            wc_colormap = self.wc_colormap.get() if hasattr(self, 'wc_colormap') else 'viridis'
+            wc_margin = int(self.wc_margin_slider.get()) if hasattr(self, 'wc_margin_slider') else 10
+            wc_shape = self.wc_shape.get() if hasattr(self, 'wc_shape') else 'rectangle'
+            
+            wc_result = analyze_wordcloud(
+                cleaned,
+                n_words=wc_n_words,
+                colormap=wc_colormap,
+                margin=wc_margin,
+                shape=wc_shape
+            )
             if wc_result.get('success') and wc_result.get('image_data'):
                 self._show_wordcloud(wc_result['image_data'])
             
-            # Frecuencia
-            freq_result = analyze_frequency(cleaned)
+            # Frecuencia - get slider value
+            freq_n = int(self.freq_slider.get()) if hasattr(self, 'freq_slider') else 20
+            freq_result = analyze_frequency(cleaned, n=freq_n, already_cleaned=True)
             if freq_result.get('success'):
-                self._show_frequency(freq_result['frequencies'])
+                self._show_frequency(freq_result['frequencies'], n=freq_n)
             
             # Stats
             stats_result = analyze_stats(cleaned)
             if stats_result.get('success'):
                 self._show_stats(stats_result)
             
-            # N-grams
-            ngram_result = analyze_ngrams(cleaned, n=2)
+            # N-grams - get slider value
+            ngram_top_k = int(self.ngram_slider.get()) if hasattr(self, 'ngram_slider') else 20
+            ngram_n = self.ngram_size.get()
+            ngram_result = analyze_ngrams(cleaned, n=ngram_n, top_k=ngram_top_k)
             if ngram_result.get('success'):
-                self._show_ngrams(ngram_result['ngrams'])
+                self._show_ngrams(ngram_result['ngrams'], top_k=ngram_top_k)
             
             # Trends
             trends_result = analyze_trends(cleaned)
@@ -571,23 +585,115 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_wc_tab(self) -> None:
         frame = self.tab_wc
         
-        # Campo para excluir palabras (después de ver la nube)
-        exclude_frame = ctk.CTkFrame(frame)
-        exclude_frame.pack(fill="x", padx=10, pady=5)
+        # === Personalization Controls Frame ===
+        customize_frame = ctk.CTkFrame(frame)
+        customize_frame.pack(fill="x", padx=10, pady=5)
         
-        ctk.CTkLabel(exclude_frame, text="Excluir palabras:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=5)
+        ctk.CTkLabel(customize_frame, text="Personalización:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=5, pady=(5, 10))
         
-        self.wc_exclude_entry = ctk.CTkEntry(exclude_frame, placeholder_text="palabra1, palabra2, ...")
-        self.wc_exclude_entry.pack(fill="x", padx=5, pady=5)
+        # Row 1: Word count slider
+        wc_count_row = ctk.CTkFrame(customize_frame)
+        wc_count_row.pack(fill="x", padx=5, pady=2)
         
-        ctk.CTkButton(exclude_frame, text="🔄 Regenerar sin estas palabras", command=self._regenerate_wc).pack(pady=5)
+        ctk.CTkLabel(wc_count_row, text="Palabras:", width=80, anchor="w").pack(side="left", padx=5)
         
+        self.wc_count_slider = ctk.CTkSlider(
+            wc_count_row,
+            from_=50,
+            to=200,
+            number_of_steps=150,
+            command=self._on_wc_count_change
+        )
+        self.wc_count_slider.set(100)
+        self.wc_count_slider.pack(side="left", fill="x", expand=True, padx=5)
+        
+        self.wc_count_label = ctk.CTkLabel(wc_count_row, text="100", width=40)
+        self.wc_count_label.pack(side="left", padx=5)
+        
+        # Row 2: Colormap dropdown
+        wc_colormap_row = ctk.CTkFrame(customize_frame)
+        wc_colormap_row.pack(fill="x", padx=5, pady=2)
+        
+        ctk.CTkLabel(wc_colormap_row, text="Colormap:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.wc_colormap = ctk.CTkComboBox(
+            wc_colormap_row,
+            values=['viridis', 'plasma', 'inferno', 'magma', 'cividis', 
+                   'blues', 'greens', 'reds', 'oranges', 'purples',
+                   'coolwarm', 'RdYlGn', 'seismic', 'terrain', 'ocean'],
+            state="readonly"
+        )
+        self.wc_colormap.set('viridis')
+        self.wc_colormap.pack(side="left", fill="x", expand=True, padx=5)
+        
+        # Row 3: Margin slider
+        wc_margin_row = ctk.CTkFrame(customize_frame)
+        wc_margin_row.pack(fill="x", padx=5, pady=2)
+        
+        ctk.CTkLabel(wc_margin_row, text="Márgenes:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.wc_margin_slider = ctk.CTkSlider(
+            wc_margin_row,
+            from_=0,
+            to=50,
+            number_of_steps=50,
+            command=self._on_wc_margin_change
+        )
+        self.wc_margin_slider.set(10)
+        self.wc_margin_slider.pack(side="left", fill="x", expand=True, padx=5)
+        
+        self.wc_margin_label = ctk.CTkLabel(wc_margin_row, text="10px", width=40)
+        self.wc_margin_label.pack(side="left", padx=5)
+        
+        # Row 4: Shape selector
+        wc_shape_row = ctk.CTkFrame(customize_frame)
+        wc_shape_row.pack(fill="x", padx=5, pady=2)
+        
+        ctk.CTkLabel(wc_shape_row, text="Forma:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.wc_shape = ctk.CTkComboBox(
+            wc_shape_row,
+            values=['rectangle', 'circle', 'heart', 'star'],
+            state="readonly"
+        )
+        self.wc_shape.set('rectangle')
+        self.wc_shape.pack(side="left", fill="x", expand=True, padx=5)
+        
+        # Row 5: Exclude words entry
+        wc_exclude_row = ctk.CTkFrame(customize_frame)
+        wc_exclude_row.pack(fill="x", padx=5, pady=5)
+        
+        ctk.CTkLabel(wc_exclude_row, text="Excluir:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.wc_exclude_entry = ctk.CTkEntry(wc_exclude_row, placeholder_text="palabra1, palabra2, ...")
+        self.wc_exclude_entry.pack(side="left", fill="x", expand=True, padx=5)
+        
+        # Generate button
+        generate_btn = ctk.CTkButton(
+            customize_frame,
+            text="Generar WordCloud",
+            command=self._regenerate_wc,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        generate_btn.pack(pady=10)
+        
+        # WordCloud display area
         self.wc_label = ctk.CTkLabel(
             frame,
             text="WordCloud aparecerá aquí",
             text_color="gray"
         )
         self.wc_label.pack(expand=True)
+    
+    def _on_wc_count_change(self, value: float) -> None:
+        """Handle word count slider change."""
+        n = int(value)
+        self.wc_count_label.configure(text=str(n))
+    
+    def _on_wc_margin_change(self, value: float) -> None:
+        """Handle margin slider change."""
+        m = int(value)
+        self.wc_margin_label.configure(text=f"{m}px")
     
     def _show_wordcloud(self, image_data: bytes) -> None:
         """Muestra WordCloud."""
@@ -617,6 +723,12 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.wc_label.configure(image=ctk_img, text="")
             self.wc_label.image = ctk_img
             
+            # Add click binding to open modal
+            self.wc_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "WordCloud"))
+            
+            # Add tooltip
+            self.wc_label.configure(cursor="hand2")
+            
         except Exception as e:
             import traceback
             logger.error(f"WordCloud error: {e}")
@@ -624,39 +736,141 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.wc_label.configure(text=f"Error: {e}")
     
     def _regenerate_wc(self) -> None:
-        """Regenera WordCloud sin palabras excluidas."""
+        """Regenera WordCloud con opciones de personalización."""
         if not self.text_content:
             self.status_label.configure(text="No hay texto cargado", text_color="orange")
             return
         
-        # Obtener palabras a excluir
+        # Get text content - check if cleaned content exists
+        if not self.cleaned_content:
+            self.status_label.configure(text="Cargue y analice el texto primero", text_color="orange")
+            return
+        
+        # Get customization values
+        n_words = int(self.wc_count_slider.get()) if hasattr(self, 'wc_count_slider') else 100
+        colormap = self.wc_colormap.get() if hasattr(self, 'wc_colormap') else 'viridis'
+        margin = int(self.wc_margin_slider.get()) if hasattr(self, 'wc_margin_slider') else 10
+        shape = self.wc_shape.get() if hasattr(self, 'wc_shape') else 'rectangle'
+        
+        # Get exclude words
         exclude_text = self.wc_exclude_entry.get().strip()
         exclude_words = [w.strip().lower() for w in exclude_text.split(',')] if exclude_text else []
         
         from tools.text_tool.processor import analyze_wordcloud, clean_text
         
-        # Limpiar con palabras excluidas
+        # Clean with exclude words (using original text to apply new exclusions)
         cleaned = clean_text(self.text_content, remove_stopwords=True, exclude_words=exclude_words)
         
-        # Generar nuevo WordCloud
-        result = analyze_wordcloud(cleaned)
+        # Check for empty text after cleaning
+        if not cleaned or not cleaned.strip():
+            word_count = len(self.text_content.split()) if self.text_content else 0
+            if word_count < 5:
+                self.status_label.configure(text="Texto muy corto para WordCloud", text_color="orange")
+            else:
+                self.status_label.configure(text="Solo stopwords después de excluir", text_color="orange")
+            return
         
-        if result.get('success') and result.get('image_data'):
-            self._show_wordcloud(result['image_data'])
-            self.status_label.configure(text=f"WordCloud regenerado ({len(cleaned.split())} palabras)", text_color="green")
-        else:
-            self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
+        # Get actual word count for display
+        actual_words = len(cleaned.split())
+        
+        # Warn if requested words > available
+        if n_words > actual_words:
+            self.status_label.configure(
+                text=f"Solo {actual_words} palabras disponibles (solicitadas: {n_words})",
+                text_color="orange"
+            )
+        
+        # Generate WordCloud with all customization params
+        try:
+            result = analyze_wordcloud(
+                cleaned,
+                n_words=n_words,
+                colormap=colormap,
+                margin=margin,
+                shape=shape
+            )
+            
+            if result.get('success') and result.get('image_data'):
+                self._show_wordcloud(result['image_data'])
+                self.status_label.configure(
+                    text=f"WordCloud: {actual_words} palabras, {colormap}, {shape}",
+                    text_color="green"
+                )
+            elif 'memoria' in result.get('error', '').lower() or 'memory' in result.get('error', '').lower():
+                # Handle memory error - reduce word count and try again
+                self.status_label.configure(
+                    text="Memoria insuficiente. Reduzca el número de palabras.",
+                    text_color="red"
+                )
+            else:
+                self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
+        except Exception as e:
+            logger.error(f"WordCloud generation error: {e}")
+            self.status_label.configure(text=f"Error: {str(e)[:50]}", text_color="red")
     
     # ============ TAB: FRECUENCIA ============
     def _setup_freq_tab(self) -> None:
         frame = self.tab_freq
         
-        self.freq_text = ctk.CTkTextbox(frame, font=("Courier New", 14))
-        self.freq_text.pack(fill="both", expand=True, padx=10, pady=10)
+        # Slider frame
+        slider_frame = ctk.CTkFrame(frame)
+        slider_frame.pack(fill="x", padx=10, pady=(10, 5))
+        
+        ctk.CTkLabel(slider_frame, text="Palabras a mostrar:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10)
+        
+        # Slider for word count (range 20-100, default 20)
+        self.freq_slider = ctk.CTkSlider(
+            slider_frame,
+            from_=20,
+            to=100,
+            number_of_steps=80,
+            command=self._on_freq_slider_change
+        )
+        self.freq_slider.set(20)
+        self.freq_slider.pack(side="left", fill="x", expand=True, padx=10)
+        
+        # Label showing current value
+        self.freq_label = ctk.CTkLabel(slider_frame, text="20 palabras", font=ctk.CTkFont(size=12))
+        self.freq_label.pack(side="left", padx=10)
+        
+        # Text view - taller with expand=True
+        self.freq_text = ctk.CTkTextbox(frame, font=("Courier New", 14), height=300)
+        self.freq_text.pack(fill="both", expand=True, padx=10, pady=(5, 10))
     
-    def _show_frequency(self, frequencies: Dict[str, int]) -> None:
+    def _on_freq_slider_change(self, value: float) -> None:
+        """Handle frequency slider change - update display after release."""
+        n = int(value)
+        self.freq_label.configure(text=f"{n} palabras")
+    
+    def _update_frequency_display(self, n: int = None) -> None:
+        """Update frequency display with specified n value."""
+        if n is None:
+            n = int(self.freq_slider.get())
+        
+        if not self.cleaned_content:
+            return
+        
+        try:
+            from tools.text_tool.processor import analyze_frequency
+            
+            result = analyze_frequency(self.cleaned_content, n=n, already_cleaned=True)
+            if result.get('success'):
+                self._show_frequency(result['frequencies'])
+        except Exception as e:
+            logger.error(f"Error updating frequency: {e}")
+    
+    def _show_frequency(self, frequencies: Dict[str, int], n: int = None) -> None:
         """Muestra frecuencia de palabras."""
         self.freq_text.delete("1.0", tk.END)
+        
+        actual_count = len(frequencies)
+        slider_n = n if n is not None else int(self.freq_slider.get())
+        
+        # Update label to show actual count
+        if actual_count < slider_n:
+            self.freq_label.configure(text=f"{actual_count} palabras (máx disponible)")
+        else:
+            self.freq_label.configure(text=f"{slider_n} palabras")
         
         texto = "📈 Palabras más frecuentes\n"
         texto += "=" * 30 + "\n\n"
@@ -699,7 +913,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         frame = self.tab_ngram
         
         opts = ctk.CTkFrame(frame)
-        opts.pack(fill="x", padx=10, pady=10)
+        opts.pack(fill="x", padx=10, pady=(10, 5))
         
         ctk.CTkLabel(opts, text="N-gram size:").pack(side="left", padx=10)
         
@@ -713,12 +927,69 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 value=n
             ).pack(side="left", padx=10)
         
-        self.ngram_text = ctk.CTkTextbox(frame, font=("Courier New", 14))
-        self.ngram_text.pack(fill="both", expand=True, padx=10, pady=10)
+        # Slider frame for top_k
+        slider_frame = ctk.CTkFrame(frame)
+        slider_frame.pack(fill="x", padx=10, pady=(5, 10))
+        
+        ctk.CTkLabel(slider_frame, text="Top resultados:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10)
+        
+        # Slider for top_k (range 20-100, default 20)
+        self.ngram_slider = ctk.CTkSlider(
+            slider_frame,
+            from_=20,
+            to=100,
+            number_of_steps=80,
+            command=self._on_ngram_slider_change
+        )
+        self.ngram_slider.set(20)
+        self.ngram_slider.pack(side="left", fill="x", expand=True, padx=10)
+        
+        # Label showing current value
+        self.ngram_label = ctk.CTkLabel(slider_frame, text="20 resultados", font=ctk.CTkFont(size=12))
+        self.ngram_label.pack(side="left", padx=10)
+        
+        # Text view - taller with expand=True
+        self.ngram_text = ctk.CTkTextbox(frame, font=("Courier New", 14), height=300)
+        self.ngram_text.pack(fill="both", expand=True, padx=10, pady=(5, 10))
     
-    def _show_ngrams(self, ngrams: Dict[str, int]) -> None:
+    def _on_ngram_slider_change(self, value: float) -> None:
+        """Handle n-gram slider change - update label."""
+        top_k = int(value)
+        self.ngram_label.configure(text=f"{top_k} resultados")
+    
+    def _update_ngrams_display(self, top_k: int = None) -> None:
+        """Update n-grams display with specified top_k value."""
+        if top_k is None:
+            top_k = int(self.ngram_slider.get())
+        
+        if not self.cleaned_content:
+            return
+        
+        try:
+            from tools.text_tool.processor import analyze_ngrams
+            
+            n = self.ngram_size.get()
+            result = analyze_ngrams(self.cleaned_content, n=n, top_k=top_k)
+            if result.get('success'):
+                self._show_ngrams(result['ngrams'], top_k=top_k)
+            else:
+                self.status_label.configure(text=result.get('error', 'Error'), text_color="orange")
+        except Exception as e:
+            logger.error(f"Error updating ngrams: {e}")
+            self.status_label.configure(text=f"Error: {e}", text_color="red")
+    
+    def _show_ngrams(self, ngrams: Dict[str, int], top_k: int = None) -> None:
         """Muestra n-grams."""
         self.ngram_text.delete("1.0", tk.END)
+        
+        actual_count = len(ngrams)
+        slider_top_k = top_k if top_k is not None else int(self.ngram_slider.get())
+        
+        # Update label to show actual count
+        if actual_count < slider_top_k:
+            self.ngram_label.configure(text=f"{actual_count} resultados (máx disponible)")
+        else:
+            self.ngram_label.configure(text=f"{slider_top_k} resultados")
         
         texto = f"🔗 N-grams ({self.ngram_size.get()})\n"
         texto += "=" * 30 + "\n\n"
@@ -760,6 +1031,12 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.trends_label.configure(image=ctk_img, text="")
             self.trends_label.image = ctk_img
             
+            # Add click binding to open modal
+            self.trends_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "Tendencias"))
+            
+            # Add tooltip
+            self.trends_label.configure(cursor="hand2")
+            
         except Exception as e:
             self.trends_label.configure(text=f"Error: {e}")
     
@@ -794,6 +1071,12 @@ class TextAnalyzerUI(ctk.CTkFrame):
             
             self.corr_label.configure(image=ctk_img, text="")
             self.corr_label.image = ctk_img
+            
+            # Add click binding to open modal
+            self.corr_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "Correlaciones"))
+            
+            # Add tooltip
+            self.corr_label.configure(cursor="hand2")
             
         except Exception as e:
             self.corr_label.configure(text=f"Error: {e}")
@@ -830,5 +1113,427 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.scatter_label.configure(image=ctk_img, text="")
             self.scatter_label.image = ctk_img
             
+            # Add click binding to open modal
+            self.scatter_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "Scatter Plot"))
+            
+            # Add tooltip
+            self.scatter_label.configure(cursor="hand2")
+            
         except Exception as e:
             self.scatter_label.configure(text=f"Error: {e}")
+    
+    # ============ CHART MODAL ============
+    def _open_chart_modal(self, image_data: bytes, title: str) -> None:
+        """Opens expanded chart view in modal window."""
+        if image_data is None:
+            self.status_label.configure(text="No hay imagen para mostrar", text_color="orange")
+            return
+        
+        # Create modal window
+        modal = ChartModal(self, image_data, title, self.status_label)
+    
+    def _export_chart(self, image_data: bytes, format: str, default_filename: str) -> bool:
+        """Export chart as PNG (300 DPI) or PDF (vector)."""
+        if image_data is None:
+            return False
+        
+        from datetime import datetime
+        from PIL import Image
+        from io import BytesIO
+        
+        # Generate default filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_name = f"{default_filename}_{timestamp}"
+        
+        if format == "png":
+            filename = filedialog.asksaveasfilename(
+                title="Guardar imagen PNG",
+                defaultextension=".png",
+                filetypes=[("PNG", "*.png"), ("All files", "*.*")],
+                initialfile=f"{default_name}.png"
+            )
+            if not filename:
+                return False
+            
+            try:
+                # Save as PNG with high quality (300 DPI equivalent)
+                img = Image.open(BytesIO(image_data))
+                # Set DPI to 300 for high quality print
+                img.save(filename, "PNG", dpi=(300, 300))
+                return True
+            except Exception as e:
+                logger.error(f"Error exporting PNG: {e}")
+                return False
+        
+        elif format == "pdf":
+            filename = filedialog.asksaveasfilename(
+                title="Guardar como PDF",
+                defaultextension=".pdf",
+                filetypes=[("PDF", "*.pdf"), ("All files", "*.*")],
+                initialfile=f"{default_name}.pdf"
+            )
+            if not filename:
+                return False
+            
+            try:
+                # Use matplotlib to save as PDF (vector quality)
+                import matplotlib.pyplot as plt
+                from matplotlib.backends.backend_pdf import PdfPages
+                import numpy as np
+                from PIL import Image
+                
+                # Open image and convert to numpy array
+                img = Image.open(BytesIO(image_data))
+                
+                # Save to PDF using matplotlib
+                with PdfPages(filename) as pdf:
+                    fig = plt.figure(figsize=(10, 8))
+                    plt.imshow(np.array(img), aspect='auto')
+                    plt.axis('off')
+                    plt.tight_layout(pad=0)
+                    pdf.savefig(fig, bbox_inches='tight', dpi=300)
+                    plt.close(fig)
+                return True
+            except Exception as e:
+                logger.error(f"Error exporting PDF: {e}")
+                return False
+        
+        return False
+
+
+class ChartModal(ctk.CTkToplevel):
+    """Modal for expanded chart view with export."""
+    
+    def __init__(self, parent, image_data: bytes, title: str, status_label):
+        super().__init__(parent)
+        
+        self.image_data = image_data
+        self.title_text = title
+        self.status_label = status_label
+        
+        # Configure modal window
+        self.title(f"📊 {title}")
+        
+        # Set minimum size 600x600, start at 800x600
+        self.minsize(600, 600)
+        self.geometry("800x600")
+        
+        # Center on screen
+        self._center_window()
+        
+        # Make modal transient (stays on top of parent)
+        self.transient(parent)
+        
+        # Grab focus
+        self.grab_set()
+        
+        # Setup UI
+        self._setup_ui()
+        
+        # Bind Escape key to close
+        self.bind("<Escape>", lambda e: self.destroy())
+        
+        # Handle window close button
+        self.protocol("WM_DELETE_WINDOW", self.destroy)
+    
+    def _center_window(self) -> None:
+        """Center the modal on screen."""
+        self.update_idletasks()
+        
+        # Get screen dimensions
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        # Get modal dimensions
+        modal_width = self.winfo_width()
+        modal_height = self.winfo_height()
+        
+        # Calculate center position
+        x = (screen_width - modal_width) // 2
+        y = (screen_height - modal_height) // 2
+        
+        # Apply position
+        self.geometry(f"+{x}+{y}")
+    
+    def _setup_ui(self) -> None:
+        """Setup modal UI components."""
+        
+        # Title bar frame
+        title_frame = ctk.CTkFrame(self, fg_color="transparent")
+        title_frame.pack(fill="x", padx=10, pady=(10, 5))
+        
+        # Title label
+        title_label = ctk.CTkLabel(
+            title_frame,
+            text=f"📊 {self.title_text}",
+            font=ctk.CTkFont(size=18, weight="bold")
+        )
+        title_label.pack(side="left", padx=5)
+        
+        # Click instruction label
+        hint_label = ctk.CTkLabel(
+            title_frame,
+            text="(Click en la imagen para expandir)",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        )
+        hint_label.pack(side="left", padx=10)
+        
+        # Close button (X)
+        close_btn = ctk.CTkButton(
+            title_frame,
+            text="✕",
+            width=30,
+            height=30,
+            command=self.destroy,
+            fg_color="#c44",
+            hover_color="#a33"
+        )
+        close_btn.pack(side="right", padx=5)
+        
+        # Image container frame with scrollbars for small screens
+        img_container = ctk.CTkFrame(self)
+        img_container.pack(fill="both", expand=True, padx=10, pady=5)
+        
+        # Create canvas with scrollbars for small viewports
+        self.canvas_frame = ctk.CTkFrame(img_container, fg_color="transparent")
+        self.canvas_frame.pack(fill="both", expand=True)
+        
+        # Canvas for image
+        self.canvas = tk.Canvas(self.canvas_frame, bg="#2b2b2b", highlightthickness=0)
+        self.canvas.pack(side="left", fill="both", expand=True)
+        
+        # Scrollbars (will show only if needed)
+        v_scrollbar = ctk.CTkScrollbar(self.canvas_frame, command=self.canvas.yview, orientation="vertical")
+        v_scrollbar.pack(side="right", fill="y")
+        
+        h_scrollbar = ctk.CTkScrollbar(self, command=self.canvas.xview, orientation="horizontal")
+        h_scrollbar.pack(fill="x")
+        
+        self.canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        
+        # Display image
+        try:
+            from PIL import Image, ImageTk
+            from io import BytesIO
+            
+            # Open image
+            img = Image.open(BytesIO(self.image_data))
+            
+            # Get original size (but limit for very large images)
+            orig_width, orig_height = img.size
+            
+            # Calculate display size (fit to modal if too large)
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+            max_width = min(orig_width, int(screen_width * 0.9))
+            max_height = min(orig_height, int(screen_height * 0.8))
+            
+            # Calculate scaled size maintaining aspect ratio
+            width_ratio = max_width / orig_width
+            height_ratio = max_height / orig_height
+            ratio = min(width_ratio, height_ratio, 1)  # Don't upscale
+            
+            display_width = int(orig_width * ratio)
+            display_height = int(orig_height * ratio)
+            
+            # Convert to CTk compatible image
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
+            
+            # Resize for display
+            img_display = img.resize((display_width, display_height), Image.Resampling.LANCZOS)
+            
+            # Create CTkImage
+            self.ctk_img = ctk.CTkImage(
+                light_image=img_display,
+                dark_image=img_display,
+                size=img_display.size
+            )
+            
+            # Display on canvas
+            self.canvas.create_image(0, 0, anchor="nw", image=self.ctk_img)
+            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+            
+            # Make canvas clickable for expand
+            self.canvas.bind("<Button-1>", self._on_image_click)
+            self.canvas.configure(cursor="hand2")
+            
+            # Store original image for export
+            self.full_image = img
+            
+        except Exception as e:
+            logger.error(f"Error displaying image in modal: {e}")
+            error_label = ctk.CTkLabel(
+                self.canvas_frame,
+                text=f"Error al cargar imagen: {e}",
+                text_color="red"
+            )
+            error_label.pack()
+        
+        # Export buttons frame
+        export_frame = ctk.CTkFrame(self)
+        export_frame.pack(fill="x", padx=10, pady=(5, 10))
+        
+        # Export buttons on bottom-right
+        export_label = ctk.CTkLabel(export_frame, text="Exportar:", font=ctk.CTkFont(size=12, weight="bold"))
+        export_label.pack(side="left", padx=10)
+        
+        # PNG export button
+        png_btn = ctk.CTkButton(
+            export_frame,
+            text="💾 Exportar como PNG",
+            command=self._export_png,
+            width=160
+        )
+        png_btn.pack(side="right", padx=5, pady=5)
+        
+        # PDF export button
+        pdf_btn = ctk.CTkButton(
+            export_frame,
+            text="📄 Exportar como PDF",
+            command=self._export_pdf,
+            width=160
+        )
+        pdf_btn.pack(side="right", padx=5, pady=5)
+    
+    def _on_image_click(self, event) -> None:
+        """Handle click on image - expand to full size."""
+        try:
+            from PIL import Image
+            from io import BytesIO
+            
+            # Open original image at full size
+            img = Image.open(BytesIO(self.image_data))
+            
+            # Calculate new size (fit to screen but show full)
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+            
+            max_width = int(screen_width * 0.95)
+            max_height = int(screen_height * 0.9)
+            
+            orig_width, orig_height = img.size
+            
+            # Calculate scaled size
+            width_ratio = max_width / orig_width
+            height_ratio = max_height / orig_height
+            ratio = min(width_ratio, height_ratio, 1)
+            
+            new_width = int(orig_width * ratio)
+            new_height = int(orig_height * ratio)
+            
+            # Resize
+            img_full = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+            # Update canvas with larger image
+            if img_full.mode != 'RGBA':
+                img_full = img_full.convert('RGBA')
+            
+            ctk_img = ctk.CTkImage(
+                light_image=img_full,
+                dark_image=img_full,
+                size=img_full.size
+            )
+            
+            # Clear and redraw
+            self.canvas.delete("all")
+            self.canvas.create_image(0, 0, anchor="nw", image=ctk_img)
+            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+            
+            # Resize window to fit image
+            new_geometry = f"{new_width + 40}x{new_height + 120}"
+            self.geometry(new_geometry)
+            self._center_window()
+            
+            # Update stored image
+            self.full_image = img
+            
+        except Exception as e:
+            logger.error(f"Error expanding image: {e}")
+    
+    def _export_png(self) -> None:
+        """Export chart as PNG."""
+        try:
+            from datetime import datetime
+            from PIL import Image
+            from io import BytesIO
+            
+            # Generate default filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_name = f"{self.title_text.lower().replace(' ', '_')}_{timestamp}"
+            
+            filename = filedialog.asksaveasfilename(
+                title="Guardar imagen PNG",
+                defaultextension=".png",
+                filetypes=[("PNG", "*.png"), ("All files", "*.*")],
+                initialfile=f"{default_name}.png"
+            )
+            
+            if not filename:
+                return
+            
+            # Get the full size image
+            if hasattr(self, 'full_image'):
+                img = self.full_image
+            else:
+                img = Image.open(BytesIO(self.image_data))
+            
+            # Save with high DPI
+            img.save(filename, "PNG", dpi=(300, 300))
+            
+            # Update status
+            self.status_label.configure(text=f"✅ PNG guardado: {filename}", text_color="green")
+            
+        except Exception as e:
+            logger.error(f"Error exporting PNG: {e}")
+            self.status_label.configure(text=f"❌ Error al guardar PNG: {e}", text_color="red")
+    
+    def _export_pdf(self) -> None:
+        """Export chart as PDF."""
+        try:
+            from datetime import datetime
+            from PIL import Image
+            import matplotlib.pyplot as plt
+            from matplotlib.backends.backend_pdf import PdfPages
+            import numpy as np
+            from io import BytesIO
+            
+            # Generate default filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_name = f"{self.title_text.lower().replace(' ', '_')}_{timestamp}"
+            
+            filename = filedialog.asksaveasfilename(
+                title="Guardar como PDF",
+                defaultextension=".pdf",
+                filetypes=[("PDF", "*.pdf"), ("All files", "*.*")],
+                initialfile=f"{default_name}.pdf"
+            )
+            
+            if not filename:
+                return
+            
+            # Get the image
+            if hasattr(self, 'full_image'):
+                img = self.full_image
+            else:
+                img = Image.open(BytesIO(self.image_data))
+            
+            # Convert to numpy array
+            img_array = np.array(img)
+            
+            # Save to PDF
+            with PdfPages(filename) as pdf:
+                fig = plt.figure(figsize=(10, 8))
+                plt.imshow(img_array, aspect='auto')
+                plt.axis('off')
+                plt.tight_layout(pad=0)
+                pdf.savefig(fig, bbox_inches='tight', dpi=300)
+                plt.close(fig)
+            
+            # Update status
+            self.status_label.configure(text=f"✅ PDF guardado: {filename}", text_color="green")
+            
+        except Exception as e:
+            logger.error(f"Error exporting PDF: {e}")
+            self.status_label.configure(text=f"❌ Error al guardar PDF: {e}", text_color="red")

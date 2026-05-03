@@ -281,23 +281,152 @@ def clean_text(text: str, remove_stopwords: bool = True, languages: List[str] = 
     return text
 
 
-def analyze_wordcloud(text: str, n_words: int = 100, width: int = 800, height: int = 400) -> Dict[str, Any]:
-    """Genera unaWordCloud."""
+def _generate_shape_mask(shape: str, width: int, height: int) -> Optional[Any]:
+    """
+    Generate mask for WordCloud shapes.
+    
+    Args:
+        shape: Shape name - 'rectangle', 'circle', 'heart', 'star'
+        width: Width of the mask in pixels
+        height: Height of the mask in pixels
+        
+    Returns:
+        PIL Image mask or None for rectangle (default)
+    """
+    try:
+        import numpy as np
+        from PIL import Image
+        
+        shape = shape.lower() if shape else 'rectangle'
+        
+        if shape == 'rectangle' or shape == 'rectángulo':
+            return None  # wordcloud uses no mask for rectangle
+            
+        elif shape == 'circle' or shape == 'círculo':
+            # Create circular mask
+            center_x, center_y = width // 2, height // 2
+            radius = min(width, height) // 2 - 5
+            
+            y, x = np.ogrid[:height, :width]
+            mask = (x - center_x) ** 2 + (y - center_y) ** 2 <= radius ** 2
+            mask = mask.astype(np.uint8) * 255
+            return Image.fromarray(mask, mode='L')
+            
+        elif shape == 'heart' or shape == 'corazón':
+            # Create heart shape mask
+            y, x = np.ogrid[:height, :width]
+            center_x = width // 2
+            scale_x = width / 100
+            scale_y = height / 100
+            
+            # Heart equation (simplified)
+            x_norm = (x - center_x) / scale_x
+            y_norm = (y - height * 0.4) / scale_y
+            
+            # Two circles + triangle approximation
+            left_circle = ((x_norm + 30) ** 2 + y_norm ** 2) <= 900
+            right_circle = ((x_norm - 30) ** 2 + y_norm ** 2) <= 900
+            triangle = (y_norm >= -50) & (y_norm <= 30) & (np.abs(x_norm) <= (30 - y_norm / 2))
+            
+            mask = (left_circle | right_circle | triangle).astype(np.uint8) * 255
+            return Image.fromarray(mask, mode='L')
+            
+        elif shape == 'star' or shape == 'estrella':
+            # Create star shape mask
+            center_x, center_y = width // 2, height // 2
+            outer_radius = min(width, height) // 2 - 5
+            inner_radius = outer_radius * 0.4
+            
+            angles = np.linspace(0, 2 * np.pi, 10, endpoint=False)
+            
+            # Create polygon points
+            points = []
+            for i, angle in enumerate(angles):
+                if i % 2 == 0:
+                    r = outer_radius
+                else:
+                    r = inner_radius
+                px = center_x + r * np.cos(angle)
+                py = center_y + r * np.sin(angle)
+                points.append([px, py])
+            
+            # Create mask from polygon
+            from PIL import ImageDraw
+            mask_img = Image.new('L', (width, height), 0)
+            draw = ImageDraw.Draw(mask_img)
+            draw.polygon([(p[0], p[1]) for p in points], fill=255)
+            
+            return mask_img
+            
+        else:
+            return None  # Unknown shape, fallback to rectangle
+            
+    except Exception as e:
+        logger.warning(f"Could not generate shape mask '{shape}': {e}")
+        return None
+
+
+def analyze_wordcloud(
+    text: str,
+    n_words: int = 100,
+    width: int = 800,
+    height: int = 400,
+    colormap: str = 'viridis',
+    margin: int = 10,
+    shape: str = 'rectangle'
+) -> Dict[str, Any]:
+    """
+    Genera una WordCloud con opciones de personalización.
+    
+    Args:
+        text: Texto de entrada
+        n_words: Número máximo de palabras a mostrar (default: 100)
+        width: Ancho de la imagen en píxeles (default: 800)
+        height: Alto de la imagen en píxeles (default: 400)
+        colormap: Nombre del colormap de matplotlib (default: 'viridis')
+                 Opciones: viridis, plasma, inferno, magma, cividis, 
+                 blues, greens, reds, oranges, purples, etc.
+        margin: Margen entre palabras en píxeles (default: 10)
+        shape: Forma de la máscara - 'rectangle', 'circle', 'heart', 'star' (default: 'rectangle')
+        
+    Returns:
+        Dict con 'success', 'image_data' (bytes), 'message'
+    """
     if not WORDCLOUD_AVAILABLE:
         return {'success': False, 'error': 'wordcloud no instalado'}
     
     try:
+        # Validate colormap - fallback to viridis if invalid
+        valid_colormaps = [
+            'viridis', 'plasma', 'inferno', 'magma', 'cividis',
+            'blues', 'greens', 'reds', 'oranges', 'purples',
+            'coolwarm', 'RdYlGn', 'seismic', 'terrain', 'ocean'
+        ]
+        if colormap.lower() not in valid_colormaps:
+            logger.warning(f"Invalid colormap '{colormap}', falling back to 'viridis'")
+            colormap = 'viridis'
+        
         cleaned = clean_text(text, remove_stopwords=True)
         
-        wc = WordCloud(
-            width=width, 
-            height=height,
-            background_color='white',
-            max_words=n_words,
-            colormap='viridis',
-            prefer_horizontal=0.7
-        )
+        # Generate shape mask if needed
+        mask = _generate_shape_mask(shape, width, height)
         
+        # Build WordCloud kwargs
+        wc_kwargs = {
+            'width': width,
+            'height': height,
+            'background_color': 'white',
+            'max_words': n_words,
+            'colormap': colormap,
+            'prefer_horizontal': 0.7,
+            'margin': margin
+        }
+        
+        # Add mask if not rectangle
+        if mask is not None:
+            wc_kwargs['mask'] = mask
+        
+        wc = WordCloud(**wc_kwargs)
         wc.generate(cleaned)
         
         # Convertir a imagen
@@ -315,8 +444,29 @@ def analyze_wordcloud(text: str, n_words: int = 100, width: int = 800, height: i
         return {'success': False, 'error': str(e)}
 
 
-def analyze_frequency(text: str, n: int = 20, remove_stopwords: bool = True, exclude_words: List[str] = None, already_cleaned: bool = False) -> Dict[str, Any]:
-    """Analiza frecuencia de palabras."""
+def analyze_frequency(
+    text: str,
+    n: int = 20,
+    remove_stopwords: bool = True,
+    exclude_words: List[str] = None,
+    already_cleaned: bool = False
+) -> Dict[str, Any]:
+    """
+    Analiza frecuencia de palabras.
+    
+    Args:
+        text: Texto de entrada
+        n: Número de palabras más frecuentes a retornar (default: 20, rango: 20-100+)
+        remove_stopwords: Si True, elimina stopwords español/inglés (default: True)
+        exclude_words: Lista de palabras adicionales a excluir
+        already_cleaned: Si True, asume texto ya está limpio
+        
+    Returns:
+        Dict con 'success', 'frequencies' (dict), 'total_words', 'unique_words'
+        
+    Note:
+        Tested and working with n values from 20 to 100+
+    """
     cleaned = text if already_cleaned else clean_text(text, remove_stopwords=remove_stopwords, exclude_words=exclude_words)
     words = cleaned.split()
     
@@ -581,7 +731,20 @@ def analyze_stats(text: str) -> Dict[str, Any]:
 
 
 def analyze_ngrams(text: str, n: int = 2, top_k: int = 20) -> Dict[str, Any]:
-    """Analiza n-grams (sin dependencia de nltk)."""
+    """
+    Analiza n-grams (sin dependencia de nltk).
+    
+    Args:
+        text: Texto de entrada
+        n: Tamaño del n-gram (2=bigramas, 3=trigramas) (default: 2)
+        top_k: Número de n-grams más frecuentes a retornar (default: 20, rango: 20-100+)
+        
+    Returns:
+        Dict con 'success', 'ngrams' (dict), 'n' (tipo de n-gram), 'total' (total encontrado)
+        
+    Note:
+        Tested and working with top_k values from 20 to 100+
+    """
     cleaned = clean_text(text, remove_stopwords=True)
     words = cleaned.split()
     
