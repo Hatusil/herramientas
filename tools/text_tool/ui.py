@@ -1282,36 +1282,32 @@ class ChartModal(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
     
     def _on_scroll(self, event) -> str:
-        """Handle scroll events - zoom in/out without changing window size."""
+        """Handle scroll events - zoom only."""
         try:
             from PIL import Image, ImageTk
             
+            if not hasattr(self, 'zoom_level'):
+                self.zoom_level = 1.0
+            
             # Determine zoom factor based on delta
             if event.delta > 0:
-                zoom_factor = 1.2  # Zoom in
+                self.zoom_level *= 1.2  # Zoom in
             else:
-                zoom_factor = 0.8  # Zoom out
+                self.zoom_level *= 0.8  # Zoom out
             
-            # Get current image
+            # Limit zoom range (0.5x to 5x)
+            self.zoom_level = max(0.5, min(5.0, self.zoom_level))
+            
+            # Get original image and apply zoom
             if hasattr(self, 'full_image') and self.full_image:
-                # Get current canvas size from scrollregion or use default
-                current_width = 800
-                current_height = 600
+                orig_width, orig_height = self.full_image.size
+                new_width = int(orig_width * self.zoom_level)
+                new_height = int(orig_height * self.zoom_level)
                 
-                # Calculate new size
-                new_width = int(current_width * zoom_factor)
-                new_height = int(current_height * zoom_factor)
-                
-                # Limit zoom range
-                if new_width < 400:
-                    return "break"
-                if new_width > 2400:
-                    return "break"
-                
-                # Resize the original image to new size
+                # Resize keeping aspect ratio
                 img_display = self.full_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
                 
-                # Update canvas - keep same window size, just scale image
+                # Update canvas
                 self.photo_img = ImageTk.PhotoImage(img_display)
                 self.canvas.delete("all")
                 self.canvas.create_image(0, 0, anchor="nw", image=self.photo_img)
@@ -1321,6 +1317,30 @@ class ChartModal(ctk.CTkToplevel):
             logger.error(f"Zoom error: {e}")
         
         return "break"
+    
+    def _on_drag_start(self, event) -> None:
+        """Start drag for panning."""
+        self._drag_start_x = event.x
+        self._drag_start_y = event.y
+        
+    def _on_drag_motion(self, event) -> None:
+        """Pan the canvas during drag."""
+        if hasattr(self, '_drag_start_x'):
+            dx = event.x - self._drag_start_x
+            dy = event.y - self._drag_start_y
+            
+            # Pan the canvas view
+            self.canvas.xview("scroll", -dx, "units")
+            self.canvas.yview("scroll", -dy, "units")
+            
+            self._drag_start_x = event.x
+            self._drag_start_y = event.y
+    
+    def _on_drag_release(self, event) -> None:
+        """End drag."""
+        if hasattr(self, '_drag_start_x'):
+            del self._drag_start_x
+            del self._drag_start_y
     
     def _center_window(self) -> None:
         """Center the modal on screen."""
@@ -1401,6 +1421,12 @@ class ChartModal(ctk.CTkToplevel):
         # Bind scroll events - zoom in/out
         self.canvas.bind("<MouseWheel>", self._on_scroll)
         self.bind("<MouseWheel>", self._on_scroll)
+        
+        # Bind drag events for panning - left click + drag
+        self.canvas.bind("<Button-1>", self._on_drag_start)
+        self.canvas.bind("<B1-Motion>", self._on_drag_motion)
+        self.canvas.bind("<ButtonRelease-1>", self._on_drag_release)
+        self.canvas.configure(cursor="hand2")
         
         # Focus on canvas so scroll works
         self.canvas.focus_set()
