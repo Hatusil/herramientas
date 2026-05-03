@@ -278,10 +278,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
             exclude_words=exclude_words
         )
         
-        # Mostrar texto crudo y limpio
-        self.raw_text.delete("1.0", tk.END)
-        self.raw_text.insert("1.0", self.text_content[:2000])
-        
+        # Mostrar texto limpio
         self.clean_text.delete("1.0", tk.END)
         self.clean_text.insert("1.0", cleaned[:2000])  # Preview primeros 2000 chars
         
@@ -294,8 +291,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
         for i, (word, count) in enumerate(top_20, 1):
             preview += f"{i:2}. {word:<15} {count:>4}\n"
         
-        self.freq_preview_text.delete("1.0", tk.END)
-        self.freq_preview_text.insert("1.0", preview)
+        self.clean_freq_text.delete("1.0", tk.END)
+        self.clean_freq_text.insert("1.0", preview)
         
         self.cleaned_content = cleaned
         self.status_label.configure(text=f"Limpieza aplicada: {len(cleaned.split())} palabras", text_color="green")
@@ -307,9 +304,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         self.text_content = ""
         self.cleaned_content = None
-        self.raw_text.delete("1.0", tk.END)
         self.clean_text.delete("1.0", tk.END)
-        self.freq_preview_text.delete("1.0", tk.END)
+        self.clean_freq_text.delete("1.0", tk.END)
         self.sources = {"text": [], "files": [], "urls": []}
         
         self._update_sources_summary()
@@ -556,9 +552,6 @@ class TextAnalyzerUI(ctk.CTkFrame):
                     text=f"{len(urls)} URLs: {len(self.text_content)} caracteres - andá a Limpieza",
                     text_color="green"
                 )
-                if hasattr(self, 'raw_text'):
-                    self.raw_text.delete("1.0", tk.END)
-                    self.raw_text.insert("1.0", self.text_content[:5000])
                 
                 logger.info(f"URL SCRAPER: Done - final text_content is {len(self.text_content)} chars")
             
