@@ -1026,8 +1026,22 @@ def analyze_topics(text: str, n_topics: int = 5, max_iter: int = 10) -> Dict[str
     paragraphs = re.split(r'\n\s*\n|\n{2,}', text.strip())
     paragraphs = [p.strip() for p in paragraphs if p.strip()]
     
+    # Si no hay suficientes párrafos, intentar dividir por oraciones
     if len(paragraphs) < 3:
-        return {'success': False, 'error': 'Texto insuficiente. Se requieren al menos 3 párrafos.', 'data': None}
+        # Dividir en oraciones (aproximadamente 5-10 oraciones por "párrafo")
+        sentences = re.split(r'[.!?]+', text.strip())
+        sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 20]
+        
+        if len(sentences) >= 6:
+            # Crear pseudo-párrafos de 5 oraciones cada uno
+            paragraphs = []
+            for i in range(0, len(sentences), 5):
+                para = ' '.join(sentences[i:i+5])
+                if para:
+                    paragraphs.append(para)
+    
+    if len(paragraphs) < 2:
+        return {'success': False, 'error': 'Texto insuficiente. Se requieren al menos 2 secciones o párrafos.', 'data': None}
     
     try:
         # Crear vectorizador Bag of Words
