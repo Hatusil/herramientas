@@ -1375,26 +1375,14 @@ class ChartModal(ctk.CTkToplevel):
         )
         title_label.pack(side="left", padx=5)
         
-        # Click instruction label
+        # Hint for controls
         hint_label = ctk.CTkLabel(
             title_frame,
-            text="(Click en la imagen para expandir)",
+            text="(Scroll = zoom, arrastrar = mover)",
             font=ctk.CTkFont(size=11),
             text_color="gray"
         )
         hint_label.pack(side="left", padx=10)
-        
-        # Close button (X)
-        close_btn = ctk.CTkButton(
-            title_frame,
-            text="✕",
-            width=30,
-            height=30,
-            command=self.destroy,
-            fg_color="#c44",
-            hover_color="#a33"
-        )
-        close_btn.pack(side="right", padx=5)
         
         # Image container frame with scrollbars for small screens
         img_container = ctk.CTkFrame(self)
@@ -1513,6 +1501,17 @@ class ChartModal(ctk.CTkToplevel):
             width=160
         )
         pdf_btn.pack(side="right", padx=5, pady=5)
+        
+        # Close button - more visible
+        close_btn = ctk.CTkButton(
+            export_frame,
+            text="✕ Cerrar",
+            command=self.destroy,
+            width=100,
+            fg_color="#c44",
+            hover_color="#a33"
+        )
+        close_btn.pack(side="left", padx=10, pady=5)
     
     def _on_image_click(self, event) -> None:
         """Handle click on image - expand to full size."""
