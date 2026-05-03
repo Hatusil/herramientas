@@ -101,23 +101,11 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         self.input_type = ctk.StringVar(value="text")
         
-        ctk.CTkRadioButton(
-            tipo_frame, text="📝 Texto", 
-            variable=self.input_type, value="text",
-            command=self._on_input_type_change
-        ).pack(side="left", padx=10)
-        
-        ctk.CTkRadioButton(
-            tipo_frame, text="📄 Archivo", 
-            variable=self.input_type, value="file",
-            command=self._on_input_type_change
-        ).pack(side="left", padx=10)
-        
-        ctk.CTkRadioButton(
-            tipo_frame, text="🌐 URL", 
-            variable=self.input_type, value="url",
-            command=self._on_input_type_change
-        ).pack(side="left", padx=10)
+        ctk.CTkRadioButton(tipo_frame, text="📝 Texto", variable=self.input_type, value="text", command=self._on_input_type_change).pack(side="left", padx=5)
+        ctk.CTkRadioButton(tipo_frame, text="📄 Archivo", variable=self.input_type, value="file", command=self._on_input_type_change).pack(side="left", padx=5)
+        ctk.CTkRadioButton(tipo_frame, text="📁 Multi", variable=self.input_type, value="files", command=self._on_input_type_change).pack(side="left", padx=5)
+        ctk.CTkRadioButton(tipo_frame, text="🌐 URL", variable=self.input_type, value="url", command=self._on_input_type_change).pack(side="left", padx=5)
+        ctk.CTkRadioButton(tipo_frame, text="🔗 URLs", variable=self.input_type, value="urls", command=self._on_input_type_change).pack(side="left", padx=5)
         
         # Área de texto (para input directo)
         self.text_input_area = ctk.CTkTextbox(frame, wrap="word")
@@ -236,9 +224,15 @@ class TextAnalyzerUI(ctk.CTkFrame):
         elif tipo == "file":
             self.file_frame.pack(fill="x", padx=10, pady=10)
             self.load_btn.configure(text="📄 Cargar y Analizar")
+        elif tipo == "files":
+            self.file_frame.pack(fill="x", padx=10, pady=10)
+            self.load_btn.configure(text="📁 Cargar Múltiples")
         elif tipo == "url":
             self.url_frame.pack(fill="x", padx=10, pady=10)
             self.load_btn.configure(text="🌐 Scrapear y Analizar")
+        elif tipo == "urls":
+            self.url_frame.pack(fill="x", padx=10, pady=10)
+            self.load_btn.configure(text="🔗 Scrapear Múltiples")
     
     def _select_file(self) -> None:
         """Seleccionar archivo."""
@@ -291,6 +285,21 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 self.text_content = result['text']
                 self.status_label.configure(text=f"Archivo cargado: {len(self.text_content)} caracteres", text_color="green")
             
+            elif tipo == "files":
+                files = filedialog.askopenfilenames(title="Seleccionar archivos", filetypes=[("Todos", "*.*")])
+                if not files:
+                    self.status_label.configure(text="Seleccioná archivos", text_color="orange")
+                    return
+                self.status_label.configure(text=f"Procesando {len(files)} archivos...", text_color="yellow")
+                self.update()
+                all_text = []
+                for f in files:
+                    result = extract_text_from_file(f)
+                    if result.get('success'):
+                        all_text.append(result['text'])
+                self.text_content = '\n\n'.join(all_text)
+                self.status_label.configure(text=f"{len(files)} archivos: {len(self.text_content)} caracteres", text_color="green")
+            
             elif tipo == "url":
                 url = self.url_entry.get().strip()
                 if not url:
@@ -304,6 +313,25 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 if not result['success']:
                     self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
                     return
+            
+            elif tipo == "urls":
+                urls_text = self.url_entry.get().strip()
+                if not urls_text:
+                    self.status_label.configure(text="Ingresá URLs (separadas por coma)", text_color="orange")
+                    return
+                
+                urls = [u.strip() for u in urls_text.split(',') if u.strip()]
+                self.status_label.configure(text=f"Scrapenado {len(urls)} URLs...", text_color="yellow")
+                self.update()
+                
+                all_text = []
+                for url in urls:
+                    result = extract_text_from_url(url)
+                    if result.get('success'):
+                        all_text.append(result['text'])
+                
+                self.text_content = '\n\n'.join(all_text)
+                self.status_label.configure(text=f"{len(urls)} URLs: {len(self.text_content)} caracteres", text_color="green")
                 
                 self.text_content = result['text']
                 self.status_label.configure(text=f"URL scrapeada: {len(self.text_content)} caracteres", text_color="green")
