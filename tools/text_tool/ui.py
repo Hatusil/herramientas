@@ -1689,9 +1689,14 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.wordtree_label.pack(expand=True)
     
     def _on_wordtree_depth_change(self, value: float) -> None:
-        """Handle depth slider change."""
+        """Handle depth slider change - auto-regenerate if phrase exists."""
         n = int(value)
         self.wordtree_depth_label.configure(text=str(n))
+        
+        # Auto-regenerate if phrase is already entered
+        phrase = self.wordtree_phrase.get().strip()
+        if phrase and self.text_content:
+            self._run_wordtree_analysis()
     
     def _run_wordtree_analysis(self) -> None:
         """Run WordTree analysis."""

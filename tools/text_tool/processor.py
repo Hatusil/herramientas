@@ -1195,9 +1195,9 @@ def analyze_wordtree(text: str, phrase: str, max_depth: int = 5) -> Dict[str, An
     
     # Crear visualización de árbol
     try:
-        fig, ax = plt.subplots(figsize=(12, 8))
+        fig, ax = plt.subplots(figsize=(10, 12))
         ax.set_xlim(-0.5, 10.5)
-        ax.set_ylim(-0.5, max(6, len(tree['children']) * 0.8 + 1))
+        ax.set_ylim(-0.5, max(8, len(tree['children']) * 1.0 + 1))
         
         # Draw root node (the phrase)
         root_x, root_y = 0.5, 5
