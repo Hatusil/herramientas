@@ -1282,47 +1282,47 @@ class ChartModal(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
     
     def _on_scroll(self, event) -> str:
-        """Handle scroll events - zoom with Ctrl+scroll, prevent propagation otherwise."""
-        # Ctrl+scroll = zoom
-        if event.state & 0x4:  # Ctrl key pressed
-            try:
-                from PIL import Image, ImageTk
-                from io import BytesIO
+        """Handle scroll events - zoom in/out, prevent propagation to parent."""
+        try:
+            from PIL import Image, ImageTk
+            
+            # Determine zoom factor based on delta
+            if event.delta > 0:
+                zoom_factor = 1.2  # Zoom in
+            else:
+                zoom_factor = 0.8  # Zoom out
+            
+            # Get current image
+            if hasattr(self, 'full_image') and self.full_image:
+                orig_width, orig_height = self.full_image.size
                 
-                # Determine zoom factor
-                if event.delta > 0:
-                    zoom_factor = 1.2  # Zoom in
-                else:
-                    zoom_factor = 0.8  # Zoom out
+                # Calculate new size
+                new_width = int(orig_width * zoom_factor)
+                new_height = int(orig_height * zoom_factor)
                 
-                # Get current image
-                if hasattr(self, 'full_image') and self.full_image:
-                    orig_width, orig_height = self.full_image.size
-                    
-                    # Calculate new size
-                    new_width = int(orig_width * zoom_factor)
-                    new_height = int(orig_height * zoom_factor)
-                    
-                    # Limit zoom range
-                    if new_width < 200 or new_width > 4000:
-                        return "break"
-                    
-                    # Resize
-                    img_display = self.full_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-                    
-                    # Update canvas
-                    self.photo_img = ImageTk.PhotoImage(img_display)
-                    self.canvas.delete("all")
-                    self.canvas.create_image(0, 0, anchor="nw", image=self.photo_img)
-                    self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-                    
-                    # Update window size
-                    self.geometry(f"{new_width + 40}x{new_height + 120}")
-            except Exception as e:
-                logger.error(f"Zoom error: {e}")
-            return "break"
+                # Limit zoom range (200-4000px)
+                if new_width < 200:
+                    return "break"
+                if new_width > 4000:
+                    return "break"
+                
+                # Resize
+                img_display = self.full_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                
+                # Update canvas
+                self.photo_img = ImageTk.PhotoImage(img_display)
+                self.canvas.delete("all")
+                self.canvas.create_image(0, 0, anchor="nw", image=self.photo_img)
+                self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+                
+                # Update window size
+                self.geometry(f"{new_width + 40}x{new_height + 120}")
+                self._current_width = new_width + 40
+                self._current_height = new_height + 120
+                
+        except Exception as e:
+            logger.error(f"Zoom error: {e}")
         
-        # Otherwise prevent propagation to parent
         return "break"
     
     def _center_window(self) -> None:
@@ -1389,7 +1389,7 @@ class ChartModal(ctk.CTkToplevel):
         self.canvas_frame.pack(fill="both", expand=True)
         
         # Canvas for image
-        self.canvas = tk.Canvas(self.canvas_frame, bg="#2b2b2b", highlightthickness=0)
+        self.canvas = tk.Canvas(self.canvas_frame, bg="#2b2b2b", highlightthickness=0, takefocus=True)
         self.canvas.pack(side="left", fill="both", expand=True)
         
         # Scrollbars (will show only if needed)
@@ -1401,9 +1401,12 @@ class ChartModal(ctk.CTkToplevel):
         
         self.canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
         
-        # Bind scroll events to prevent propagation to parent
+        # Bind scroll events - zoom in/out
         self.canvas.bind("<MouseWheel>", self._on_scroll)
         self.bind("<MouseWheel>", self._on_scroll)
+        
+        # Focus on canvas so scroll works
+        self.canvas.focus_set()
         
         # Display image
         try:
