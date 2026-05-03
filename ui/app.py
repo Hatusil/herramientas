@@ -168,11 +168,130 @@ class App(ctk.CTk):
                 tool['status']
             )
         
-        # Seleccionar primera tool si hay alguna
+        # Mostrar pantalla de bienvenida en lugar de auto-seleccionar
         if tools:
-            self._on_tool_selected(tools[0]['name'])
+            self._show_welcome_screen(tools)
         
         logger.info(f"Cargadas {len(tools)} herramientas")
+    
+    def _show_welcome_screen(self, tools: list) -> None:
+        """Muestra pantalla de bienvenida con todas las herramientas."""
+        # Limpiar content frame
+        for widget in self.content_frame.winfo_children():
+            widget.destroy()
+        
+        # Crear frame de bienvenida
+        welcome_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        welcome_frame.pack(fill="both", expand=True)
+        
+        # Título de bienvenida
+        title = ctk.CTkLabel(
+            welcome_frame,
+            text="🔧 Herramientas",
+            font=ctk.CTkFont(size=32, weight="bold"),
+            text_color="white"
+        )
+        title.pack(pady=(30, 10))
+        
+        subtitle = ctk.CTkLabel(
+            welcome_frame,
+            text="Seleccioná una herramienta para comenzar",
+            font=ctk.CTkFont(size=16),
+            text_color="gray"
+        )
+        subtitle.pack(pady=(0, 30))
+        
+        # Grilla de herramientas
+        tools_frame = ctk.CTkFrame(welcome_frame, fg_color="transparent")
+        tools_frame.pack(fill="both", expand=True, padx=20)
+        
+        # Obtener iconos para cada tool
+        tool_icons = {
+            'text_tool': '📊',
+            'duplicate_tool': '📁',
+            'hash_tool': '#️⃣',
+            'compress_tool': '📦',
+            'audio_tool': '🎵',
+            'gif_tool': '🎞️',
+            'pdf_tool': '📄',
+            'video_tool': '🎬',
+            'rename_tool': '✏️',
+            'search_tool': '🔍',
+            'scrubber': '🧹'
+        }
+        
+        tool_descriptions = {
+            'text_tool': 'Análisis de texto, WordCloud, estadísticas',
+            'duplicate_tool': 'Encuentra y elimina archivos duplicados',
+            'hash_tool': 'Calcula hashes MD5/SHA para verificar archivos',
+            'compress_tool': 'Comprime archivos y carpetas',
+            'audio_tool': 'Procesa y convierte archivos de audio',
+            'gif_tool': 'Crea y edita imágenes GIF animadas',
+            'pdf_tool': 'Manipula documentos PDF',
+            'video_tool': 'Procesa y convierte archivos de video',
+            'rename_tool': 'Renombra archivos en lote',
+            'search_tool': 'Busca archivos por contenido',
+            'scrubber': 'Limpia metadatos de archivos'
+        }
+        
+        # Crear grid de botones (3 columnas)
+        for i, tool in enumerate(tools):
+            row = i // 3
+            col = i % 3
+            
+            tool_name = tool['name']
+            icon = tool_icons.get(tool_name, '🔧')
+            description = tool_descriptions.get(tool_name, '')
+            
+            # Card de tool
+            card = ctk.CTkFrame(
+                tools_frame,
+                fg_color="#2b2b2b",
+                corner_radius=10
+            )
+            card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+            
+            # Configurar grid
+            tools_frame.grid_columnconfigure(col, weight=1)
+            tools_frame.grid_rowconfigure(row, weight=1)
+            
+            # Botón con icono
+            btn = ctk.CTkButton(
+                card,
+                text=f"{icon} {tool.get('title', tool_name)}",
+                font=ctk.CTkFont(size=16, weight="bold"),
+                fg_color="#3b3b3b",
+                hover_color="#4A90D9",
+                text_color="white",
+                height=50,
+                command=lambda t=tool_name: self._on_tool_selected(t)
+            )
+            btn.pack(fill="x", padx=10, pady=(10, 5))
+            
+            # Descripción
+            if description:
+                desc_label = ctk.CTkLabel(
+                    card,
+                    text=description,
+                    font=ctk.CTkFont(size=11),
+                    text_color="gray",
+                    wraplength=150
+                )
+                desc_label.pack(padx=10, pady=(0, 10))
+        
+        # Botón "Comenzar con la primera" opcional
+        first_tool = tools[0]['name']
+        first_title = tools[0].get('title', first_tool)
+        
+        ctk.CTkButton(
+            welcome_frame,
+            text=f"Comenzar con {first_title} →",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="#4A90D9",
+            hover_color="#6BA8E0",
+            command=lambda: self._on_tool_selected(first_tool),
+            height=40
+        ).pack(pady=20)
     
     def _on_tool_selected(self, tool_name: str) -> None:
         """
