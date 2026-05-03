@@ -1072,12 +1072,15 @@ def analyze_topics(text: str, n_topics: int = 5, max_iter: int = 10,
         # Crear matriz documento-término
         doc_term_matrix = vectorizer.fit_transform(paragraphs)
         
+        if doc_term_matrix.shape[1] == 0:
+            return {'success': False, 'error': 'No hay suficientes palabras para analizar temas.', 'data': None}
+        
         # Obtener vocabulario
         feature_names = vectorizer.get_feature_names_out()
         
         # Crear modelo LDA
         lda = LatentDirichletAllocation(
-            n_components=n_topics,
+            n_components=min(n_topics, doc_term_matrix.shape[0]),
             max_iter=max_iter,
             learning_method='online',
             random_state=42,
