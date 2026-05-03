@@ -160,29 +160,31 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.exclude_entry = ctk.CTkEntry(opts_frame, placeholder_text="ej: palabra1, palabra2, palabra3")
         self.exclude_entry.pack(fill="x", padx=5, pady=5)
         
-        # Botones de acción
+        # Botones de acción - alternables
         action_frame = ctk.CTkFrame(frame, fg_color="transparent")
         action_frame.pack(fill="x", padx=10, pady=10)
         
-        # Botón Preview (ligero)
-        ctk.CTkButton(
+        # Botón Preview Texto Bruto (sin filtros)
+        self.preview_raw_btn = ctk.CTkButton(
             action_frame,
-            text="🔍 Preview (texto limpio)",
-            command=self._preview_frequency,
+            text="👁 Preview Texto Bruto",
+            command=self._preview_raw_text,
             width=180,
-            fg_color="#4a4",
-            hover_color="#383"
-        ).pack(side="left", padx=5)
+            fg_color="#888",
+            hover_color="#666"
+        )
+        self.preview_raw_btn.pack(side="left", padx=5)
         
-        # Botón Aplicar Limpieza
-        ctk.CTkButton(
+        # Botón Aplicar Limpieza (con filtros)
+        self.apply_clean_btn = ctk.CTkButton(
             action_frame,
             text="🔄 Aplicar Limpieza",
             command=self._apply_clean,
             width=180,
             fg_color="#48a",
             hover_color="#386"
-        ).pack(side="left", padx=5)
+        )
+        self.apply_clean_btn.pack(side="left", padx=5)
         
         # ==================== SECCIÓN: RESULTADOS ====================
         results_section = ctk.CTkLabel(frame, text="✅ RESULTADOS", font=ctk.CTkFont(size=14, weight="bold"))
@@ -214,56 +216,38 @@ class TextAnalyzerUI(ctk.CTkFrame):
             hover_color="#c50"
         ).pack(fill="x", padx=10, pady=(20, 10))
     
-    def _preview_frequency(self) -> None:
-        """Muestra preview de frecuencia sin aplicar limpieza completa."""
+    def _preview_raw_text(self) -> None:
+        """Muestra preview del texto en bruto (sin aplicar filtros)."""
         if not self.text_content:
             self.status_label.configure(text="Primero cargá texto", text_color="orange")
             return
         
-        try:
-            from tools.text_tool.processor import analyze_frequency
-            
-            # Get exclude words if any
-            exclude_text = self.exclude_entry.get().strip()
-            exclude_words = [w.strip().lower() for w in exclude_text.split(',')] if exclude_text else []
-            
-            # Apply cleaning options for preview
-            remove_stopwords = self.remove_stopwords.get()
-            
-            # Get cleaned text for preview
-            from tools.text_tool.processor import clean_text
-            cleaned = clean_text(
-                self.text_content,
-                remove_stopwords=remove_stopwords,
-                exclude_words=exclude_words if exclude_words else None
-            )
-            
-            # Get frequency top 20
-            result = analyze_frequency(cleaned, n=20, already_cleaned=True)
-            
-            if result.get('success'):
-                freqs = result['frequencies']
-                texto = "📊 Frecuencia de palabras (top 20) - Texto limpio:\n"
-                texto += "=" * 45 + "\n\n"
-                
-                for i, (word, count) in enumerate(freqs.items(), 1):
-                    bar = "█" * min(int(count / max(freqs.values()) * 20), 20)
-                    texto += f"{i:2}. {word:<20} {count:>4} {bar}\n"
-                
-                # Also show cleaned text preview
-                self.clean_text.delete("1.0", tk.END)
-                self.clean_text.insert("1.0", cleaned[:2000])
-                
-                self.clean_freq_text.delete("1.0", tk.END)
-                self.clean_freq_text.insert("1.0", texto)
-                
-                self.status_label.configure(text="Preview: opciones aplicadas sobre texto limpio", text_color="green")
-            else:
-                self.status_label.configure(text="Error en análisis", text_color="red")
-                
-        except Exception as e:
-            logger.error(f"Preview frequency error: {e}")
-            self.status_label.configure(text=f"Error: {e}", text_color="red")
+        # Mostrar texto en bruto
+        self.clean_text.delete("1.0", tk.END)
+        self.clean_text.insert("1.0", self.text_content[:2000])
+        
+        # Top 20 palabras del texto original (sin filtros)
+        from collections import Counter
+        words = self.text_content.lower().split()
+        word_freq = Counter(words)
+        top_20 = word_freq.most_common(20)
+        
+        max_count = top_20[0][1] if top_20 else 1
+        texto = "📊 Top 20 palabras (texto bruto - sin filtros):\n"
+        texto += "=" * 45 + "\n\n"
+        
+        for i, (word, count) in enumerate(top_20, 1):
+            bar = "█" * min(int(count / max_count * 20), 20)
+            texto += f"{i:2}. {word:<20} {count:>4} {bar}\n"
+        
+        self.clean_freq_text.delete("1.0", tk.END)
+        self.clean_freq_text.insert("1.0", texto)
+        
+        # Activar botón (indicar estado activo)
+        self.preview_raw_btn.configure(fg_color="#4a4", hover_color="#383")
+        self.apply_clean_btn.configure(fg_color="#48a", hover_color="#386")
+        
+        self.status_label.configure(text="Preview: texto en bruto (sin filtros)", text_color="green")
     
     def _apply_clean(self) -> None:
         """Aplica limpieza y muestra preview."""
@@ -299,6 +283,11 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.clean_freq_text.insert("1.0", preview)
         
         self.cleaned_content = cleaned
+        
+        # Activar botón "Aplicar Limpieza" (indicar estado activo)
+        self.preview_raw_btn.configure(fg_color="#888", hover_color="#666")
+        self.apply_clean_btn.configure(fg_color="#4a4", hover_color="#383")
+        
         self.status_label.configure(text=f"Limpieza aplicada: {len(cleaned.split())} palabras", text_color="green")
         
         # Auto-update all analysis tabs when cleaning is applied
@@ -999,17 +988,22 @@ class TextAnalyzerUI(ctk.CTkFrame):
         """Muestra estadísticas."""
         self.stats_text.delete("1.0", tk.END)
         
-        texto = "📉 Estadísticas del Texto\n"
-        texto += "=" * 30 + "\n\n"
+        # Define fixed width for labels to align values
+        label_width = 25
         
-        texto += f"Caracteres totales:     {stats.get('total_chars', 0):,}\n"
-        texto += f"Palabras totales:      {stats.get('total_words', 0):,}\n"
-        texto += f"Palabras únicas:        {stats.get('unique_words', 0):,}\n"
-        texto += f"Oraciones:             {stats.get('total_sentences', 0):,}\n"
+        texto = "📉 Estadísticas del Texto\n"
+        texto += "=" * (label_width + 12) + "\n"
+        texto += f"{'Métrica':<{label_width}} {'Valor':>10}\n"
+        texto += "-" * (label_width + 12) + "\n"
+        
+        texto += f"{'Caracteres totales':<{label_width}} {stats.get('total_chars', 0):>10,}\n"
+        texto += f"{'Palabras totales':<{label_width}} {stats.get('total_words', 0):>10,}\n"
+        texto += f"{'Palabras únicas':<{label_width}} {stats.get('unique_words', 0):>10,}\n"
+        texto += f"{'Oraciones':<{label_width}} {stats.get('total_sentences', 0):>10,}\n"
         texto += "\n"
-        texto += f"Longitud promedio palabra: {stats.get('avg_word_length', 0):.2f}\n"
-        texto += f"Longitud promedio oración: {stats.get('avg_sentence_length', 0):.2f}\n"
-        texto += f"Type-Token Ratio:       {stats.get('type_token_ratio', 0):.4f}\n"
+        texto += f"{'Promedio palabra':<{label_width}} {stats.get('avg_word_length', 0):>10.2f}\n"
+        texto += f"{'Promedio oración':<{label_width}} {stats.get('avg_sentence_length', 0):>10.2f}\n"
+        texto += f"{'Type-Token Ratio':<{label_width}} {stats.get('type_token_ratio', 0):>10.4f}\n"
         
         self.stats_text.insert("1.0", texto)
     
