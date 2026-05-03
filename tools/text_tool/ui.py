@@ -40,13 +40,22 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 "2. Ingresar o seleccionar contenido",
                 "3. Click en 'Cargar y Analizar'",
                 "4. Ver resultados en las solapas:",
-                "   ☁️ WordCloud - nube de palabras",
-                "   📈 Frecuencia - palabras más usadas",
+                "   ☁️ WordCloud - nube de palabras personalizable",
+                "   📈 Frecuencia - palabras más usadas (slider 20-100)",
                 "   📉 Stats - estadísticas del texto",
-                "   🔗 N-grams - frases repetidas",
+                "   🔗 N-grams - frases repetidas (slider 20-100)",
                 "   📊 Trends - frecuencia por secciones",
                 "   🔥 Correlaciones - palabras que van juntas",
-                "   ⬡ Scatter - distribución de términos"
+                "   ⬡ Scatter - distribución de términos",
+                "5. Click en cualquier gráfico para ver en ventana emergente",
+                "   - Scroll = zoom (0.5x a 5x)",
+                "   - Arrastrar = mover imagen",
+                "   - Exportar como PNG o PDF"
+            ],
+            tips=[
+                "💡 WordCloud: usá los controles para cambiar cantidad de palabras, colormap, márgenes y forma",
+                "💡 Frequency/N-grams: usá los sliders para ver más resultados",
+                "💡 Gráficos: click para abrir en ventana grande, usá scroll para zoom"
             ],
             warnings=[
                 "⚠️ Trends/Correlations/Scatter requieren texto largo (>200 palabras)",
