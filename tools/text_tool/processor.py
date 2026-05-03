@@ -303,14 +303,16 @@ def _generate_shape_mask(shape: str, width: int, height: int) -> Optional[Any]:
             return None  # wordcloud uses no mask for rectangle
             
         elif shape == 'circle' or shape == 'círculo':
-            # Create circular mask
+            # Create circular mask - swap rows/cols to match width/height
             center_x, center_y = width // 2, height // 2
             radius = min(width, height) // 2 - 5
             
             y, x = np.ogrid[:height, :width]
             mask = (x - center_x) ** 2 + (y - center_y) ** 2 <= radius ** 2
-            mask = mask.astype(np.uint8) * 255
-            return mask  # Return numpy array directly
+            # Invert: 0 in shape area (where words go), 255 for background
+            mask = (1 - mask.astype(np.uint8)) * 255
+            # Transpose to match width x height order
+            return mask.T
             
         elif shape == 'heart' or shape == 'corazón':
             # Create heart shape mask
@@ -328,8 +330,11 @@ def _generate_shape_mask(shape: str, width: int, height: int) -> Optional[Any]:
             right_circle = ((x_norm - 30) ** 2 + y_norm ** 2) <= 900
             triangle = (y_norm >= -50) & (y_norm <= 30) & (np.abs(x_norm) <= (30 - y_norm / 2))
             
-            mask = (left_circle | right_circle | triangle).astype(np.uint8) * 255
-            return mask  # Return numpy array, not PIL Image
+            mask = (left_circle | right_circle | triangle).astype(np.uint8)
+            # Invert: 0 in shape area (where words go), 255 for background
+            mask = (1 - mask) * 255
+            # Transpose to match width x height order
+            return mask.T
             
         elif shape == 'star' or shape == 'estrella':
             # Create star shape mask
@@ -356,9 +361,13 @@ def _generate_shape_mask(shape: str, width: int, height: int) -> Optional[Any]:
             draw = ImageDraw.Draw(mask_img)
             draw.polygon([(p[0], p[1]) for p in points], fill=255)
             
-            # Convert to numpy array for wordcloud
+            # Convert to numpy array for wordcloud - invert and transpose
             import numpy as np
-            return np.array(mask_img)
+            mask_array = np.array(mask_img)
+            # Invert: 0 where shape is (words go there), 255 for background
+            mask_array = (255 - mask_array)
+            # Transpose to match width x height order
+            return mask_array.T
             
         else:
             return None  # Unknown shape, fallback to rectangle
