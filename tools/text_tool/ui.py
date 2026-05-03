@@ -1489,20 +1489,9 @@ class ChartModal(ctk.CTkToplevel):
         export_frame = ctk.CTkFrame(self)
         export_frame.pack(fill="x", padx=10, pady=(5, 10))
         
-        # Close button - prominent on left
-        close_btn = ctk.CTkButton(
-            export_frame,
-            text="✕ Cerrar",
-            command=self.destroy,
-            width=100,
-            fg_color="#c44",
-            hover_color="#a33"
-        )
-        close_btn.pack(side="left", padx=10, pady=5)
-        
-        # Export label
+        # Export label and buttons on left
         export_label = ctk.CTkLabel(export_frame, text="Exportar:", font=ctk.CTkFont(size=12, weight="bold"))
-        export_label.pack(side="left", padx=20)
+        export_label.pack(side="left", padx=10)
         
         # PNG export button
         png_btn = ctk.CTkButton(
@@ -1511,7 +1500,7 @@ class ChartModal(ctk.CTkToplevel):
             command=self._export_png,
             width=100
         )
-        png_btn.pack(side="right", padx=5, pady=5)
+        png_btn.pack(side="left", padx=5, pady=5)
         
         # PDF export button
         pdf_btn = ctk.CTkButton(
@@ -1520,7 +1509,18 @@ class ChartModal(ctk.CTkToplevel):
             command=self._export_pdf,
             width=100
         )
-        pdf_btn.pack(side="right", padx=5, pady=5)
+        pdf_btn.pack(side="left", padx=5, pady=5)
+        
+        # Close button - on right
+        close_btn = ctk.CTkButton(
+            export_frame,
+            text="✕ Cerrar",
+            command=self.destroy,
+            width=100,
+            fg_color="#c44",
+            hover_color="#a33"
+        )
+        close_btn.pack(side="right", padx=10, pady=5)
     
     def _on_image_click(self, event) -> None:
         """Handle click on image - expand to full size."""
