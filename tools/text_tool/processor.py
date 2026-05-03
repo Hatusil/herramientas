@@ -310,7 +310,7 @@ def _generate_shape_mask(shape: str, width: int, height: int) -> Optional[Any]:
             y, x = np.ogrid[:height, :width]
             mask = (x - center_x) ** 2 + (y - center_y) ** 2 <= radius ** 2
             mask = mask.astype(np.uint8) * 255
-            return Image.fromarray(mask, mode='L')
+            return mask  # Return numpy array directly
             
         elif shape == 'heart' or shape == 'corazón':
             # Create heart shape mask
@@ -329,7 +329,7 @@ def _generate_shape_mask(shape: str, width: int, height: int) -> Optional[Any]:
             triangle = (y_norm >= -50) & (y_norm <= 30) & (np.abs(x_norm) <= (30 - y_norm / 2))
             
             mask = (left_circle | right_circle | triangle).astype(np.uint8) * 255
-            return Image.fromarray(mask, mode='L')
+            return mask  # Return numpy array, not PIL Image
             
         elif shape == 'star' or shape == 'estrella':
             # Create star shape mask
@@ -350,13 +350,15 @@ def _generate_shape_mask(shape: str, width: int, height: int) -> Optional[Any]:
                 py = center_y + r * np.sin(angle)
                 points.append([px, py])
             
-            # Create mask from polygon
-            from PIL import ImageDraw
+            # Create mask from polygon - convert to numpy array
+            from PIL import ImageDraw, Image
             mask_img = Image.new('L', (width, height), 0)
             draw = ImageDraw.Draw(mask_img)
             draw.polygon([(p[0], p[1]) for p in points], fill=255)
             
-            return mask_img
+            # Convert to numpy array for wordcloud
+            import numpy as np
+            return np.array(mask_img)
             
         else:
             return None  # Unknown shape, fallback to rectangle
