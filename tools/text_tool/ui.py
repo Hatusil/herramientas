@@ -96,6 +96,15 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Tab: Scatter
         self.tab_scatter = self.tabview.add("⬡ Scatter")
         
+        # Tab: KWIC (Contexts)
+        self.tab_kwic = self.tabview.add("🔍 Contextos (KWIC)")
+        
+        # Tab: Topics (LDA)
+        self.tab_topics = self.tabview.add("📚 Temas (LDA)")
+        
+        # Tab: WordTree (Árbol de Palabras)
+        self.tab_wordtree = self.tabview.add("🌳 Árbol de Palabras")
+        
         # Set up cada tab
         self._setup_input_tab()
         self._setup_clean_tab()
@@ -106,6 +115,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self._setup_trends_tab()
         self._setup_corr_tab()
         self._setup_scatter_tab()
+        self._setup_kwic_tab()
+        self._setup_topics_tab()
+        self._setup_wordtree_tab()
     
     # ============ TAB: LIMPIEZA ============
     def _setup_clean_tab(self) -> None:
@@ -1263,6 +1275,445 @@ class TextAnalyzerUI(ctk.CTkFrame):
             
         except Exception as e:
             self.scatter_label.configure(text=f"Error: {e}")
+    
+    # ============ TAB: KWIC (CONTEXTOS) ============
+    def _setup_kwic_tab(self) -> None:
+        frame = self.tab_kwic
+        
+        # === Search Controls Frame ===
+        search_frame = ctk.CTkFrame(frame)
+        search_frame.pack(fill="x", padx=10, pady=10)
+        
+        ctk.CTkLabel(
+            search_frame,
+            text="Buscar palabra clave en contexto:",
+            font=ctk.CTkFont(size=12, weight="bold")
+        ).pack(anchor="w", padx=5, pady=(5, 10))
+        
+        # Keyword input
+        keyword_row = ctk.CTkFrame(search_frame)
+        keyword_row.pack(fill="x", padx=5, pady=5)
+        
+        ctk.CTkLabel(keyword_row, text="Palabra:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.kwic_keyword = ctk.CTkEntry(keyword_row, placeholder_text="palabra a buscar...")
+        self.kwic_keyword.pack(side="left", fill="x", expand=True, padx=5)
+        
+        # Bind Enter key to search
+        self.kwic_keyword.bind("<Return>", lambda e: self._run_kwic_search())
+        
+        # Context window slider
+        context_row = ctk.CTkFrame(search_frame)
+        context_row.pack(fill="x", padx=5, pady=5)
+        
+        ctk.CTkLabel(context_row, text="Contexto (±palabras):", width=120, anchor="w").pack(side="left", padx=5)
+        
+        self.kwic_context_slider = ctk.CTkSlider(
+            context_row,
+            from_=1,
+            to=15,
+            number_of_steps=14,
+            command=self._on_kwic_context_change
+        )
+        self.kwic_context_slider.set(5)
+        self.kwic_context_slider.pack(side="left", fill="x", expand=True, padx=5)
+        
+        self.kwic_context_label = ctk.CTkLabel(context_row, text="5", width=30)
+        self.kwic_context_label.pack(side="left", padx=5)
+        
+        # Max results slider
+        results_row = ctk.CTkFrame(search_frame)
+        results_row.pack(fill="x", padx=5, pady=5)
+        
+        ctk.CTkLabel(results_row, text="Máx resultados:", width=120, anchor="w").pack(side="left", padx=5)
+        
+        self.kwic_results_slider = ctk.CTkSlider(
+            results_row,
+            from_=5,
+            to=50,
+            number_of_steps=45,
+            command=self._on_kwic_results_change
+        )
+        self.kwic_results_slider.set(20)
+        self.kwic_results_slider.pack(side="left", fill="x", expand=True, padx=5)
+        
+        self.kwic_results_label = ctk.CTkLabel(results_row, text="20", width=30)
+        self.kwic_results_label.pack(side="left", padx=5)
+        
+        # Search button
+        search_btn = ctk.CTkButton(
+            search_frame,
+            text="🔍 Buscar",
+            command=self._run_kwic_search,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        search_btn.pack(pady=10)
+        
+        # Results display - scrollable text area
+        ctk.CTkLabel(
+            frame,
+            text="Resultados:",
+            font=ctk.CTkFont(size=12, weight="bold")
+        ).pack(anchor="w", padx=10, pady=(10, 5))
+        
+        self.kwic_results_text = ctk.CTkTextbox(
+            frame,
+            font=("Courier New", 12),
+            height=300
+        )
+        self.kwic_results_text.pack(fill="both", expand=True, padx=10, pady=(5, 10))
+    
+    def _on_kwic_context_change(self, value: float) -> None:
+        """Handle context slider change."""
+        n = int(value)
+        self.kwic_context_label.configure(text=str(n))
+    
+    def _on_kwic_results_change(self, value: float) -> None:
+        """Handle results slider change."""
+        n = int(value)
+        self.kwic_results_label.configure(text=str(n))
+    
+    def _run_kwic_search(self) -> None:
+        """Run KWIC search."""
+        if not self.text_content:
+            self.status_label.configure(text="No hay texto cargado", text_color="orange")
+            return
+        
+        keyword = self.kwic_keyword.get().strip()
+        if not keyword:
+            self.status_label.configure(text="Ingrese una palabra clave", text_color="orange")
+            return
+        
+        context = int(self.kwic_context_slider.get())
+        max_results = int(self.kwic_results_slider.get())
+        
+        try:
+            from tools.text_tool.processor import analyze_kwic
+            
+            result = analyze_kwic(self.text_content, keyword, context=context, max_results=max_results)
+            
+            if result.get('success'):
+                self._show_kwic_results(result.get('data', []), keyword)
+                if not result.get('data'):
+                    self.status_label.configure(
+                        text=result.get('error', 'No se encontraron ocurrencias'),
+                        text_color="orange"
+                    )
+                else:
+                    self.status_label.configure(
+                        text=f"{len(result.get('data', []))} ocurrencias encontradas",
+                        text_color="green"
+                    )
+            else:
+                self.status_label.configure(
+                    text=result.get('error', 'Error'),
+                    text_color="red"
+                )
+        except Exception as e:
+            logger.error(f"KWIC error: {e}")
+            self.status_label.configure(text=f"Error: {e}", text_color="red")
+    
+    def _show_kwic_results(self, concordances: list, keyword: str) -> None:
+        """Display KWIC concordance results."""
+        self.kwic_results_text.delete("1.0", tk.END)
+        
+        if not concordances:
+            self.kwic_results_text.insert("1.0", "No se encontraron ocurrencias")
+            return
+        
+        # Header
+        texto = f"🔍 Contextos para '{keyword}'\n"
+        texto += "=" * 70 + "\n\n"
+        
+        # Calculate max widths
+        max_before = max(len(c.get('before', '')) for c in concordances) if concordances else 20
+        max_after = max(len(c.get('after', '')) for c in concordances) if concordances else 20
+        
+        before_width = min(max_before, 40)  # Limit display width
+        after_width = min(max_after, 40)
+        
+        # Each concordance entry
+        for i, conc in enumerate(concordances, 1):
+            before = conc.get('before', '')[:before_width]
+            keyword_disp = conc.get('keyword', '')
+            after = conc.get('after', '')[:after_width]
+            
+            # Format: before | keyword | after
+            texto += f"{i:>3}. {before:<{before_width}} | {keyword_disp} | {after}\n"
+        
+        self.kwic_results_text.insert("1.0", texto)
+    
+    # ============ TAB: TOPICS (LDA) ============
+    def _setup_topics_tab(self) -> None:
+        frame = self.tab_topics
+        
+        # === Controls Frame ===
+        controls_frame = ctk.CTkFrame(frame)
+        controls_frame.pack(fill="x", padx=10, pady=10)
+        
+        ctk.CTkLabel(
+            controls_frame,
+            text="Extracción de tópicos usando LDA (Latent Dirichlet Allocation):",
+            font=ctk.CTkFont(size=12, weight="bold")
+        ).pack(anchor="w", padx=5, pady=(5, 10))
+        
+        # Topic count slider
+        topic_count_row = ctk.CTkFrame(controls_frame)
+        topic_count_row.pack(fill="x", padx=5, pady=5)
+        
+        ctk.CTkLabel(topic_count_row, text="Número de temas:", width=120, anchor="w").pack(side="left", padx=5)
+        
+        self.topics_count_slider = ctk.CTkSlider(
+            topic_count_row,
+            from_=3,
+            to=10,
+            number_of_steps=7,
+            command=self._on_topics_count_change
+        )
+        self.topics_count_slider.set(5)
+        self.topics_count_slider.pack(side="left", fill="x", expand=True, padx=5)
+        
+        self.topics_count_label = ctk.CTkLabel(topic_count_row, text="5", width=30)
+        self.topics_count_label.pack(side="left", padx=5)
+        
+        # Run button
+        analyze_btn = ctk.CTkButton(
+            controls_frame,
+            text="📚 Analizar Temas",
+            command=self._run_topics_analysis,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        analyze_btn.pack(pady=10)
+        
+        # Results display - scrollable text area
+        ctk.CTkLabel(
+            frame,
+            text="Resultados:",
+            font=ctk.CTkFont(size=12, weight="bold")
+        ).pack(anchor="w", padx=10, pady=(10, 5))
+        
+        self.topics_results_text = ctk.CTkTextbox(
+            frame,
+            font=("Courier New", 12),
+            height=300
+        )
+        self.topics_results_text.pack(fill="both", expand=True, padx=10, pady=(5, 10))
+    
+    def _on_topics_count_change(self, value: float) -> None:
+        """Handle topic count slider change."""
+        n = int(value)
+        self.topics_count_label.configure(text=str(n))
+    
+    def _run_topics_analysis(self) -> None:
+        """Run LDA topics analysis."""
+        if not self.text_content:
+            self.status_label.configure(text="No hay texto cargado", text_color="orange")
+            return
+        
+        n_topics = int(self.topics_count_slider.get())
+        
+        try:
+            from tools.text_tool.processor import analyze_topics
+            
+            result = analyze_topics(self.text_content, n_topics=n_topics)
+            
+            if result.get('success'):
+                self._show_topics_results(result.get('data', []))
+                if result.get('data'):
+                    self.status_label.configure(
+                        text=f"Análisis de temas completado: {len(result.get('data', []))} tópicos",
+                        text_color="green"
+                    )
+                else:
+                    self.status_label.configure(
+                        text=result.get('error', 'No se encontraron suficientes tópicos'),
+                        text_color="orange"
+                    )
+            else:
+                self.status_label.configure(
+                    text=result.get('error', 'Error'),
+                    text_color="red"
+                )
+        except Exception as e:
+            logger.error(f"Topics error: {e}")
+            self.status_label.configure(text=f"Error: {e}", text_color="red")
+    
+    def _show_topics_results(self, topics: list) -> None:
+        """Display LDA topics results."""
+        self.topics_results_text.delete("1.0", tk.END)
+        
+        if not topics:
+            self.topics_results_text.insert("1.0", "No se pudieron extraer temas del texto.")
+            return
+        
+        # Header
+        texto = "📚 Temas extraídos con LDA\n"
+        texto += "=" * 60 + "\n\n"
+        
+        # Each topic
+        for topic in topics:
+            topic_id = topic.get('topic_id', 0)
+            words = topic.get('words', [])
+            
+            texto += f"--- Tema {topic_id + 1} ---\n"
+            
+            if not words:
+                texto += "  (Sin palabras)\n"
+            else:
+                # Find max weight for normalization display
+                max_weight = max(w.get('weight', 0) for w in words) if words else 1
+                
+                for word_data in words:
+                    word = word_data.get('word', '')
+                    weight = word_data.get('weight', 0)
+                    
+                    # Normalize weight for display (0-20 bars)
+                    normalized = int((weight / max_weight) * 20) if max_weight > 0 else 0
+                    bar = "▓" * normalized + "░" * (20 - normalized)
+                    
+                    texto += f"  {word:<20} {bar} {weight:.3f}\n"
+            
+            texto += "\n"
+        
+        self.topics_results_text.insert("1.0", texto)
+    
+    # ============ TAB: WORDTREE (ÁRBOL DE PALABRAS) ============
+    def _setup_wordtree_tab(self) -> None:
+        frame = self.tab_wordtree
+        
+        # === Controls Frame ===
+        controls_frame = ctk.CTkFrame(frame)
+        controls_frame.pack(fill="x", padx=10, pady=10)
+        
+        ctk.CTkLabel(
+            controls_frame,
+            text="Visualización de relaciones de palabras en estructura de árbol:",
+            font=ctk.CTkFont(size=12, weight="bold")
+        ).pack(anchor="w", padx=5, pady=(5, 10))
+        
+        # Phrase input
+        phrase_row = ctk.CTkFrame(controls_frame)
+        phrase_row.pack(fill="x", padx=5, pady=5)
+        
+        ctk.CTkLabel(phrase_row, text="Frase raíz:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.wordtree_phrase = ctk.CTkEntry(phrase_row, placeholder_text="palabra o frase a buscar...")
+        self.wordtree_phrase.pack(side="left", fill="x", expand=True, padx=5)
+        
+        # Bind Enter key to run
+        self.wordtree_phrase.bind("<Return>", lambda e: self._run_wordtree_analysis())
+        
+        # Max depth slider
+        depth_row = ctk.CTkFrame(controls_frame)
+        depth_row.pack(fill="x", padx=5, pady=5)
+        
+        ctk.CTkLabel(depth_row, text="Profundidad máx:", width=120, anchor="w").pack(side="left", padx=5)
+        
+        self.wordtree_depth_slider = ctk.CTkSlider(
+            depth_row,
+            from_=2,
+            to=5,
+            number_of_steps=3,
+            command=self._on_wordtree_depth_change
+        )
+        self.wordtree_depth_slider.set(3)
+        self.wordtree_depth_slider.pack(side="left", fill="x", expand=True, padx=5)
+        
+        self.wordtree_depth_label = ctk.CTkLabel(depth_row, text="3", width=30)
+        self.wordtree_depth_label.pack(side="left", padx=5)
+        
+        # Run button
+        generate_btn = ctk.CTkButton(
+            controls_frame,
+            text="🌳 Generar Árbol",
+            command=self._run_wordtree_analysis,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        generate_btn.pack(pady=10)
+        
+        # Image display area
+        self.wordtree_label = ctk.CTkLabel(
+            frame,
+            text="Árbol de palabras aparecerá aquí",
+            text_color="gray"
+        )
+        self.wordtree_label.pack(expand=True)
+    
+    def _on_wordtree_depth_change(self, value: float) -> None:
+        """Handle depth slider change."""
+        n = int(value)
+        self.wordtree_depth_label.configure(text=str(n))
+    
+    def _run_wordtree_analysis(self) -> None:
+        """Run WordTree analysis."""
+        if not self.text_content:
+            self.status_label.configure(text="No hay texto cargado", text_color="orange")
+            return
+        
+        phrase = self.wordtree_phrase.get().strip()
+        if not phrase:
+            self.status_label.configure(text="Ingrese una frase raíz", text_color="orange")
+            return
+        
+        max_depth = int(self.wordtree_depth_slider.get())
+        
+        try:
+            from tools.text_tool.processor import analyze_wordtree
+            
+            result = analyze_wordtree(self.text_content, phrase, max_depth=max_depth)
+            
+            if result.get('success') and result.get('image_data'):
+                self._show_wordtree(result['image_data'])
+                self.status_label.configure(
+                    text=f"Árbol generado para: '{phrase}'",
+                    text_color="green"
+                )
+            elif result.get('success'):
+                self.status_label.configure(
+                    text=result.get('error', 'No se encontraron relaciones repetidas'),
+                    text_color="orange"
+                )
+            else:
+                self.status_label.configure(
+                    text=result.get('error', 'Error'),
+                    text_color="red"
+                )
+        except Exception as e:
+            logger.error(f"WordTree error: {e}")
+            self.status_label.configure(text=f"Error: {e}", text_color="red")
+    
+    def _show_wordtree(self, image_data) -> None:
+        """Display WordTree visualization."""
+        try:
+            from PIL import Image
+            from io import BytesIO
+            
+            if not isinstance(image_data, (bytes, bytearray)):
+                raise ValueError(f"image_data debe ser bytes, recibido: {type(image_data)}")
+            
+            img = Image.open(BytesIO(image_data))
+            img.thumbnail((700, 400))
+            
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
+            
+            ctk_img = ctk.CTkImage(
+                light_image=img,
+                dark_image=img,
+                size=img.size
+            )
+            
+            self.wordtree_label.configure(image=ctk_img, text="")
+            self.wordtree_label.image = ctk_img
+            
+            # Add click binding to open modal
+            self.wordtree_label.unbind("<Button-1>")
+            self.wordtree_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "Árbol de Palabras"))
+            
+            self.wordtree_label.configure(cursor="hand2")
+            
+        except Exception as e:
+            self.wordtree_label.configure(text=f"Error: {e}")
     
     # ============ CHART MODAL ============
     def _open_chart_modal(self, image_data, title: str) -> None:

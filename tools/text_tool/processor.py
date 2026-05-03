@@ -25,6 +25,114 @@ from collections import Counter
 
 logger = logging.getLogger(__name__)
 
+# ============================================================
+# CONFIGURACIÓN DE LÍMITES Y HELPERS
+# ============================================================
+
+# Límites de tamaño de texto
+TEXT_SIZE_WARNING = 100_000  # 100KB - mostrar warning
+TEXT_SIZE_LIMIT = 500_000    # 500KB - límite máximo
+TEXT_SIZE_CHUNK = 50_000     # 50KB - tamaño de chunk para procesamiento
+
+def check_text_size(text: str) -> Dict[str, Any]:
+    """
+    Verifica el tamaño del texto y retorna información de estado.
+    
+    Returns:
+        dict con keys:
+        - is_too_large: bool - si excede el límite máximo
+        - needs_warning: bool - si necesita warning (entre warning y límite)
+        - size: int - tamaño en caracteres
+        - size_mb: float - tamaño en MB
+        - word_count: int - número de palabras
+        - estimated_time: str - tiempo estimado de procesamiento
+    """
+    if not text:
+        return {
+            'is_too_large': False,
+            'needs_warning': False,
+            'size': 0,
+            'size_mb': 0,
+            'word_count': 0,
+            'estimated_time': '< 1 seg'
+        }
+    
+    size = len(text)
+    word_count = len(text.split())
+    size_mb = size / (1024 * 1024)
+    
+    # Estimar tiempo de procesamiento basado en tamaño
+    if size < TEXT_SIZE_WARNING:
+        time_est = '< 1 seg'
+    elif size < TEXT_SIZE_WARNING * 2:
+        time_est = '1-5 seg'
+    elif size < TEXT_SIZE_LIMIT:
+        time_est = '5-15 seg'
+    else:
+        time_est = '15-30 seg+'
+    
+    return {
+        'is_too_large': size > TEXT_SIZE_LIMIT,
+        'needs_warning': TEXT_SIZE_WARNING < size <= TEXT_SIZE_LIMIT,
+        'size': size,
+        'size_mb': round(size_mb, 2),
+        'word_count': word_count,
+        'estimated_time': time_est
+    }
+
+def process_in_chunks(text: str, analyzer_func: Callable, chunk_size: int = TEXT_SIZE_CHUNK, **kwargs) -> Dict[str, Any]:
+    """
+    Procesa texto grande en chunks y combina resultados.
+    
+    Args:
+        text: Texto a procesar
+        analyzer_func: Función de análisis a aplicar
+        chunk_size: Tamaño de cada chunk
+        **kwargs: Argumentos para la función de análisis
+    
+    Returns:
+        dict con resultados combinados
+    """
+    chunks = []
+    current_chunk = []
+    current_size = 0
+    
+    # Dividir por párrafos
+    paragraphs = re.split(r'\n\s*\n|\n{2,}', text.strip())
+    
+    for para in paragraphs:
+        para_size = len(para)
+        if current_size + para_size > chunk_size and current_chunk:
+            chunks.append('\n\n'.join(current_chunk))
+            current_chunk = []
+            current_size = 0
+        current_chunk.append(para)
+        current_size += para_size
+    
+    if current_chunk:
+        chunks.append('\n\n'.join(current_chunk))
+    
+    # Procesar cada chunk y combinar
+    combined_results = []
+    errors = []
+    
+    for i, chunk in enumerate(chunks):
+        try:
+            result = analyzer_func(chunk, **kwargs)
+            if result.get('success'):
+                combined_results.append(result)
+            else:
+                errors.append(result.get('error', f'Chunk {i+1} falló'))
+        except Exception as e:
+            errors.append(f'Chunk {i+1}: {str(e)}')
+    
+    return {
+        'chunks_processed': len(chunks),
+        'successful': len(combined_results),
+        'errors': errors,
+        'results': combined_results
+    }
+
 try:
     import nltk
     # NLTK para n-grams
@@ -64,6 +172,13 @@ try:
     REQUESTS_AVAILABLE = True
 except ImportError:
     REQUESTS_AVAILABLE = False
+
+try:
+    from sklearn.feature_extraction.text import CountVectorizer
+    from sklearn.decomposition import LatentDirichletAllocation
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    SKLEARN_AVAILABLE = False
 
 
 # =============================================================================
@@ -801,9 +916,315 @@ def analyze_ngrams(text: str, n: int = 2, top_k: int = 20) -> Dict[str, Any]:
     }
 
 
-# =============================================================================
-# ANALYZER REGISTRATIONS - Registrar analizadores en el registry
-# =============================================================================
+def analyze_kwic(text: str, keyword: str, context: int = 5, max_results: int = 20) -> Dict[str, Any]:
+    """
+    Análisis KWIC (Keyword In Context) - Concordancia de palabras clave en contexto.
+    
+    Args:
+        text: Texto de entrada
+        keyword: Palabra clave a buscar
+        context: Número de palabras antes/después a mostrar (default: 5, rango: 1-15)
+        max_results: Máximo de ocurrencias a mostrar (default: 20)
+        
+    Returns:
+        Dict con 'success', 'data' ([{'before': str, 'keyword': str, 'after': str}]), 'error': str
+        
+    Note:
+        Implementa concordancia estilo Voyant - muestra palabra clave en su contexto.
+    """
+    if not text or not text.strip():
+        return {'success': False, 'error': 'Ingrese texto para analizar', 'data': None}
+    
+    # Limpiar texto y buscar palabra clave (case-insensitive)
+    keyword = keyword.strip().lower()
+    if not keyword:
+        return {'success': False, 'error': 'Ingrese una palabra clave', 'data': None}
+    
+    # Procesar texto - mantener estructura de palabras
+    words = text.split()
+    words_lower = [w.lower() for w in words]
+    
+    # Encontrar todas las ocurrencias
+    concordances = []
+    for i, word in enumerate(words_lower):
+        if word == keyword:
+            # Calcular contexto antes
+            start = max(0, i - context)
+            before_words = words[start:i]
+            before_text = ' '.join(before_words)
+            
+            # Keyword en texto original
+            keyword_orig = words[i]
+            
+            # Calcular contexto después
+            end = min(len(words), i + context + 1)
+            after_words = words[i+1:end]
+            after_text = ' '.join(after_words)
+            
+            concordances.append({
+                'before': before_text,
+                'keyword': keyword_orig,
+                'after': after_text
+            })
+            
+            # Limitar resultados
+            if len(concordances) >= max_results:
+                break
+    
+    if not concordances:
+        return {
+            'success': True,
+            'data': [],
+            'error': 'No se encontraron ocurrencias'
+        }
+    
+    return {
+        'success': True,
+        'data': concordances,
+        'error': ''
+    }
+
+
+def analyze_topics(text: str, n_topics: int = 5, max_iter: int = 10) -> Dict[str, Any]:
+    """
+    Análisis de Tópicos usando LDA (Latent Dirichlet Allocation).
+    
+    Args:
+        text: Texto de entrada
+        n_topics: Número de tópicos a extraer (default: 5, rango: 3-10)
+        max_iter: Máximo de iteraciones para LDA (default: 10)
+        
+    Returns:
+        Dict con 'success', 'data' ([{'topic_id': int, 'words': [{'word': str, 'weight': float}]}]), 'error': str
+        
+    Note:
+        Implementa LDA estilo Voyant - extrae tópicos latentes del texto.
+    """
+    if not SKLEARN_AVAILABLE:
+        return {'success': False, 'error': 'scikit-learn no instalado', 'data': None}
+    
+    if not text or not text.strip():
+        return {'success': False, 'error': 'Ingrese texto para analizar', 'data': None}
+    
+    # Dividir texto en párrafos (separados por líneas en blanco o múltiples saltos)
+    paragraphs = re.split(r'\n\s*\n|\n{2,}', text.strip())
+    paragraphs = [p.strip() for p in paragraphs if p.strip()]
+    
+    if len(paragraphs) < 3:
+        return {'success': False, 'error': 'Texto insuficiente. Se requieren al menos 3 párrafos.', 'data': None}
+    
+    try:
+        # Crear vectorizador Bag of Words
+        # Usar stopwords en español e inglés
+        vectorizer = CountVectorizer(
+            max_df=0.95,  # Ignorar términos que aparecen en >95% de docs
+            min_df=1,      # Ignorar términos que aparecen en solo 1 doc
+            stop_words='english',  # Listas de stopwords de sklearn
+            max_features=1000  # Máximo de features
+        )
+        
+        # Crear matriz documento-término
+        doc_term_matrix = vectorizer.fit_transform(paragraphs)
+        
+        # Obtener vocabulario
+        feature_names = vectorizer.get_feature_names_out()
+        
+        # Crear modelo LDA
+        lda = LatentDirichletAllocation(
+            n_components=n_topics,
+            max_iter=max_iter,
+            learning_method='online',
+            random_state=42,
+            n_jobs=-1
+        )
+        
+        # Ajustar modelo
+        lda.fit(doc_term_matrix)
+        
+        # Extraer tópicos
+        topics_data = []
+        for topic_idx, topic in enumerate(lda.components_):
+            # Obtener top palabras del tópico
+            top_word_indices = topic.argsort()[:-11:-1]  # Top 10 palabras
+            
+            words = []
+            for word_idx in top_word_indices:
+                word = feature_names[word_idx]
+                weight = float(topic[word_idx])
+                words.append({'word': word, 'weight': weight})
+            
+            topics_data.append({
+                'topic_id': topic_idx,
+                'words': words
+            })
+        
+        return {
+            'success': True,
+            'data': topics_data,
+            'error': ''
+        }
+        
+    except Exception as e:
+        logger.error(f"LDA error: {e}")
+        return {'success': False, 'error': str(e), 'data': None}
+
+
+def analyze_wordtree(text: str, phrase: str, max_depth: int = 5) -> Dict[str, Any]:
+    """
+    Análisis WordTree - visualiza relaciones de palabras en estructura de árbol.
+    
+    Args:
+        text: Texto de entrada
+        phrase: Frase raíz a buscar
+        max_depth: Profundidad máxima del árbol (default: 5, rango: 2-5)
+        
+    Returns:
+        Dict con 'success', 'image_data' (bytes), 'tree' (dict), 'error': str
+        
+    Note:
+        Implementa visualización estilo Voyant - muestra árbol de palabras
+        derivadas de la frase raíz.
+    """
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        return {'success': False, 'error': 'matplotlib no instalado', 'image_data': None, 'tree': None}
+    
+    if not text or not text.strip():
+        return {'success': False, 'error': 'Ingrese texto para analizar', 'image_data': None, 'tree': None}
+    
+    phrase = phrase.strip().lower()
+    if not phrase:
+        return {'success': False, 'error': 'Ingrese una frase para analizar', 'image_data': None, 'tree': None}
+    
+    # Procesar texto
+    words = text.lower().split()
+    phrase_words = phrase.split()
+    phrase_len = len(phrase_words)
+    
+    if len(words) < phrase_len + 1:
+        return {'success': False, 'error': 'Texto muy corto para analizar', 'image_data': None, 'tree': None}
+    
+    # Buscar todas las ocurrencias de la frase y collectar siguientes palabras
+    # Usar n-grams para encontrar siguiente palabra después de la frase
+    from collections import Counter, defaultdict
+    
+    # Construir árbol: phrase -> [siguiente_palabra] -> [más_siguiente] -> ...
+    tree = defaultdict(lambda: {'count': 0, 'children': defaultdict(lambda: {'count': 0, 'children': {}})})
+    
+    # Encontrar ocurrencias de la frase y colectar palabras siguientes
+    phrase_as_tuple = tuple(phrase_words)
+    
+    for i in range(len(words) - phrase_len):
+        # Verificar si las palabras coinciden con la frase
+        if tuple(words[i:i+phrase_len]) == phrase_as_tuple:
+            # Found - colectar siguientes palabras (hasta max_depth)
+            current_level = tree
+            current_level['count'] += 1
+            
+            # Colectar siguientes palabras
+            for depth in range(max_depth):
+                next_idx = i + phrase_len + depth
+                if next_idx >= len(words):
+                    break
+                    
+                next_word = words[next_idx]
+                
+                # Solo añadir si no es empty y no es solo punctiation
+                if next_word and len(next_word) > 0:
+                    # Add to children
+                    if next_word not in current_level['children']:
+                        current_level['children'][next_word] = {'count': 0, 'children': {}}
+                    current_level['children'][next_word]['count'] += 1
+                    
+                    # Move to next level for next iteration
+                    current_level = current_level['children'][next_word]
+    
+    # Verificar si hay datos en el árbol
+    if tree['count'] == 0 and len(tree['children']) == 0:
+        return {'success': True, 'data': [], 'error': 'No se encontraron relaciones repetidas', 'tree': {}}
+    
+    # Convertir árbol a estructura simple para visualización
+    def tree_to_dict(node):
+        """Convierte árbol a formato simple."""
+        result = {
+            'count': node.get('count', 0),
+            'children': {}
+        }
+        for child_name, child_data in node.get('children', {}).items():
+            result['children'][child_name] = tree_to_dict(child_data)
+        return result
+    
+    tree_data = tree_to_dict(tree)
+    
+    # Crear visualización de árbol
+    try:
+        fig, ax = plt.subplots(figsize=(12, 8))
+        ax.set_xlim(-0.5, 10.5)
+        ax.set_ylim(-0.5, max(6, len(tree['children']) * 0.8 + 1))
+        
+        # Draw root node (the phrase)
+        root_x, root_y = 0.5, 5
+        ax.text(root_x, root_y, phrase, fontsize=14, fontweight='bold',
+               ha='center', va='center',
+               bbox=dict(boxstyle='round,pad=0.3', facecolor='#ADD8E6', edgecolor='black'))
+        
+        # Draw first level children (next words)
+        first_level_items = sorted(tree['children'].items(), key=lambda x: x[1]['count'], reverse=True)
+        
+        if not first_level_items:
+            ax.text(5, 2.5, "No se encontraron relaciones repetidas", 
+                   fontsize=12, ha='center', style='italic', color='gray')
+        else:
+            # Limit first level to 8 items for readability
+            first_level_items = first_level_items[:8]
+            
+            # Calculate spacing
+            level_height = 4
+            item_spacing = 10 / (len(first_level_items) + 1)
+            
+            for idx, (word, data) in enumerate(first_level_items):
+                x_pos = item_spacing * (idx + 1)
+                y_pos = level_height
+                
+                # Draw line from root
+                ax.plot([root_x, x_pos], [root_y - 0.2, y_pos + 0.2], 
+                       'k-', linewidth=1, alpha=0.5)
+                
+                # Draw node
+                count_text = f"({data['count']})"
+                ax.text(x_pos, y_pos, f"{word}\n{count_text}", 
+                       fontsize=10, ha='center', va='center',
+                       bbox=dict(boxstyle='round,pad=0.2', facecolor='#E8E8E8', edgecolor='gray'))
+            
+            # Add continuation indicator if truncated
+            if len(tree['children']) > 8:
+                ax.text(5, 0.5, "... (continúa)", fontsize=10, 
+                       ha='center', style='italic', color='gray')
+        
+        ax.set_title(f'Árbol de Palabras: "{phrase}"', fontsize=14, fontweight='bold')
+        ax.axis('off')
+        
+        # Convertir a imagen
+        img_buffer = BytesIO()
+        plt.tight_layout()
+        plt.savefig(img_buffer, format='PNG', dpi=100)
+        img_buffer.seek(0)
+        plt.close(fig)
+        
+        return {
+            'success': True,
+            'image_data': img_buffer.getvalue(),
+            'tree': tree_data,
+            'error': ''
+        }
+        
+    except Exception as e:
+        logger.error(f"WordTree visualization error: {e}")
+        return {'success': False, 'error': str(e), 'image_data': None, 'tree': None}
 def _register_analyzers():
     """Registra todos los analizadores disponibles."""
     global ANALYZER_REGISTRY
@@ -857,6 +1278,27 @@ def _register_analyzers():
             'returns': 'image',
             'description': 'Distribución término-posición',
             'min_words': 20
+        },
+        'kwic': {
+            'func': analyze_kwic,
+            'requires': [],
+            'returns': 'data',
+            'description': 'KWIC - Keyword In Context',
+            'min_words': 50
+        },
+        'topics': {
+            'func': analyze_topics,
+            'requires': ['sklearn'],
+            'returns': 'data',
+            'description': 'LDA - Latent Dirichlet Allocation',
+            'min_words': 100
+        },
+        'wordtree': {
+            'func': analyze_wordtree,
+            'requires': ['matplotlib'],
+            'returns': 'image',
+            'description': 'WordTree - Árbol de palabras',
+            'min_words': 50
         }
     })
 
@@ -887,7 +1329,8 @@ def check_dependencies(requires: List[str]) -> Dict[str, Any]:
         'numpy': 'numpy',
         'pdfplumber': PDFPLUMBER_AVAILABLE,
         'docx': DOCX_AVAILABLE,
-        'requests': REQUESTS_AVAILABLE
+        'requests': REQUESTS_AVAILABLE,
+        'sklearn': SKLEARN_AVAILABLE
     }
     
     for req in requires:
