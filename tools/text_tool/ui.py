@@ -1251,6 +1251,8 @@ class ChartModal(ctk.CTkToplevel):
         self.image_data = image_data
         self.title_text = title
         self.status_label = status_label
+        self._current_width = 800
+        self._current_height = 600
         
         # Configure modal window
         self.title(f"📊 {title}")
@@ -1258,6 +1260,8 @@ class ChartModal(ctk.CTkToplevel):
         # Set minimum size 600x600, start at 800x600
         self.minsize(600, 600)
         self.geometry("800x600")
+        self._current_width = 800
+        self._current_height = 600
         
         # Center on screen
         self._center_window()
@@ -1285,16 +1289,16 @@ class ChartModal(ctk.CTkToplevel):
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         
-        # Get modal dimensions
-        modal_width = self.winfo_width()
-        modal_height = self.winfo_height()
+        # Get modal dimensions (use minsize if not yet set)
+        modal_width = max(self.winfo_width(), self._current_width)
+        modal_height = max(self.winfo_height(), self._current_height)
         
         # Calculate center position
         x = (screen_width - modal_width) // 2
-        y = (screen_height - modal_height) // 2
+        y = max(50, (screen_height - modal_height) // 2)  # At least 50px from top
         
         # Apply position
-        self.geometry(f"+{x}+{y}")
+        self.geometry(f"{modal_width}x{modal_height}+{x}+{y}")
     
     def _setup_ui(self) -> None:
         """Setup modal UI components."""
@@ -1398,10 +1402,6 @@ class ChartModal(ctk.CTkToplevel):
             # Display on canvas
             self.canvas.create_image(0, 0, anchor="nw", image=self.photo_img)
             self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-            
-            # Make canvas clickable for expand
-            self.canvas.bind("<Button-1>", self._on_image_click)
-            self.canvas.configure(cursor="hand2")
             
             # Store original image for export
             self.full_image = img
