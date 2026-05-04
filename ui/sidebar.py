@@ -8,6 +8,7 @@ from PIL import Image, ImageDraw
 from typing import List, Dict, Callable, Any
 from pathlib import Path
 from core import constants
+from core import config
 
 logger = logging.getLogger(__name__)
 
@@ -115,11 +116,14 @@ class Sidebar(ctk.CTkFrame):
             self,
             text="🏠 Inicio",
             command=self._on_inicio,
-            fg_color="#2b2b2b",
-            hover_color="#4A90D9",
+            fg_color=constants.COLORS.get("bg_medium", "#252525"),
+            hover_color=constants.COLORS.get("primary", "#3b82f6"),
+            text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
             height=30
         )
         self.inicio_btn.pack(fill="x", padx=10, pady=(8, 5))
+        
+        
         
         # Scrollable frame para las tools - expande
         self.scroll_frame = ctk.CTkScrollableFrame(
@@ -132,34 +136,88 @@ class Sidebar(ctk.CTkFrame):
         # Bindings para scroll
         self._setup_scroll_binding(self.scroll_frame)
         
-        # Botón Acerca de
+        # Botón Acerca de - con mejor contraste
         acerca_btn = ctk.CTkButton(
             self,
-            text="Acerca de",
+            text="ℹ️ Acerca de",
             command=self._on_acerca_de,
-            fg_color="transparent",
-            border_width=1
+            fg_color=constants.COLORS.get("bg_medium", "#252525"),
+            text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
+            border_width=1,
+            border_color=constants.COLORS.get("border", "#404040"),
+            hover_color=constants.COLORS.get("primary", "#3b82f6"),
+            height=36,
+            font=ctk.CTkFont(size=13)
         )
-        acerca_btn.pack(fill="x", padx=10, pady=(5, 0))
+        acerca_btn.pack(fill="x", padx=10, pady=(8, 0))
         try:
             from ui.tooltip import add_tooltip
             add_tooltip(acerca_btn, "Informacion sobre la aplicacion", 400)
         except Exception as e:
             logger.warning(f"Error adding tooltip: {e}")
         
-        # Botón de control (Salir)
-        control_frame = ctk.CTkFrame(self, fg_color="transparent")
-        control_frame.pack(fill="x", padx=10, pady=10)
-        
-        # Botón Salir - usar Maximize normal de Windows
-        salir_btn = ctk.CTkButton(
-            control_frame,
-            text="Salir",
-            command=self._on_salir,
-            fg_color="#c42b1c",
-            hover_color="#9e2317"
+        # Botón de control (Salir + Theme Switch)
+        self.control_frame = ctk.CTkFrame(
+            self,
+            fg_color=constants.COLORS.get("bg_medium", "#252525"),
+            border_color=constants.COLORS.get("border", "#404040"),
+            border_width=1
         )
-        salir_btn.pack(fill="x")
+        self.control_frame.pack(fill="x", padx=10, pady=10)
+        
+        # Título de sección
+        config_label = ctk.CTkLabel(
+            self.control_frame,
+            text="CONFIGURACIÓN",
+            text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
+            font=ctk.CTkFont(size=11, weight="bold")
+        )
+        config_label.pack(fill="x", padx=12, pady=(10, 8))
+        
+        # Switch para cambio de tema
+        self._theme_var = ctk.StringVar(value=constants.get_theme())
+        self.theme_switch = ctk.CTkSwitch(
+            self.control_frame,
+            text="",
+            command=self._on_toggle_theme,
+            onvalue="light",
+            offvalue="dark",
+            variable=self._theme_var,
+            text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
+            fg_color=constants.COLORS.get("bg_hover", "#3d3d3d"),
+            progress_color=constants.COLORS.get("primary", "#3b82f6")
+        )
+        self.theme_switch.pack(fill="x", padx=12, pady=(0, 8))
+        
+        # Label que muestra el estado actual
+        self._theme_label = ctk.CTkLabel(
+            self.control_frame,
+            text=f"Modo: {'Claro' if constants.get_theme() == 'light' else 'Oscuro'}",
+            text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
+            font=ctk.CTkFont(size=11)
+        )
+        self._theme_label.pack(fill="x", padx=12, pady=(0, 8))
+        
+        # Divisor
+        divisor = ctk.CTkFrame(
+            self.control_frame,
+            height=1,
+            fg_color=constants.COLORS.get("border", "#404040")
+        )
+        divisor.pack(fill="x", padx=12, pady=8)
+        
+        # Botón Salir
+        salir_btn = ctk.CTkButton(
+            self.control_frame,
+            text="Salir de la Aplicación",
+            command=self._on_salir,
+            fg_color=constants.COLORS.get("error", "#ef4444"),
+            hover_color="#b91c1c",
+            text_color="white",
+            height=36,
+            font=ctk.CTkFont(size=13, weight="bold")
+        )
+        salir_btn.pack(fill="x", padx=12, pady=(8, 12))
     
     def _setup_scroll_binding(self, scroll_frame) -> None:
         """Configura bindings de scroll con mouse wheel."""
@@ -242,6 +300,39 @@ class Sidebar(ctk.CTkFrame):
         if tools:
             self._highlight_tool(tools[0]['name'])
     
+    def update_theme(self) -> None:
+        """Actualiza los colores del sidebar cuando cambia el tema."""
+        # Actualizar control_frame (configuración)
+        if hasattr(self, 'control_frame'):
+            self.control_frame.configure(
+                fg_color=constants.COLORS.get("bg_medium", "#252525"),
+                border_color=constants.COLORS.get("border", "#404040")
+            )
+        
+        # Actualizar label de configuración
+        if hasattr(self, '_theme_label'):
+            self._theme_label.configure(
+                text=f"Modo: {'Claro' if constants.get_theme() == 'light' else 'Oscuro'}",
+                text_color=constants.COLORS.get("text_secondary", "#9ca3af")
+            )
+        
+        # Actualizar botón de inicio
+        if hasattr(self, 'inicio_btn'):
+            self.inicio_btn.configure(
+                fg_color=constants.COLORS.get("bg_medium", "#252525"),
+                hover_color=constants.COLORS.get("primary", "#3b82f6"),
+                text_color=constants.COLORS.get("text_primary", "#e0e0e0")
+            )
+        
+        # Actualizar botónAcerca de
+        if hasattr(self, '_acerca_btn'):
+            self._acerca_btn.configure(
+                fg_color=constants.COLORS.get("bg_medium", "#252525"),
+                text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
+                border_color=constants.COLORS.get("border", "#404040"),
+                hover_color=constants.COLORS.get("primary", "#3b82f6")
+            )
+    
     def _highlight_tool(self, tool_name: str = None) -> None:
         """Resalta el botón seleccionado. Si tool_name es None, deselecciona todos."""
         selected_color = constants.COLORS["primary"]
@@ -268,6 +359,31 @@ class Sidebar(ctk.CTkFrame):
         """Vuelve a la pantalla de bienvenida."""
         # Notificar al app para que muestre la pantalla de inicio
         self.on_tool_select("__welcome__")
+    
+    def _on_toggle_theme(self) -> None:
+        """Cambia entre tema oscuro y claro usando el switch."""
+        new_theme = self.theme_switch.get()
+        
+        # Guardar en config (persistencia)
+        config.save_theme(new_theme)
+        
+        # Actualizar constants
+        constants.set_theme(new_theme)
+        
+        # Actualizar label con el modo actual
+        self._theme_label.configure(
+            text=f"Modo: {'Claro' if new_theme == 'light' else 'Oscuro'}",
+            text_color=constants.COLORS.get("text_secondary", "#9ca3af")
+        )
+        
+        # Notificar a la app principal para que refresque todos los widgets
+        if hasattr(self.master, 'refresh_theme'):
+            self.master.refresh_theme()
+        
+        # Forzar redibujado de la ventana
+        self.master.update()
+        
+        logger.info(f"Tema cambiado a: {new_theme}")
     
     def _on_acerca_de(self) -> None:
         """Muestra diálogo Acerca de - estilo profesional."""

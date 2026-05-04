@@ -3,6 +3,12 @@ HelpPanel: Componente reutilizable para mostrar ayuda/descripción en las herram
 Muestra la ayuda como un popup flotante (CTkToplevel) que no desplaza el contenido.
 """
 import customtkinter as ctk
+import sys
+from pathlib import Path
+
+# Importar constants para colores del tema
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from core import constants
 
 
 class HelpPopup:
@@ -47,20 +53,23 @@ class HelpPopup:
         # Bloquear interacción con la ventana padre
         self.window.grab_set()
         
-        # Frame principal - fondo oscuro
-        main_frame = ctk.CTkFrame(self.window, fg_color="#1a1a1a")
+        # Frame principal - usar colores del tema
+        main_frame = ctk.CTkFrame(
+            self.window,
+            fg_color=constants.COLORS.get("bg_dark", "#1a1a1a")
+        )
         main_frame.pack(fill="both", expand=True, padx=0, pady=0)
         
         # Usar CTkScrollableFrame que maneja el scroll correctamente
         scrollable = ctk.CTkScrollableFrame(
             main_frame,
-            fg_color="#1a1a1a",
+            fg_color=constants.COLORS.get("bg_dark", "#1a1a1a"),
             label_text="",
-            label_fg_color="#1a1a1a"
+            label_fg_color=constants.COLORS.get("bg_dark", "#1a1a1a")
         )
         scrollable.pack(fill="both", expand=True, padx=15, pady=15)
         
-        # Contenido con wraplength - colores contrasts
+        # Contenido con wraplength - colores del tema
         if description:
             desc_label = ctk.CTkLabel(
                 scrollable,
@@ -69,7 +78,7 @@ class HelpPopup:
                 justify="left",
                 anchor="w",
                 wraplength=450,
-                text_color="white"
+                text_color=constants.COLORS.get("text_primary", "#e0e0e0")
             )
             desc_label.pack(anchor="w", padx=10, pady=(5, 10), fill="x")
         
@@ -78,7 +87,7 @@ class HelpPopup:
                 scrollable,
                 text="📌 Uso:",
                 font=ctk.CTkFont(size=15, weight="bold"),
-                text_color="#4A90D9"
+                text_color=constants.COLORS.get("primary", "#3b82f6")
             ).pack(anchor="w", padx=10, pady=(10, 0))
             
             for item in self._usage:
@@ -86,7 +95,7 @@ class HelpPopup:
                     scrollable,
                     text=f"• {item}",
                     font=ctk.CTkFont(size=14),
-                    text_color="#BBBBBB",
+                    text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
                     justify="left",
                     anchor="w",
                     wraplength=420
@@ -97,7 +106,7 @@ class HelpPopup:
                 scrollable,
                 text="💡 Tips:",
                 font=ctk.CTkFont(size=15, weight="bold"),
-                text_color="#4A90D9"
+                text_color=constants.COLORS.get("primary", "#3b82f6")
             ).pack(anchor="w", padx=10, pady=(15, 0))
             
             for tip in self._tips:
@@ -105,7 +114,7 @@ class HelpPopup:
                     scrollable,
                     text=f"• {tip}",
                     font=ctk.CTkFont(size=14),
-                    text_color="#7CFC00",
+                    text_color=constants.COLORS.get("success", "#22c55e"),
                     justify="left",
                     anchor="w",
                     wraplength=420
@@ -116,7 +125,7 @@ class HelpPopup:
                 scrollable,
                 text="⚠️ Advertencias:",
                 font=ctk.CTkFont(size=15, weight="bold"),
-                text_color="#4A90D9"
+                text_color=constants.COLORS.get("primary", "#3b82f6")
             ).pack(anchor="w", padx=10, pady=(15, 0))
             
             for warn in self._warnings:
@@ -124,7 +133,7 @@ class HelpPopup:
                     scrollable,
                     text=f"• {warn}",
                     font=ctk.CTkFont(size=14),
-                    text_color="#FFA500",
+                    text_color=constants.COLORS.get("warning", "#f59e0b"),
                     justify="left",
                     anchor="w",
                     wraplength=420
@@ -136,8 +145,8 @@ class HelpPopup:
             text="Cerrar",
             command=self.close,
             width=100,
-            fg_color="#4A90D9",
-            hover_color="#6BA8E0"
+            fg_color=constants.COLORS.get("primary", "#3b82f6"),
+            hover_color=constants.COLORS.get("primary_hover", "#2563eb")
         )
         close_btn.pack(pady=(15, 20))
         
@@ -161,8 +170,9 @@ class HelpButton(ctk.CTkButton):
             command=self._open_help,
             width=80,
             height=28,
-            fg_color="gray",
-            hover_color="darkgray",
+            fg_color=constants.COLORS.get("bg_hover", "#3d3d3d"),
+            hover_color=constants.COLORS.get("primary", "#3b82f6"),
+            text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
             **kwargs
         )
         

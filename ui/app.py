@@ -13,6 +13,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from core import constants
+from core import config
 from core.plugin_manager import PluginManager
 from ui.sidebar import Sidebar
 from ui.status_bar import StatusBar
@@ -32,6 +33,11 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         
+        # ============ INICIALIZAR TEMA ============
+        # Cargar tema desde config y aplicar
+        saved_theme = config.load_theme()
+        constants.set_theme(saved_theme)
+        
         # Configuración de ventana
         self.title(constants.APP_NAME)
         self.geometry(f"{constants.APP_WIDTH}x{constants.APP_HEIGHT}")
@@ -40,7 +46,7 @@ class App(ctk.CTk):
         # Centrar ventana en pantalla
         self._center_window()
         
-        # Estilo de ventana
+        # Estilo de ventana - usar color del tema actual
         self.configure(fg_color=constants.COLORS["bg_dark"])
         
         # Permitir maximizar
@@ -96,6 +102,33 @@ class App(ctk.CTk):
             # Bug conocido de CustomTkinter CTkButton - forzar salida
             import sys
             sys.exit(0)
+    
+    def refresh_theme(self) -> None:
+        """Actualiza todos los widgets cuando cambia el tema."""
+        # Actualizar ventana principal
+        self.configure(fg_color=constants.COLORS["bg_dark"])
+
+        # Actualizar content frame
+        if self.content_frame:
+            self.content_frame.configure(fg_color=constants.COLORS["bg_medium"])
+
+        # Actualizar sidebar completo - forzar recargar tools
+        if self.sidebar:
+            tools = self.plugin_manager.get_tools_list()
+            self.sidebar.set_tools(tools)
+            # Actualizar colores del tema en sidebar
+            if hasattr(self.sidebar, 'update_theme'):
+                self.sidebar.update_theme()
+
+        # Recargar pantalla actual si hay una tool activa
+        if self.current_tool:
+            tool = self.plugin_manager.get_tools().get(self.current_tool)
+            if tool:
+                self._on_tool_selected(self.current_tool)
+        else:
+            # Recargar pantalla de bienvenida
+            tools = self.plugin_manager.get_tools_list()
+            self._show_welcome_screen(tools)
     
     def _setup_ui(self) -> None:
         """Configura la interfaz de usuario."""
@@ -181,7 +214,10 @@ class App(ctk.CTk):
             widget.destroy()
         
         # Crear frame de bienvenida
-        welcome_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        welcome_frame = ctk.CTkFrame(
+            self.content_frame,
+            fg_color=constants.COLORS.get("bg_medium", "#252525")
+        )
         welcome_frame.pack(fill="both", expand=True)
         
         # Título de bienvenida
@@ -189,7 +225,7 @@ class App(ctk.CTk):
             welcome_frame,
             text="🔧 Herramientas",
             font=ctk.CTkFont(size=32, weight="bold"),
-            text_color="white"
+            text_color=constants.COLORS.get("text_primary", "#e0e0e0")
         )
         title.pack(pady=(30, 10))
         
@@ -197,7 +233,7 @@ class App(ctk.CTk):
             welcome_frame,
             text="Seleccioná una herramienta para comenzar",
             font=ctk.CTkFont(size=16),
-            text_color="gray"
+            text_color=constants.COLORS.get("text_secondary", "#9ca3af")
         )
         subtitle.pack(pady=(0, 30))
         
@@ -246,7 +282,7 @@ class App(ctk.CTk):
             # Card de tool
             card = ctk.CTkFrame(
                 tools_frame,
-                fg_color="#2b2b2b",
+                fg_color=constants.COLORS.get("bg_light", "#2d2d2d"),
                 corner_radius=10
             )
             card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
@@ -260,8 +296,8 @@ class App(ctk.CTk):
                 card,
                 text=f"{icon} {tool.get('title', tool_name)}",
                 font=ctk.CTkFont(size=16, weight="bold"),
-                fg_color="#3b3b3b",
-                hover_color="#4A90D9",
+                fg_color=constants.COLORS.get("button_fg", "#3d3d3d"),
+                hover_color=constants.COLORS.get("button_hover", "#525252"),
                 text_color="white",
                 height=50,
                 command=lambda t=tool_name: self._on_tool_selected(t)
@@ -274,7 +310,7 @@ class App(ctk.CTk):
                     card,
                     text=description,
                     font=ctk.CTkFont(size=11),
-                    text_color="gray",
+                    text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
                     wraplength=150
                 )
                 desc_label.pack(padx=10, pady=(0, 10))
