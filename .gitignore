@@ -83,3 +83,6 @@ coverage.xml
 
 # --- Proyecto ---
 !Herramientas.spec  # Este SÍ se necesita para PyInstaller
+
+# --- Otros ---
+informes/

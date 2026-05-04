@@ -294,7 +294,7 @@ class App(ctk.CTk):
             # Botón con icono
             btn = ctk.CTkButton(
                 card,
-                text=f"{icon} {tool.get('title', tool_name)}",
+                text=f"{icon} {tool.get('display_name', tool_name)}",
                 font=ctk.CTkFont(size=16, weight="bold"),
                 fg_color=constants.COLORS.get("button_fg", "#3d3d3d"),
                 hover_color=constants.COLORS.get("button_hover", "#525252"),

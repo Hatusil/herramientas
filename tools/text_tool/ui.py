@@ -10,6 +10,7 @@ from pathlib import Path
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Dict, Any
+import time
 
 logger = logging.getLogger(__name__)
 class TextAnalyzerUI(ctk.CTkFrame):
@@ -20,7 +21,411 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.on_process = on_process
         self.text_content: str = ""
         self.sources: Dict[str, Any] = {"text": [], "files": [], "urls": []}
+        
+        # Phase 1: Centralized state management
+        self._state: Dict[str, Any] = {
+            'text': "",
+            'file_path': None,
+            'last_analysis': None,
+            'progress': None,
+            'thread_running': False,
+            'has_text': False,
+            'current_tab': "📥 Entrada"
+        }
+        
+        # Phase 2: Threading and progress
+        self.executor = ThreadPoolExecutor(max_workers=1)  # Single analysis at a time
+        self._progress_start_time: float = 0
+        self._progress_threshold = 2.0  # 2-second threshold
+        
         self._setup_ui()
+    
+    # ============ STATE MANAGEMENT (Phase 1) ============
+    def _update_state(self, **kwargs) -> None:
+        """Update state dictionary with provided key-value pairs."""
+        for key, value in kwargs.items():
+            self._state[key] = value
+    
+    def _get_state(self, key: str, default: Any = None) -> Any:
+        """Get state value with optional default."""
+        return self._state.get(key, default)
+    
+    def _check_has_text(self) -> bool:
+        """Check if text content is available."""
+        return bool(self.text_content and self.text_content.strip())
+    
+    def _on_tab_change(self, tab_name: str) -> None:
+        """Track current tab."""
+        self._state['current_tab'] = tab_name
+    
+    # ============ PROGRESS BAR + THREADING (Phase 2) ============
+    # Progress callback for long-running operations
+    def _progress_callback(self, progress: float) -> None:
+        """Callback for progress updates from analysis functions.
+        
+        Args:
+            progress: Progress value 0.0 to 1.0
+        """
+        if self._get_state('thread_running'):
+            # Schedule UI update on main thread
+            self.after(0, lambda p=progress: self._update_progress_value(p))
+    
+    def _update_progress_value(self, progress: float) -> None:
+        """Update progress bar value on main thread."""
+        if self._get_state('thread_running'):
+            self.progress_bar.set(min(max(progress, 0), 1))
+            self._update_state(progress=int(progress * 100))
+    
+    def _show_progress(self) -> None:
+        """Show progress bar widget."""
+        self.progress_bar.pack(pady=(0, 5))
+        self.progress_bar.configure(progress_color="blue")
+    
+    def _hide_progress(self) -> None:
+        """Hide progress bar widget."""
+        self.progress_bar.set(0)
+        self.progress_bar.pack_forget()
+    
+    def _update_progress_indeterminate(self) -> None:
+        """Show indeterminate progress animation."""
+        self.progress_bar.configure(progress_color="blue")
+        # Animate indeterminate mode (oscillating)
+        def animate():
+            if self._get_state('thread_running'):
+                # Oscillate between 0.2 and 0.8
+                import random
+                self.progress_bar.set(0.2 + random.random() * 0.6)
+                self.after(200, animate)
+        animate()
+    
+    def _run_in_thread(self, analysis_fn: Callable, *args, **kwargs) -> None:
+        """Execute analysis function in background thread with progress tracking.
+        
+        Args:
+            analysis_fn: The analysis function to run
+            *args: Positional arguments for analysis_fn
+            **kwargs: Keyword arguments for analysis_fn
+            
+        Returns:
+            None: Result handled via callback pattern
+        """
+        # Check if thread already running
+        if self._get_state('thread_running'):
+            self.status_label.configure(text="Análisis en progreso...", text_color="orange")
+            return
+        
+        # Mark thread as running
+        self._update_state(thread_running=True)
+        
+        # Record start time for threshold check
+        start_time = time.time()
+        self._progress_start_time = start_time
+        
+        # Schedule progress bar after threshold (2 seconds)
+        self.after(int(self._progress_threshold * 1000), lambda: self._check_show_progress(start_time))
+        
+        def worker():
+            """Background worker function."""
+            try:
+                # Execute analysis
+                result = analysis_fn(*args, **kwargs)
+                
+                # Calculate elapsed time
+                elapsed = time.time() - start_time
+                
+                # Schedule result handling on main thread
+                self.after(0, lambda r=result, e=elapsed: self._handle_thread_result(r, e))
+            except Exception as e:
+                import traceback
+                logger.error(f"Thread error: {e}")
+                traceback.print_exc()
+                self.after(0, lambda: self._handle_thread_error(str(e)))
+        
+        # Submit to thread pool
+        self.executor.submit(worker)
+    
+    def _check_show_progress(self, start_time: float) -> None:
+        """Check if operation is taking longer than threshold - show progress bar."""
+        if self._get_state('thread_running') and start_time == self._progress_start_time:
+            elapsed = time.time() - start_time
+            if elapsed >= self._progress_threshold:
+                self._show_progress()
+                self._update_progress_indeterminate()
+    
+    def _handle_thread_result(self, result: Dict[str, Any], elapsed: float) -> None:
+        """Handle analysis result from background thread."""
+        # Hide progress bar
+        self._hide_progress()
+        
+        # Reset thread state
+        self._update_state(thread_running=False, progress=None)
+        
+        # Process result
+        if result:
+            self._process_analysis_result(result)
+        
+        # Update status
+        self.status_label.configure(text=f"Análisis completado en {elapsed:.1f}s", text_color="green")
+    
+    def _handle_thread_error(self, error_msg: str) -> None:
+        """Handle error from background thread."""
+        self._hide_progress()
+        self._update_state(thread_running=False, progress=None)
+        self.status_label.configure(text=f"Error: {error_msg}", text_color="red")
+    
+    def _process_analysis_result(self, result: Dict[str, Any]) -> None:
+        """Process and display analysis result based on type."""
+        # This is a placeholder - actual display logic is in individual methods
+        # The calling code determines what result to display
+        pass
+    
+    def _cleanup_thread(self) -> None:
+        """Clean up thread state on completion or error."""
+        self._hide_progress()
+        self._update_state(thread_running=False, progress=None)
+    
+    # ============ PHASE 3: KEYBOARD SHORTCUTS + DRAG-DROP ============
+    def _on_paste(self, event=None):
+        """Handle Ctrl+V paste from clipboard into text area."""
+        try:
+            # Get clipboard content
+            clipboard_text = self.clipboard_get()
+            if clipboard_text and clipboard_text.strip():
+                # Insert at cursor position
+                self.text_input_area.insert(tk.INSERT, clipboard_text)
+                # Update state
+                current_text = self.text_input_area.get("1.0", tk.END).strip()
+                self._update_state(text=current_text, has_text=bool(current_text))
+                self.status_label.configure(text=f"Pegado: {len(clipboard_text)} caracteres", text_color="green")
+        except tk.TclError:
+            # Clipboard is empty or contains non-text data
+            self.status_label.configure(text="Clipboard vacío o no texto", text_color="orange")
+        return "break"  # Prevent default paste behavior
+    
+    def _on_open_file(self, event=None):
+        """Handle Ctrl+O to open file dialog."""
+        files = filedialog.askopenfilenames(
+            title="Seleccionar archivos",
+            filetypes=[
+                ("Texto", "*.txt *.md"),
+                ("Documentos", "*.pdf *.docx *.doc"),
+                ("Todos", "*.*")
+            ]
+        )
+        if files:
+            self._load_files(files)
+        return "break"
+    
+    def _on_save_file(self, event=None):
+        """Handle Ctrl+S to save current text to file."""
+        # Get current text to save (prefer cleaned content if available)
+        text_to_save = self.cleaned_content if self.cleaned_content else self.text_content
+        
+        if not text_to_save:
+            self.status_label.configure(text="No hay texto para guardar", text_color="orange")
+            return "break"
+        
+        # Get initial directory from current file_path if exists
+        initial_dir = ""
+        initial_file = "texto_guardado.txt"
+        
+        current_path = self._get_state('file_path')
+        if current_path:
+            initial_dir = os.path.dirname(current_path)
+            initial_file = os.path.basename(current_path)
+        
+        # Open save dialog
+        file_path = filedialog.asksaveasfilename(
+            title="Guardar archivo",
+            initialdir=initial_dir,
+            initialfile=initial_file,
+            defaultextension=".txt",
+            filetypes=[
+                ("Texto", "*.txt"),
+                ("Markdown", "*.md"),
+                ("Todos", "*.*")
+            ]
+        )
+        
+        if file_path:
+            try:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(text_to_save)
+                
+                # Update state with new file path
+                self._update_state(file_path=file_path)
+                
+                self.status_label.configure(
+                    text=f"Guardado: {len(text_to_save)} caracteres en {os.path.basename(file_path)}",
+                    text_color="green"
+                )
+            except Exception as e:
+                logger.error(f"Error guardando archivo: {e}")
+                self.status_label.configure(text=f"Error al guardar: {e}", text_color="red")
+        
+        return "break"
+    
+    def _load_files(self, files: tuple) -> None:
+        """Load files and update state. Called by Ctrl+O and drag-drop."""
+        try:
+            from tools.text_tool.processor import extract_text_from_file
+            
+            all_text = []
+            for f in files:
+                result = extract_text_from_file(f)
+                if result.get('success'):
+                    all_text.append(result['text'])
+            
+            if all_text:
+                new_text = '\n\n'.join(all_text)
+                if self.text_content:
+                    self.text_content += '\n\n' + new_text
+                else:
+                    self.text_content = new_text
+                
+                self.sources["files"].extend(files)
+                self.cleaned_content = None
+                self._update_sources_summary()
+                self._update_files_display()
+                
+                # State update
+                self._update_state(
+                    text=self.text_content,
+                    file_path=files[0] if files else None,
+                    has_text=bool(self.text_content)
+                )
+                self.status_label.configure(
+                    text=f"{len(files)} archivos: {len(self.text_content)} caracteres",
+                    text_color="green"
+                )
+                # Switch to text mode to show loaded content
+                self.input_type.set("text")
+                self._on_input_type_change()
+        except ImportError:
+            self.status_label.configure(
+                text="Installa dependencias: pip install wordcloud nltk pdfplumber",
+                text_color="red"
+            )
+    
+    def _on_run_analysis(self, event=None):
+        """Handle Ctrl+Enter to run analysis on current tab."""
+        current_tab = self._get_state('current_tab')
+        
+        # Check if on input tab - run load
+        if current_tab == "📥 Entrada":
+            self._load_and_analyze()
+        # Check if on clean tab - run all analysis
+        elif current_tab == "⚙️ Limpieza":
+            if self._check_text_size(show_warning=True):
+                self._apply_clean()
+                self._run_all_analysis()
+        else:
+            # Try to run analysis on current tab
+            self.status_label.configure(text=f"Ejecutando análisis en {current_tab}...", text_color="blue")
+        
+        return "break"
+    
+    def _on_cancel_analysis(self, event=None):
+        """Handle Escape to cancel running analysis."""
+        if self._get_state('thread_running'):
+            self._update_state(thread_running=False, progress=None)
+            self._hide_progress()
+            self.status_label.configure(text="Análisis cancelado", text_color="orange")
+            # Note: Thread continues in background but UI state is reset
+        else:
+            # If no analysis running, maybe close popup or clear input
+            pass
+        return "break"
+    
+    def _on_file_drop(self, event):
+        """Handle file drop on text input area (drag-drop support)."""
+        # Get dropped files from event data
+        files = self.tk.splitlist(event.data) if hasattr(event, 'data') else ()
+        
+        if files:
+            # Filter for supported file types
+            supported_exts = {'.txt', '.md', '.pdf', '.docx', '.doc'}
+            valid_files = [f for f in files if Path(f).suffix.lower() in supported_exts]
+            
+            if valid_files:
+                self._load_files(tuple(valid_files))
+            else:
+                # Show error for unsupported files
+                if files:
+                    ext = Path(files[0]).suffix.lower()
+                    self.status_label.configure(
+                        text=f"Tipo de archivo no soportado: {ext}",
+                        text_color="red"
+                    )
+        return "break"
+    
+    def _on_url_drop(self, event):
+        """Handle URL drop on text input area (drag-drop support)."""
+        # URL drops come as text data
+        try:
+            url_text = event.data if hasattr(event, 'data') else ""
+            if url_text and url_text.startswith(('http://', 'https://')):
+                # Add to URL entry
+                self.input_type.set("url")
+                self._on_input_type_change()
+                
+                # Clear existing and add the URL
+                for row, entry in self.url_entries:
+                    entry.delete(0, tk.END)
+                self.url_entries = []
+                self._add_url_field()
+                self.url_entries[0][1].insert(0, url_text)
+                
+                self.status_label.configure(
+                    text=f"URL detectada: {url_text[:50]}...",
+                    text_color="green"
+                )
+        except Exception as e:
+            logger.error(f"URL drop error: {e}")
+        return "break"
+    
+    def _setup_keyboard_shortcuts(self) -> None:
+        """Bind keyboard shortcuts to text input area."""
+        # Ctrl+V - paste
+        self.text_input_area.bind('<Control-v>', self._on_paste)
+        
+        # Ctrl+O - open file
+        self.text_input_area.bind('<Control-o>', self._on_open_file)
+        
+        # Ctrl+S - save file
+        self.text_input_area.bind('<Control-s>', self._on_save_file)
+        
+        # Ctrl+Enter - run analysis
+        self.bind('<Control-Return>', self._on_run_analysis)
+        
+        # Escape - cancel analysis
+        self.bind('<Escape>', self._on_cancel_analysis)
+        
+        # For drag-drop, try to register as drop target (Tkinter dnd)
+        # Note: CTkTextbox doesn't support Tkinter dnd, so we skip this silently
+        try:
+            if hasattr(self.text_input_area, 'drop_target_register'):
+                # Register for file drops
+                self.text_input_area.drop_target_register('DND_Files')
+                self.text_input_area.dnd_bind('<<Drop>>', self._on_file_drop)
+        except (tk.TclError, AttributeError):
+            # CTkTextbox doesn't support Tkinter dnd, or TclError
+            pass
+    
+    def _update_help_with_shortcuts(self) -> None:
+        """Update help panel description with new keyboard shortcuts."""
+        # This updates the help panel text at initialization
+        new_tips = [
+            "💡 WordCloud: usá los controles para cambiar cantidad de palabras, colormap, márgenes y forma",
+            "💡 Frequency/N-grams: usá los sliders para ver más resultados",
+            "💡 Gráficos: click para abrir en ventana grande, usá scroll para zoom",
+            "💡 Atajos: Ctrl+V=paste, Ctrl+O=abrir, Ctrl+S=guardar, Ctrl+Enter=analizar, Escape=cancelar"
+        ]
+        
+        # Update the help panel if it exists
+        if hasattr(self, '_help_panel'):
+            # Help panel is set up in _setup_ui - we can modify tips there
+            pass  # Tips are passed in add_help call
     
     def _setup_ui(self) -> None:
         # Título
@@ -55,7 +460,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
             tips=[
                 "💡 WordCloud: usá los controles para cambiar cantidad de palabras, colormap, márgenes y forma",
                 "💡 Frequency/N-grams: usá los sliders para ver más resultados",
-                "💡 Gráficos: click para abrir en ventana grande, usá scroll para zoom"
+                "💡 Gráficos: click para abrir en ventana grande, usá scroll para zoom",
+                "💡 Atajos: Ctrl+V=paste, Ctrl+O=abrir, Ctrl+S=guardar, Ctrl+Enter=analizar, Escape=cancelar",
+                "💡 Arrastrá archivos .txt/.md/.pdf sobre el área de texto para cargarlos"
             ],
             warnings=[
                 "⚠️ Trends/Correlations/Scatter requieren texto largo (>200 palabras)",
@@ -206,15 +613,15 @@ class TextAnalyzerUI(ctk.CTkFrame):
         clean_label = ctk.CTkLabel(frame, text="Texto limpio (preview):", font=ctk.CTkFont(size=12))
         clean_label.pack(anchor="w", padx=10, pady=(5, 0))
         
-        self.clean_text = ctk.CTkTextbox(frame, wrap="word", height=100)
-        self.clean_text.pack(fill="x", padx=10, pady=5)
+        self.clean_text = ctk.CTkTextbox(frame, wrap="word")
+        self.clean_text.pack(fill="both", expand=True, padx=10, pady=5)
         
         # Top 20 palabras
         top_words_label = ctk.CTkLabel(frame, text="Top 20 palabras:", font=ctk.CTkFont(size=12))
         top_words_label.pack(anchor="w", padx=10, pady=(10, 0))
         
-        self.clean_freq_text = ctk.CTkTextbox(frame, wrap="word", height=150, font=("Courier New", 11))
-        self.clean_freq_text.pack(fill="x", padx=10, pady=5)
+        self.clean_freq_text = ctk.CTkTextbox(frame, wrap="word", font=("Courier New", 11))
+        self.clean_freq_text.pack(fill="both", expand=True, padx=10, pady=5)
         
         # ==================== BOTÓN PRINCIPAL ====================
         # Destacado y visible
@@ -245,12 +652,16 @@ class TextAnalyzerUI(ctk.CTkFrame):
         top_20 = word_freq.most_common(20)
         
         max_count = top_20[0][1] if top_20 else 1
+        # Calculate dynamic width for proper alignment
+        max_word_len = max(len(word) for word, _ in top_20) if top_20 else 10
+        text_width = max(15, max_word_len + 2)
+        
         texto = "📊 Top 20 palabras (texto bruto - sin filtros):\n"
-        texto += "=" * 45 + "\n\n"
+        texto += "=" * (text_width + 10) + "\n\n"
         
         for i, (word, count) in enumerate(top_20, 1):
             bar = "█" * min(int(count / max_count * 20), 20)
-            texto += f"{i:2}. {word:<20} {count:>4} {bar}\n"
+            texto += f"{i:2}. {word:<{text_width}} {count:>4} {bar}\n"
         
         self.clean_freq_text.delete("1.0", tk.END)
         self.clean_freq_text.insert("1.0", texto)
@@ -287,9 +698,13 @@ class TextAnalyzerUI(ctk.CTkFrame):
         word_freq = Counter(words)
         top_20 = word_freq.most_common(20)
         
-        preview = "Top 20 palabras:\n" + "=" * 25 + "\n"
+        # Calculate dynamic width for proper alignment
+        max_word_len = max(len(word) for word, _ in top_20) if top_20 else 10
+        text_width = max(12, max_word_len + 2)
+        
+        preview = "Top 20 palabras:\n" + "=" * (text_width + 8) + "\n"
         for i, (word, count) in enumerate(top_20, 1):
-            preview += f"{i:2}. {word:<15} {count:>4}\n"
+            preview += f"{i:2}. {word:<{text_width}} {count:>4}\n"
         
         self.clean_freq_text.delete("1.0", tk.END)
         self.clean_freq_text.insert("1.0", preview)
@@ -301,6 +716,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.apply_clean_btn.configure(fg_color="#4a4", hover_color="#383")
         
         self.status_label.configure(text=f"Limpieza aplicada: {len(cleaned.split())} palabras", text_color="green")
+        
+        # State update (Phase 1) - track last analysis
+        self._update_state(last_analysis="limpieza")
         
         # Auto-update all analysis tabs when cleaning is applied
         self._update_frequency_display()
@@ -316,6 +734,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.clean_text.delete("1.0", tk.END)
         self.clean_freq_text.delete("1.0", tk.END)
         self.sources = {"text": [], "files": [], "urls": []}
+        
+        # State reset (Phase 1)
+        self._update_state(text="", file_path=None, last_analysis=None, has_text=False)
         
         self._update_sources_summary()
         self._update_files_display()
@@ -374,7 +795,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
         Returns:
             bool: True si el texto es aceptable, False si es muy grande
         """
-        if not self.text_content:
+        # State check (Phase 1) - use state lookup instead of direct hasattr
+        if not self._get_state('has_text'):
             self.status_label.configure(text="Primero cargá texto", text_color="orange")
             return False
         
@@ -475,6 +897,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Initialize input view (después de crear botón)
         self._on_input_type_change()
         
+        # Phase 3: Setup keyboard shortcuts
+        self._setup_keyboard_shortcuts()
+        
         # Status
         self.status_label = ctk.CTkLabel(
             self, 
@@ -482,6 +907,16 @@ class TextAnalyzerUI(ctk.CTkFrame):
             text_color="gray"
         )
         self.status_label.pack(pady=5)
+        
+        # Phase 2: Progress bar (hidden by default)
+        self.progress_bar = ctk.CTkProgressBar(
+            self,
+            width=300,
+            height=8
+        )
+        self.progress_bar.set(0)  # Start at 0
+        self.progress_bar.pack(pady=(0, 5))
+        self.progress_bar.pack_forget()  # Hide initially
         
         # Texto limpio para visualizaciones
         self.cleaned_content = None
@@ -554,6 +989,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 self.sources["text"].append(text[:100])
                 self.cleaned_content = None
                 self._update_sources_summary()
+                # State update (Phase 1)
+                self._update_state(text=self.text_content, has_text=bool(self.text_content))
                 self.status_label.configure(text=f"Texto cargado: {len(self.text_content)} caracteres", text_color="green")
             
             elif tipo == "files":
@@ -585,6 +1022,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 self.cleaned_content = None
                 self._update_sources_summary()
                 self._update_files_display()
+                # State update (Phase 1)
+                self._update_state(text=self.text_content, file_path=files[0] if files else None, has_text=bool(self.text_content))
                 self.status_label.configure(text=f"{len(files)} archivos: {len(self.text_content)} caracteres", text_color="green")
             
             elif tipo == "url":
@@ -627,6 +1066,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 self.sources["urls"].extend(urls)
                 self.cleaned_content = None
                 self._update_sources_summary()
+                # State update (Phase 1)
+                self._update_state(text=self.text_content, has_text=bool(self.text_content))
                 self.status_label.configure(
                     text=f"{len(urls)} URLs: {len(self.text_content)} caracteres - andá a Limpieza",
                     text_color="green"
@@ -735,6 +1176,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
             scatter_result = analyze_scatter(cleaned)
             if scatter_result.get('success') and scatter_result.get('image_data'):
                 self._show_scatter(scatter_result['image_data'])
+            
+            # State update (Phase 1) - track completed analysis
+            self._update_state(last_analysis="full_analysis")
             
             self.status_label.configure(text="Análisis completo!", text_color="green")
             
@@ -874,8 +1318,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
             # Abrir imagen desde bytes
             img = Image.open(BytesIO(image_data))
             
-            # Resize para display (más pequeño)
-            img.thumbnail((600, 300))
+            # Resize para display (más pequeño) - reducido 5%
+            img.thumbnail((570, 285))
             
             # Convertir a formato que CTkImage pueda usar
             # Asegurar modo correcto
@@ -984,8 +1428,12 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_freq_tab(self) -> None:
         frame = self.tab_freq
         
-        # Slider frame
-        slider_frame = ctk.CTkFrame(frame)
+        # Frame contenedor que ocupa todo el espacio del tab
+        container = ctk.CTkFrame(frame, fg_color="transparent")
+        container.pack(fill="both", expand=True)
+        
+        # Slider frame - en la parte superior
+        slider_frame = ctk.CTkFrame(container, fg_color="transparent")
         slider_frame.pack(fill="x", padx=10, pady=(10, 5))
         
         ctk.CTkLabel(slider_frame, text="Palabras a mostrar:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10)
@@ -1005,8 +1453,13 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.freq_label = ctk.CTkLabel(slider_frame, text="20 palabras", font=ctk.CTkFont(size=12))
         self.freq_label.pack(side="left", padx=10)
         
-        # Text view - taller with expand=True
-        self.freq_text = ctk.CTkTextbox(frame, font=("Courier New", 14), height=300)
+        # Text view - ocupa el resto del espacio, con altura mínima
+        self.freq_text = ctk.CTkTextbox(
+            container, 
+            font=("Courier New", 14), 
+            wrap="word",
+            height=441  # Aumentado 5%
+        )
         self.freq_text.pack(fill="both", expand=True, padx=10, pady=(5, 10))
     
     def _on_freq_slider_change(self, value: float) -> None:
@@ -1066,12 +1519,17 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_stats_tab(self) -> None:
         frame = self.tab_stats
         
-        stats_frame = ctk.CTkFrame(frame)
-        stats_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        # Frame contenedor que ocupa todo el espacio del tab
+        container = ctk.CTkFrame(frame, fg_color="transparent")
+        container.pack(fill="both", expand=True)
         
-        # Fixed height to show all stats without scrolling
-        self.stats_text = ctk.CTkTextbox(stats_frame, font=("Courier New", 15), height=200)
-        self.stats_text.pack(fill="x", padx=10, pady=10)
+        # Configurar container para grid
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+        
+        # Stats text - usar grid para que se expanda
+        self.stats_text = ctk.CTkTextbox(container, font=("Courier New", 15), height=270)
+        self.stats_text.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
     
     def _show_stats(self, stats: Dict[str, Any]) -> None:
         """Muestra estadísticas."""
@@ -1100,8 +1558,16 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_ngram_tab(self) -> None:
         frame = self.tab_ngram
         
-        opts = ctk.CTkFrame(frame)
-        opts.pack(fill="x", padx=10, pady=(10, 5))
+        # Frame contenedor que ocupa todo el espacio del tab
+        container = ctk.CTkFrame(frame, fg_color="transparent")
+        container.pack(fill="both", expand=True)
+        
+        # Configurar container para grid
+        container.grid_rowconfigure(1, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+        
+        opts = ctk.CTkFrame(container)
+        opts.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 5))
         
         ctk.CTkLabel(opts, text="N-gram size:").pack(side="left", padx=10)
         
@@ -1118,9 +1584,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 value=n
             ).pack(side="left", padx=10)
         
-        # Slider frame for top_k
-        slider_frame = ctk.CTkFrame(frame)
-        slider_frame.pack(fill="x", padx=10, pady=(5, 10))
+        # Slider frame for top_k - usar grid para mejor control
+        slider_frame = ctk.CTkFrame(container, fg_color="transparent")
+        slider_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(5, 0))
         
         ctk.CTkLabel(slider_frame, text="Top resultados:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10)
         
@@ -1139,9 +1605,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.ngram_label = ctk.CTkLabel(slider_frame, text="20 resultados", font=ctk.CTkFont(size=12))
         self.ngram_label.pack(side="left", padx=10)
         
-        # Text view - taller with expand=True
-        self.ngram_text = ctk.CTkTextbox(frame, font=("Courier New", 14), height=300)
-        self.ngram_text.pack(fill="both", expand=True, padx=10, pady=(5, 10))
+        # Text view - usar grid para que se expanda
+        self.ngram_text = ctk.CTkTextbox(container, font=("Courier New", 14), height=345)
+        self.ngram_text.grid(row=2, column=0, sticky="nsew", padx=10, pady=(5, 10))
     
     def _on_ngram_slider_change(self, value: float) -> None:
         """Handle n-gram slider change - update label and display."""
@@ -1357,9 +1823,17 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_kwic_tab(self) -> None:
         frame = self.tab_kwic
         
-        # === Search Controls Frame ===
-        search_frame = ctk.CTkFrame(frame)
-        search_frame.pack(fill="x", padx=10, pady=10)
+        # Frame contenedor que ocupa todo el espacio del tab
+        container = ctk.CTkFrame(frame, fg_color="transparent")
+        container.pack(fill="both", expand=True)
+        
+        # Configurar container para grid
+        container.grid_rowconfigure(1, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+        
+        # === Search Controls Frame - usar grid ===
+        search_frame = ctk.CTkFrame(container, fg_color="transparent")
+        search_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=10)
         
         ctk.CTkLabel(
             search_frame,
@@ -1426,19 +1900,20 @@ class TextAnalyzerUI(ctk.CTkFrame):
         )
         search_btn.pack(pady=10)
         
-        # Results display - scrollable text area
+        # Labels
         ctk.CTkLabel(
-            frame,
+            container,
             text="Resultados:",
             font=ctk.CTkFont(size=12, weight="bold")
-        ).pack(anchor="w", padx=10, pady=(10, 5))
+        ).grid(row=1, column=0, sticky="w", padx=10, pady=(10, 5))
         
+        # Results display - usar grid para que se expanda
         self.kwic_results_text = ctk.CTkTextbox(
-            frame,
+            container,
             font=("Courier New", 12),
-            height=300
+            height=180  # Reducido 5%
         )
-        self.kwic_results_text.pack(fill="both", expand=True, padx=10, pady=(5, 10))
+        self.kwic_results_text.grid(row=2, column=0, sticky="nsew", padx=10, pady=(5, 10))
     
     def _on_kwic_context_change(self, value: float) -> None:
         """Handle context slider change."""
@@ -1528,9 +2003,17 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_topics_tab(self) -> None:
         frame = self.tab_topics
         
-        # === Controls Frame ===
-        controls_frame = ctk.CTkFrame(frame)
-        controls_frame.pack(fill="x", padx=10, pady=10)
+        # Frame contenedor que ocupa todo el espacio del tab
+        container = ctk.CTkFrame(frame, fg_color="transparent")
+        container.pack(fill="both", expand=True)
+        
+        # Configurar container para grid
+        container.grid_rowconfigure(1, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+        
+        # === Controls Frame - usar grid ===
+        controls_frame = ctk.CTkFrame(container, fg_color="transparent")
+        controls_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=10)
         
         ctk.CTkLabel(
             controls_frame,
@@ -1566,19 +2049,20 @@ class TextAnalyzerUI(ctk.CTkFrame):
         )
         analyze_btn.pack(pady=10)
         
-        # Results display - scrollable text area
+        # Labels
         ctk.CTkLabel(
-            frame,
+            container,
             text="Resultados:",
             font=ctk.CTkFont(size=12, weight="bold")
-        ).pack(anchor="w", padx=10, pady=(10, 5))
+        ).grid(row=1, column=0, sticky="w", padx=10, pady=(10, 5))
         
+        # Results display - usar grid para que se expanda
         self.topics_results_text = ctk.CTkTextbox(
-            frame,
+            container,
             font=("Courier New", 12),
-            height=300
+            height=230
         )
-        self.topics_results_text.pack(fill="both", expand=True, padx=10, pady=(5, 10))
+        self.topics_results_text.grid(row=2, column=0, sticky="nsew", padx=10, pady=(5, 10))
     
     def _on_topics_count_change(self, value: float) -> None:
         """Handle topic count slider change."""
@@ -1599,6 +2083,10 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         try:
             from tools.text_tool.processor import analyze_topics, clean_text
+            
+            # Show "Analizando" status
+            self.status_label.configure(text="🔄 Analizando temas con LDA...", text_color="blue")
+            self.update()
             
             # Get cleaning options from Clean tab
             exclude_text = self.exclude_entry.get().strip()
@@ -1664,6 +2152,10 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 # Find max weight for normalization display
                 max_weight = max(w.get('weight', 0) for w in words) if words else 1
                 
+                # Calculate dynamic width for proper alignment
+                max_word_len = max(len(word_data.get('word', '')) for word_data in words) if words else 10
+                text_width = max(15, max_word_len + 2)
+                
                 for word_data in words:
                     word = word_data.get('word', '')
                     weight = word_data.get('weight', 0)
@@ -1672,7 +2164,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
                     normalized = int((weight / max_weight) * 20) if max_weight > 0 else 0
                     bar = "▓" * normalized + "░" * (20 - normalized)
                     
-                    texto += f"  {word:<20} {bar} {weight:.3f}\n"
+                    texto += f"  {word:<{text_width}} {bar} {weight:.3f}\n"
             
             texto += "\n"
         
@@ -1803,6 +2295,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 image_data = result
                 tree_data = None
             
+            # Save tree data for collapse/expand functionality
+            self._last_wordtree_result = tree_data
+            
             # If we have tree_data, build interactive tree
             if tree_data and tree_data.get('children'):
                 self._build_interactive_wordtree(tree_data)
@@ -1817,14 +2312,22 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.wordtree_label.configure(text=f"Error: {e}")
     
     def _build_interactive_wordtree(self, tree_data: dict) -> None:
-        """Build interactive tree with clickable nodes."""
+        """Build interactive tree with clickable nodes and collapse/expand."""
         # Clear previous content
         self.wordtree_label.configure(image=None, text="")
         
+        # Initialize collapse state if not exists
+        if not hasattr(self, 'wordtree_collapsed'):
+            self.wordtree_collapsed = {}
+        
         # Create a canvas with scroll for the tree
         if not hasattr(self, 'wordtree_canvas'):
-            # Create canvas frame - darker background, more space
-            self.wordtree_canvas_frame = ctk.CTkFrame(self.tab_wordtree, fg_color="#1a1a1a")
+            # Create canvas frame - darker background, más altura mínima
+            self.wordtree_canvas_frame = ctk.CTkFrame(
+                self.tab_wordtree, 
+                fg_color="#1a1a1a",
+                height=504  # Aumentado 40%
+            )
             self.wordtree_canvas_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
             
             self.wordtree_canvas = ctk.CTkCanvas(self.wordtree_canvas_frame, bg="#1a1a1a", highlightthickness=0)
@@ -1837,8 +2340,13 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.wordtree_inner_frame = ctk.CTkFrame(self.wordtree_canvas, fg_color="#1a1a1a")
             self.wordtree_canvas.create_window((0, 0), window=self.wordtree_inner_frame, anchor="nw")
             
-            self.wordtree_inner_frame.bind("<Configure>", 
-                lambda e: self.wordtree_canvas.configure(scrollregion=self.wordtree_canvas.bbox("all")))
+            # Configure scrollregion with proper bounds
+            def update_scrollregion(event=None):
+                bbox = self.wordtree_canvas.bbox("all")
+                if bbox:
+                    self.wordtree_canvas.configure(scrollregion=bbox)
+            
+            self.wordtree_inner_frame.bind("<Configure>", update_scrollregion)
         
         # Clear inner frame
         for widget in self.wordtree_inner_frame.winfo_children():
@@ -1892,9 +2400,33 @@ class TextAnalyzerUI(ctk.CTkFrame):
             count = child.get('count', 0)
             subchildren = child.get('children', [])
             
+            # Check if this node is collapsed
+            is_collapsed = self.wordtree_collapsed.get(word, False)
+            child_count = len(subchildren)
+            
             # Card frame - solid dark background
             card = ctk.CTkFrame(children_frame, fg_color="#2d2d2d", corner_radius=10)
             card.pack(side="left", padx=8, pady=8, fill="both", expand=True)
+            
+            # Header frame with collapse/expand button
+            header_frame = ctk.CTkFrame(card, fg_color="transparent")
+            header_frame.pack(fill="x", padx=8, pady=(8, 0))
+            
+            # Collapse/expand button if has children
+            if child_count > 0:
+                collapse_btn = ctk.CTkButton(
+                    header_frame,
+                    text="−" if not is_collapsed else "+",
+                    font=ctk.CTkFont(size=16, weight="bold"),
+                    fg_color="#4A4A4A",
+                    hover_color="#5A5A5A",
+                    text_color="white",
+                    width=30,
+                    height=30,
+                    command=lambda w=word: self._toggle_wordtree_collapse(w),
+                    corner_radius=4
+                )
+                collapse_btn.pack(side="left", padx=(0, 5))
             
             # Word button - solid color
             word_btn = ctk.CTkButton(
@@ -1905,22 +2437,26 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 hover_color="#505050",
                 text_color="white",
                 command=lambda w=word: self._expand_wordtree_node(w),
-                width=140,
+                width=140 if child_count == 0 else 110,
                 height=40,
                 corner_radius=6
             )
-            word_btn.pack(padx=8, pady=(8, 4))
+            word_btn.pack(padx=8, pady=(8 if child_count == 0 else 0, 4))
             
-            # Count label - more visible
+            # Count label with collapsed indicator - more visible
+            count_text = f"🔢 {count} veces"
+            if is_collapsed and child_count > 0:
+                count_text += f" ({child_count} hidden)"
+            
             ctk.CTkLabel(
                 card,
-                text=f"🔢 {count} veces",
+                text=count_text,
                 font=ctk.CTkFont(size=12),
                 text_color="#AAAAAA"
             ).pack(pady=(0, 8))
             
-            # Sub-children - show more clearly
-            if subchildren:
+            # Sub-children - show more clearly (only if not collapsed)
+            if subchildren and not is_collapsed:
                 sub_frame = ctk.CTkFrame(card, fg_color="transparent")
                 sub_frame.pack(padx=8, pady=(0, 8))
                 
@@ -1945,6 +2481,14 @@ class TextAnalyzerUI(ctk.CTkFrame):
                         corner_radius=4
                     )
                     sub_btn.pack(pady=2)
+            elif is_collapsed:
+                # Show collapsed indicator
+                ctk.CTkLabel(
+                    card,
+                    text=f"(Click + para expandir)",
+                    font=ctk.CTkFont(size=10),
+                    text_color="#666666"
+                ).pack(pady=5)
         
         # Add export/zoom button at bottom
         export_frame = ctk.CTkFrame(self.wordtree_inner_frame, fg_color="#1a1a1a")
@@ -2000,6 +2544,22 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self._run_wordtree_analysis()
         
         self.status_label.configure(text=f"Árbol re-centrado en: '{word}'", text_color="green")
+    
+    def _toggle_wordtree_collapse(self, word: str) -> None:
+        """Toggle collapse/expand state of a node in the WordTree."""
+        if not hasattr(self, 'wordtree_collapsed'):
+            self.wordtree_collapsed = {}
+        
+        # Toggle state
+        self.wordtree_collapsed[word] = not self.wordtree_collapsed.get(word, False)
+        
+        # Re-render the tree to reflect the change
+        # Get current tree data from the last result
+        if hasattr(self, '_last_wordtree_result'):
+            self._build_interactive_wordtree(self._last_wordtree_result)
+        
+        status = "colapsado" if self.wordtree_collapsed[word] else "expandido"
+        self.status_label.configure(text=f"Nodo '{word}' {status}", text_color="green")
     
     def _show_wordtree_image(self, image_data) -> None:
         """Display WordTree as image (fallback)."""

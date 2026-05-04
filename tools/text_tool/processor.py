@@ -956,8 +956,11 @@ def analyze_kwic(text: str, keyword: str, context: int = 5, max_results: int = 2
     if not keyword:
         return {'success': False, 'error': 'Ingrese una palabra clave', 'data': None}
     
-    # Procesar texto - mantener estructura de palabras
-    words = text.split()
+    # Aplicar clean_text() internamente para filtrar stopwords
+    cleaned = clean_text(text, remove_stopwords=True, exclude_words=[])
+    
+    # Procesar texto limpio - mantener estructura de palabras
+    words = cleaned.split()
     words_lower = [w.lower() for w in words]
     
     # Encontrar todas las ocurrencias
@@ -1049,15 +1052,35 @@ def analyze_topics(text: str, n_topics: int = 5, max_iter: int = 10,
         sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 20]
         
         if len(sentences) >= 6:
-            # Crear pseudo-párrafos de 5 oraciones cada uno
+            # Crear pseudo-párrafos de 3 oraciones cada uno (más documentos = más topics posibles)
             paragraphs = []
-            for i in range(0, len(sentences), 5):
-                para = ' '.join(sentences[i:i+5])
+            for i in range(0, len(sentences), 3):
+                para = ' '.join(sentences[i:i+3])
                 if para:
                     paragraphs.append(para)
+            
+            # Si aún tenemos pocos documentos, dividir más finamente
+            if len(paragraphs) < n_topics:
+                # Usar grupos de 1-2 oraciones
+                paragraphs = []
+                for i in range(0, len(sentences), 2):
+                    para = ' '.join(sentences[i:i+2])
+                    if para:
+                        paragraphs.append(para)
     
     if len(paragraphs) < 2:
-        return {'success': False, 'error': 'Texto insuficiente. Se requieren al menos 2 secciones o párrafos.', 'data': None}
+        # Intentar con texto continuo como un solo "documento"
+        words = cleaned.split()
+        if len(words) >= 20:  # Al menos 20 palabras
+            # Crear múltiples pseudo-secciones para permitir más topics
+            section_size = max(10, len(words) // 5)  # 5 secciones mínimas
+            paragraphs = []
+            for i in range(0, len(words), section_size):
+                section = ' '.join(words[i:i+section_size])
+                if section:
+                    paragraphs.append(section)
+        else:
+            return {'success': False, 'error': 'Texto insuficiente. Se requieren al menos 20 palabras para análisis de tópicos.', 'data': None}
     
     try:
         # Crear vectorizador Bag of Words
@@ -1149,8 +1172,11 @@ def analyze_wordtree(text: str, phrase: str, max_depth: int = 5) -> Dict[str, An
     if not phrase:
         return {'success': False, 'error': 'Ingrese una frase para analizar', 'image_data': None, 'tree': None}
     
-    # Procesar texto
-    words = text.lower().split()
+    # Aplicar clean_text() internamente para filtrar stopwords
+    cleaned = clean_text(text, remove_stopwords=True, exclude_words=[])
+    
+    # Procesar texto limpio
+    words = cleaned.lower().split()
     phrase_words = phrase.split()
     phrase_len = len(phrase_words)
     
