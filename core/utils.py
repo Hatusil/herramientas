@@ -4,6 +4,7 @@ Funciones helper que pueden ser usadas por múltiples módulos.
 """
 import logging
 import os
+import platform
 import re
 import subprocess
 from pathlib import Path
@@ -82,15 +83,31 @@ def clean_text(text: str, remove_stopwords: bool = True, languages: List[str] = 
 def get_ffmpeg_path() -> str:
     """
     Obtiene el path de ffmpeg (local o del sistema).
+    Cross-platform: Windows (.exe) vs Linux (no extension).
     
     Returns:
         str: Ruta al ejecutable de ffmpeg
     """
-    # Primero verificar en tools/ffmpeg/
-    local_ffmpeg = Path(__file__).parent.parent / "tools" / "ffmpeg" / "bin" / "ffmpeg.exe"
+    ext = ".exe" if platform.system() == "Windows" else ""
+    local_ffmpeg = Path(__file__).parent.parent / "tools" / "ffmpeg" / "bin" / f"ffmpeg{ext}"
     if local_ffmpeg.exists():
         return str(local_ffmpeg)
     return "ffmpeg"  # Usar del PATH
+
+
+def get_ffprobe_path() -> str:
+    """
+    Obtiene el path de ffprobe (local o del sistema).
+    Cross-platform: Windows (.exe) vs Linux (no extension).
+    
+    Returns:
+        str: Ruta al ejecutable de ffprobe
+    """
+    ext = ".exe" if platform.system() == "Windows" else ""
+    local_ffprobe = Path(__file__).parent.parent / "tools" / "ffmpeg" / "bin" / f"ffprobe{ext}"
+    if local_ffprobe.exists():
+        return str(local_ffprobe)
+    return "ffprobe"  # Usar del PATH
 
 
 def check_ffmpeg() -> bool:

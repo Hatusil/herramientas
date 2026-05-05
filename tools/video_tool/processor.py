@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List
 
-from core.utils import get_ffmpeg_path, check_ffmpeg
+from core.utils import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg
 
 logger = logging.getLogger(__name__)
 
@@ -189,10 +189,8 @@ def get_video_info(video_path: str) -> Dict[str, Any]:
         return {'success': False, 'error': 'Archivo no encontrado'}
     
     try:
-        # Get ffprobe from same directory as ffmpeg
-        ffmpeg_bin = Path(get_ffmpeg_path()).parent
-        ffprobe_bin = ffmpeg_bin / 'ffprobe.exe'
-        cmd = [str(ffprobe_bin), '-v', 'quiet', '-print_format', 'json', 
+        # Use cross-platform get_ffprobe_path()
+        cmd = [get_ffprobe_path(), '-v', 'quiet', '-print_format', 'json', 
                '-show_format', '-show_streams', video_path]
         
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)

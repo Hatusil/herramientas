@@ -2724,18 +2724,28 @@ class ChartModal(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
     
     def _on_scroll(self, event) -> str:
-        """Handle scroll events - zoom only."""
+        """Handle scroll events - zoom only (Linux + Windows)."""
         try:
             from PIL import Image, ImageTk
             
             if not hasattr(self, 'zoom_level'):
                 self.zoom_level = 1.0
             
-            # Determine zoom factor based on delta
-            if event.delta > 0:
-                self.zoom_level *= 1.2  # Zoom in
+            # Cross-platform: Linux uses event.num (Button-4/Button-5), Windows uses event.delta (MouseWheel)
+            if hasattr(event, 'num') and event.num in (4, 5):
+                # Linux scroll: Button-4 = scroll up, Button-5 = scroll down
+                if event.num == 4:
+                    self.zoom_level *= 1.2  # Zoom in
+                else:
+                    self.zoom_level *= 0.8  # Zoom out
+            elif hasattr(event, 'delta') and event.delta != 0:
+                # Windows MouseWheel
+                if event.delta > 0:
+                    self.zoom_level *= 1.2  # Zoom in
+                else:
+                    self.zoom_level *= 0.8  # Zoom out
             else:
-                self.zoom_level *= 0.8  # Zoom out
+                return "break"
             
             # Limit zoom range (0.5x to 5x)
             self.zoom_level = max(0.5, min(5.0, self.zoom_level))
@@ -2847,9 +2857,13 @@ class ChartModal(ctk.CTkToplevel):
         
         self.canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
         
-        # Bind scroll events - zoom in/out
+        # Bind scroll events - zoom in/out (cross-platform: Windows MouseWheel + Linux Button-4/5)
         self.canvas.bind("<MouseWheel>", self._on_scroll)
+        self.canvas.bind("<Button-4>", self._on_scroll)
+        self.canvas.bind("<Button-5>", self._on_scroll)
         self.bind("<MouseWheel>", self._on_scroll)
+        self.bind("<Button-4>", self._on_scroll)
+        self.bind("<Button-5>", self._on_scroll)
         
         # Bind drag events for panning - left click + drag
         self.canvas.bind("<Button-1>", self._on_drag_start)

@@ -2,7 +2,9 @@
 FilePicker: Selector de archivos con acceso rápido a unidades y favoritos.
 """
 import os
+import sys
 import logging
+import subprocess
 import tkinter as tk
 import customtkinter as ctk
 from tkinter import filedialog
@@ -286,7 +288,7 @@ class FilePicker(ctk.CTkFrame):
             if 0 <= idx < len(self.files):
                 file = self.files[idx]
                 if os.path.isfile(file):
-                    os.startfile(file)
+                    open_file_cross_platform(file)
     
     def get_files(self) -> List[str]:
         """Retorna lista de archivos."""
@@ -299,3 +301,16 @@ def select_files(filetypes=None, multiple=True, title="Seleccionar"):
         return filedialog.askopenfilenames(title=title, filetypes=filetypes)
     else:
         return filedialog.askopenfilename(title=title, filetypes=filetypes)
+
+
+def open_file_cross_platform(file_path: str) -> None:
+    """
+    Abre un archivo con la aplicación predeterminada del sistema.
+    Cross-platform: Windows, macOS, Linux.
+    """
+    if sys.platform == 'win32':
+        os.startfile(file_path)
+    elif sys.platform == 'darwin':
+        subprocess.run(['open', file_path], check=True)
+    else:
+        subprocess.run(['xdg-open', file_path], check=True)

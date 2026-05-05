@@ -1,6 +1,7 @@
 """
 Constantes y configuración del proyecto.
 """
+import platform
 from pathlib import Path
 import customtkinter as ctk
 
@@ -178,7 +179,12 @@ TOOL_STATUS_ERROR = "ERROR"
 TOOL_STATUS_LOADING = "LOADING"
 
 # Configuración de fuentes - optimizadas para mejor legibilidad
-FONT_FAMILY = "Segoe UI"
+# Cross-platform: Segoe UI en Windows, DejaVu Sans en Linux
+if platform.system() == "Windows":
+    FONT_FAMILY = "Segoe UI"
+else:
+    FONT_FAMILY = "DejaVu Sans"
+    
 FONT_SIZE_SMALL = 14    # Antes 12
 FONT_SIZE_NORMAL = 16    # Antes 14
 FONT_SIZE_LARGE = 18    # Antes 16

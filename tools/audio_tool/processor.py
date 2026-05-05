@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 from core import constants
-from core.utils import get_ffmpeg_path, check_ffmpeg, get_output_path, get_output_path_format
+from core.utils import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg, get_output_path, get_output_path_format
 
 
 logger = logging.getLogger(__name__)
@@ -46,13 +46,9 @@ def get_audio_info(file_path: str) -> Dict[str, Any]:
         return {'success': False, 'error': 'FFmpeg no instalado'}
     
     try:
-        # Usar ffprobe desde la misma ubicación que ffmpeg
-        ffmpeg_bin = Path(get_ffmpeg_path()).parent
-        ffprobe_bin = ffmpeg_bin / 'ffprobe.exe'
-        
-        # Usar ffprobe para obtener info
+        # Usar función cross-platform get_ffprobe_path()
         cmd = [
-            str(ffprobe_bin) if ffprobe_bin.exists() else 'ffprobe',
+            get_ffprobe_path(),
             '-v', 'quiet',
             '-print_format', 'json',
             '-show_format',
@@ -573,12 +569,9 @@ def verify_audio_integrity(file_path: str) -> Dict[str, Any]:
         return {'corrupt': False, 'message': 'Archivo no encontrado', 'details': {}}
     
     try:
-        # Usar ffprobe para verificar
-        ffmpeg_bin = Path(get_ffmpeg_path()).parent
-        ffprobe_bin = ffmpeg_bin / 'ffprobe.exe'
-        
+        # Usar función cross-platform get_ffprobe_path()
         cmd = [
-            str(ffprobe_bin) if ffprobe_bin.exists() else 'ffprobe',
+            get_ffprobe_path(),
             '-v', 'error',
             '-show_format',
             '-show_streams',
