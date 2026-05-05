@@ -12,21 +12,20 @@ for lib in ['customtkinter', 'PIL', 'PIL._imaging', 'matplotlib', 'matplotlib.ba
     except:
         pass
 
-# Librerías adicionales que necesitamos
+# Librerías adicionales (sin nltk/scipy que tienen problemas en PyInstaller)
 libs = [
     'mutagen', 'pypdf', 'pypdf2', 'reportlab', 'piexif',
-    'docx', 'openpyxl', 'chardet', 'wordcloud', 'nltk', 
+    'docx', 'openpyxl', 'chardet', 'wordcloud',
     'pdfplumber', 'requests', 'bs4', 'beautifulsoup4', 
-    'pptx', 'lxml', 'sklearn', 'sklearn.feature_extraction',
-    'sklearn.decomposition'
+    'pptx', 'lxml'
 ]
 
 for lib in libs:
     hiddenimports.append(lib)
 
-# Agregar datos de las libs
+# Agregar datos de las libs (sin nltk)
 datas = []
-for lib in ['customtkinter', 'PIL', 'matplotlib', 'numpy', 'nltk']:
+for lib in ['customtkinter', 'PIL', 'matplotlib', 'numpy']:
     try:
         datas += collect_data_files(lib)
     except:
@@ -53,7 +52,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['pytest'],
+    excludes=['pytest', 'nltk', 'scipy'],
     noarchive=False,
 )
 
