@@ -1435,6 +1435,92 @@ def analyze_mandala(text: str, n_terms: int = 12, n_rings: int = 3) -> Dict[str,
         return {'success': False, 'error': f'Error al generar gráfico: {str(e)}', 'image_data': None}
 
 
+def analyze_wordtree_simple(text: str, phrase: str, max_results: int = 20) -> Dict[str, Any]:
+    """
+    Análisis WordTree Simple - lista plana de palabras que siguen una frase raíz.
+    
+    Args:
+        text: Texto de entrada
+        phrase: Frase raíz a buscar
+        max_results: Máximo de resultados a mostrar (default: 20, rango: 10-50)
+        
+    Returns:
+        Dict con 'success', 'continuations' (list), 'phrase' (str), 'error': str
+        
+    Example:
+        Para "analisis de":
+        - texto: 15 ocurrencias
+        - datos: 12 ocurrencias
+        - resultados: 8 ocurrencias
+    """
+    if not text or not text.strip():
+        return {'success': False, 'error': 'Ingrese texto para analizar', 'continuations': [], 'phrase': ''}
+    
+    phrase = phrase.strip().lower()
+    if not phrase:
+        return {'success': False, 'error': 'Ingrese una frase para analizar', 'continuations': [], 'phrase': ''}
+    
+    # Validación de parámetros
+    if max_results < 10:
+        max_results = 10
+    elif max_results > 50:
+        max_results = 50
+    
+    # Aplicar clean_text() internamente
+    cleaned = clean_text(text, remove_stopwords=True, exclude_words=[])
+    
+    # Procesar texto limpio
+    words = cleaned.lower().split()
+    phrase_words = phrase.split()
+    phrase_len = len(phrase_words)
+    
+    if len(words) < phrase_len + 1:
+        return {'success': False, 'error': 'Texto muy corto para analizar', 'continuations': [], 'phrase': phrase}
+    
+    # Buscar ocurrencias de la frase y colectar siguientes palabras
+    from collections import Counter
+    
+    phrase_as_tuple = tuple(phrase_words)
+    continuations = Counter()
+    
+    for i in range(len(words) - phrase_len):
+        # Verificar si las palabras coinciden con la frase
+        if tuple(words[i:i+phrase_len]) == phrase_as_tuple:
+            # Encontrada - colectar primera palabra siguiente
+            next_idx = i + phrase_len
+            if next_idx < len(words):
+                next_word = words[next_idx]
+                if next_word and len(next_word) > 0:
+                    continuations[next_word] += 1
+    
+    if not continuations:
+        return {
+            'success': True,
+            'continuations': [],
+            'phrase': phrase,
+            'error': 'No se encontraron continuaciones'
+        }
+    
+    # Ordenar por frecuencia y limitar resultados
+    sorted_continuations = sorted(continuations.items(), key=lambda x: x[1], reverse=True)[:max_results]
+    
+    # Formatear como lista simple
+    result_list = []
+    for word, count in sorted_continuations:
+        result_list.append({
+            'word': word,
+            'count': count
+        })
+    
+    return {
+        'success': True,
+        'continuations': result_list,
+        'phrase': phrase,
+        'total_found': len(continuations),
+        'error': ''
+    }
+
+
 def analyze_wordtree(text: str, phrase: str, max_depth: int = 5) -> Dict[str, Any]:
     """
     Análisis WordTree - visualiza relaciones de palabras en estructura de árbol.
@@ -1695,6 +1781,13 @@ def _register_analyzers():
             'returns': 'image',
             'description': 'WordTree - Árbol de palabras',
             'min_words': 50
+        },
+        'wordtree_simple': {
+            'func': analyze_wordtree_simple,
+            'requires': [],
+            'returns': 'text',
+            'description': 'WordTree Simple - lista de continuaciones',
+            'min_words': 20
         },
         'streamgraph': {
             'func': analyze_streamgraph,

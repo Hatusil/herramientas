@@ -2458,7 +2458,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         ctk.CTkLabel(
             controls_frame,
-            text="Visualización de relaciones de palabras en estructura de árbol:",
+            text="Lista de continuaciones/simple:",
             font=ctk.CTkFont(size=12, weight="bold")
         ).pack(anchor="w", padx=5, pady=(5, 10))
         
@@ -2474,11 +2474,11 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Bind Enter key to run
         self.wordtree_phrase.bind("<Return>", lambda e: self._run_wordtree_analysis())
         
-        # Max depth slider
+        # Max results slider
         depth_row = ctk.CTkFrame(controls_frame)
         depth_row.pack(fill="x", padx=5, pady=5)
         
-        ctk.CTkLabel(depth_row, text="Profundidad máx:", width=120, anchor="w").pack(side="left", padx=5)
+        ctk.CTkLabel(depth_row, text="Máx resultados:", width=120, anchor="w").pack(side="left", padx=5)
         
         self.wordtree_depth_slider = ctk.CTkSlider(
             depth_row,
@@ -2496,7 +2496,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Run button
         generate_btn = ctk.CTkButton(
             controls_frame,
-            text="🌳 Generar Árbol",
+            text="📋 Generar Lista",
             command=self._run_wordtree_analysis,
             font=ctk.CTkFont(size=14, weight="bold")
         )
@@ -2505,7 +2505,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Image display area
         self.wordtree_label = ctk.CTkLabel(
             frame,
-            text="Árbol de palabras aparecerá aquí",
+            text="Lista de continuaciones aparecerá aquí",
             text_color="gray"
         )
         self.wordtree_label.pack(expand=True)
@@ -2521,7 +2521,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self._run_wordtree_analysis()
     
     def _run_wordtree_analysis(self) -> None:
-        """Run WordTree analysis."""
+        """Run WordTree analysis - now uses simple list format."""
         # Check text size first
         if not self._check_text_size(show_warning=True):
             return
@@ -2535,22 +2535,23 @@ class TextAnalyzerUI(ctk.CTkFrame):
             self.status_label.configure(text="Ingrese una frase raíz", text_color="orange")
             return
         
-        max_depth = int(self.wordtree_depth_slider.get())
+        max_results = int(self.wordtree_depth_slider.get()) * 5  # depth -> results multiplier
         
         try:
-            from tools.text_tool.processor import analyze_wordtree
+            from tools.text_tool.processor import analyze_wordtree_simple
             
-            result = analyze_wordtree(self.text_content, phrase, max_depth=max_depth)
+            result = analyze_wordtree_simple(self.text_content, phrase, max_results=max_results)
             
-            if result.get('success') and (result.get('image_data') or result.get('tree')):
-                self._show_wordtree(result)  # Pass full result
+            if result.get('success') and result.get('continuations'):
+                self._show_wordtree_simple(result)
+                total = result.get('total_found', len(result['continuations']))
                 self.status_label.configure(
-                    text=f"Árbol generado para: '{phrase}'",
+                    text=f"Lista de continuaciones para '{phrase}': {total} encontradas",
                     text_color="green"
                 )
             elif result.get('success'):
                 self.status_label.configure(
-                    text=result.get('error', 'No se encontraron relaciones repetidas'),
+                    text=result.get('error', 'No se encontraron continuaciones'),
                     text_color="orange"
                 )
             else:
@@ -2560,6 +2561,50 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 )
         except Exception as e:
             logger.error(f"WordTree error: {e}")
+            self.status_label.configure(text=f"Error: {e}", text_color="red")
+    
+    def _show_wordtree_simple(self, result: dict) -> None:
+        """Display WordTree as simple text list."""
+        try:
+            continuations = result.get('continuations', [])
+            phrase = result.get('phrase', '')
+            
+            if not continuations:
+                self.wordtree_label.configure(text="No se encontraron continuaciones")
+                return
+            
+            # Build text output
+            lines = [f"Continuaciones para '{phrase}':\n"]
+            lines.append("=" * 40 + "\n\n")
+            
+            for item in continuations:
+                word = item.get('word', '')
+                count = item.get('count', 0)
+                # Format as: "texto: 15 ocurrencias"
+                lines.append(f"- {word}: {count} ocurrencias\n")
+            
+            output_text = ''.join(lines)
+            
+            # Show in a textbox (reuse existing setup)
+            if hasattr(self, 'wordtree_canvas_frame'):
+                self.wordtree_canvas_frame.pack_forget()
+            
+            # Create simple text area if not exists, or update existing
+            if not hasattr(self, 'wordtree_simple_text'):
+                self.wordtree_simple_text = ctk.CTkTextbox(
+                    self.tab_wordtree,
+                    wrap="word",
+                    font=("Courier New", 12)
+                )
+                self.wordtree_simple_text.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+            
+            # Update text
+            self.wordtree_simple_text.delete("1.0", tk.END)
+            self.wordtree_simple_text.insert("1.0", output_text)
+            self.wordtree_simple_text.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+            
+        except Exception as e:
+            logger.error(f"WordTree simple display error: {e}")
             self.status_label.configure(text=f"Error: {e}", text_color="red")
     
     def _show_wordtree(self, result) -> None:
