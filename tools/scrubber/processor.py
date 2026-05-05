@@ -6,6 +6,9 @@ import logging
 from pathlib import Path
 from typing import Dict, Any
 
+# Importar funciones compartidas de core (máxima #4: Lo que me gusta en una herramienta debe estar en las demás)
+from core.utils import get_output_path
+
 logger = logging.getLogger(__name__)
 
 # =============================================================================
@@ -340,14 +343,4 @@ def clean_xlsx(file_path: str) -> Dict[str, Any]:
         return {'success': False, 'error': str(e), 'output_files': []}
 
 
-# =============================================================================
-# UTILIDADES
-# =============================================================================
-
-def get_output_path(input_path: str, suffix: str) -> str:
-    """Genera ruta de salida con sufijo."""
-    p = Path(input_path)
-    parent = p.parent
-    stem = p.stem
-    ext = p.suffix
-    return str(parent / f"{stem}{suffix}{ext}")
+# get_output_path() importado desde core.utils (máxima #4)
