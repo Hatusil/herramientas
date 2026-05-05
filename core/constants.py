@@ -3,7 +3,13 @@ Constantes y configuración del proyecto.
 """
 import platform
 from pathlib import Path
-import customtkinter as ctk
+
+try:
+    import customtkinter as ctk
+    CTK_AVAILABLE = True
+except ImportError:
+    CTK_AVAILABLE = False
+    ctk = None
 
 # Raíz del proyecto (parent de core/)
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
@@ -160,13 +166,13 @@ def apply_theme_to_widget(widget) -> None:
     # Para otros widgets, no hacer nada especial
 
 
-# Inicializar con tema oscuro por defecto
-set_theme("dark")
-
-try:
-    ctk.set_default_color_theme("dark-blue")
-except Exception:
-    pass  # Theme puede no estar disponible en algunos entornos
+# Inicializar con tema oscuro por defecto (solo si CTK disponible)
+if CTK_AVAILABLE:
+    set_theme("dark")
+    try:
+        ctk.set_default_color_theme("dark-blue")
+    except Exception:
+        pass  # Theme puede no estar disponible en algunos entornos
 
 # Configuración de Audio
 DEFAULT_LUFS = -16  # EBU R128 target loudness
@@ -190,7 +196,7 @@ FONT_SIZE_NORMAL = 16    # Antes 14
 FONT_SIZE_LARGE = 18    # Antes 16
 FONT_SIZE_TITLE = 24    # Antes 20
 
-def font(size: str = "normal", weight: str = "normal") -> ctk.CTkFont:
+def font(size: str = "normal", weight: str = "normal"):
     """Retorna font con el tamaño especificado.
     
     Args:
@@ -198,8 +204,10 @@ def font(size: str = "normal", weight: str = "normal") -> ctk.CTkFont:
         weight: Peso de fuente (normal, bold)
         
     Returns:
-        CTkFont configurado
+        CTkFont configurado (o None si CTK no disponible)
     """
+    if not CTK_AVAILABLE:
+        return None
     from customtkinter import CTkFont
     sizes = {
         "small": FONT_SIZE_SMALL,

@@ -209,6 +209,52 @@ def validate_input_file(path: str) -> dict:
     return {'valid': True}
 
 
+def validate_file_extension(path: str, allowed_extensions: list) -> dict:
+    """
+    Valida que el archivo tenga una extensión permitida.
+    
+    Args:
+        path: Ruta al archivo
+        allowed_extensions: Lista de extensiones permitidas (ej: ['.pdf', '.txt'])
+        
+    Returns:
+        dict: {'valid': bool, 'error': str or None}
+    """
+    if not path:
+        return {'valid': False, 'error': 'No path provided'}
+    
+    ext = os.path.splitext(path)[1].lower()
+    allowed = [e.lower() for e in allowed_extensions]
+    
+    if ext not in allowed:
+        return {'valid': False, 'error': f'Extensión {ext} no permitida. Permitidas: {", ".join(allowed)}'}
+    
+    return {'valid': True}
+
+
+def validate_file_size(path: str, max_size_mb: float = 100) -> dict:
+    """
+    Valida que el archivo no exceda un tamaño máximo.
+    
+    Args:
+        path: Ruta al archivo
+        max_size_mb: Tamaño máximo en MB (default: 100)
+        
+    Returns:
+        dict: {'valid': bool, 'error': str or None, 'size_mb': float}
+    """
+    if not path or not os.path.exists(path):
+        return {'valid': True}  # Handled by validate_input_file
+    
+    size_bytes = os.path.getsize(path)
+    size_mb = size_bytes / (1024 * 1024)
+    
+    if size_mb > max_size_mb:
+        return {'valid': False, 'error': f'Archivo demasiado grande ({size_mb:.1f}MB). Máximo: {max_size_mb}MB', 'size_mb': round(size_mb, 2)}
+    
+    return {'valid': True, 'size_mb': round(size_mb, 2)}
+
+
 def format_error_message(error: Exception, context: str = "") -> str:
     """
     Formatea un error con contexto opcional.
