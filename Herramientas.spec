@@ -1,12 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_all
+
+datas = [('core', 'core'), ('tools', 'tools'), ('ui', 'ui'), ('assets', 'assets'), ('requirements.txt', '.'), ('README.md', '.'), ('__main__.py', '.')]
+binaries = []
+hiddenimports = ['customtkinter', 'PIL', 'mutagen', 'pypdf', 'reportlab', 'piexif', 'docx', 'openpyxl', 'chardet', 'wordcloud', 'nltk', 'pdfplumber', 'requests', 'bs4', 'beautifulsoup4', 'pptx', 'lxml']
+tmp_ret = collect_all('nltk')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('bs4')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('beautifulsoup4')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
     ['ui\\app.py'],
     pathex=[],
-    binaries=[],
-    datas=[],
-    hiddenimports=[],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
