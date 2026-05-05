@@ -6,6 +6,9 @@ import os
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
+# Importar funciones compartidas de core (máxima #3: Consistency)
+from core.utils import get_output_path
+
 try:
     from pypdf import PdfReader, PdfWriter, PageObject
     from pypdf.generic import RectangleObject
@@ -39,13 +42,7 @@ def check_pypdf() -> bool:
     return PdfReader is not None
 
 
-def get_output_path(input_path: str, suffix: str) -> str:
-    """Genera ruta de salida con sufijo."""
-    p = Path(input_path)
-    parent = p.parent
-    stem = p.stem
-    ext = p.suffix
-    return str(parent / f"{stem}{suffix}{ext}")
+# get_output_path() importado desde core.utils (máxima #3: Consistency)
 
 
 def get_pdf_info(file_path: str) -> Dict[str, Any]:

@@ -23,6 +23,9 @@ from typing import Dict, Any, List, Optional, Callable
 from io import BytesIO
 from collections import Counter
 
+# Importar funciones compartidas de core
+from core.utils import clean_text, STOP_WORDS
+
 logger = logging.getLogger(__name__)
 
 # ============================================================
@@ -215,28 +218,7 @@ def get_analyzer_info(name: str) -> Optional[Dict[str, Any]]:
     return ANALYZER_REGISTRY.get(name)
 
 
-# Stop words comunes (español + inglés)
-STOP_WORDS = {
-    'es': {'el', 'la', 'los', 'las', 'un', 'una', 'unas', 'unos', 'de', 'del', 'al', 'a', 
-           'en', 'con', 'por', 'para', 'sin', 'sobre', 'entre', 'y', 'e', 'o', 'u', 'que',
-           'como', 'más', 'pero', 'ni', 'si', 'no', 'sí', 'él', 'ella', 'ellos', 'ellas',
-           'este', 'esta', 'estos', 'estas', 'ese', 'esa', 'esos', 'esas', 'esto',
-           'mi', 'tu', 'su', 'mis', 'tus', 'sus', 'nuestro', 'nuestra', 'nosotros',
-           'ser', 'estar', 'hay', 'fue', 'era', 'son', 'son', 'es', 'está', 'han', 'había',
-           'lo', 'su', 'al', 'todo', 'toda', 'todos', 'todas', 'poco', 'poca', 'pocos', 'pocas',
-           'mucho', 'mucha', 'muchos', 'muchas', 'otro', 'otra', 'otros', 'otras', 'mismo', 'misma'},
-    'en': {'the', 'a', 'an', 'and', 'or', 'but', 'if', 'in', 'to', 'of', 'for', 'on', 
-           'with', 'at', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be', 'been',
-           'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
-           'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought', 'used',
-           'it', 'he', 'she', 'they', 'we', 'you', 'i', 'me', 'him', 'her', 'us', 'them',
-           'this', 'that', 'these', 'those', 'what', 'which', 'who', 'whom', 'whose',
-           'my', 'your', 'his', 'her', 'its', 'our', 'their', 'whose',
-           'not', 'no', 'yes', 'all', 'any', 'some', 'such', 'no', 'nor', 'only',
-           'very', 'just', 'also', 'now', 'then', 'there', 'here', 'when', 'where',
-           'each', 'every', 'both', 'few', 'more', 'most', 'other', 'some', 'any',
-           'so', 'than', 'too', 'very', 'just', 'even', 'still', 'already', 'yet'}
-}
+# STOP_WORDS importado desde core.utils (máxima #3: Consistency)
 
 
 def extract_text_from_file(file_path: str) -> Dict[str, Any]:
@@ -366,34 +348,7 @@ def extract_text_from_url(url: str) -> Dict[str, Any]:
         return {'success': False, 'error': str(e)}
 
 
-def clean_text(text: str, remove_stopwords: bool = True, languages: List[str] = ['es', 'en'], exclude_words: List[str] = None) -> str:
-    """Limpia el texto: minúsculas, remove signos, stopwords."""
-    # Minúsculas
-    text = text.lower()
-    
-    # Remove punctuation
-    text = re.sub(r'[^\w\s]', ' ', text)
-    
-    # Remove numbers
-    text = re.sub(r'\d+', '', text)
-    
-    # Normalizar espacios
-    text = re.sub(r'\s+', ' ', text).strip()
-    
-    if remove_stopwords:
-        stop = set()
-        for lang in languages:
-            stop.update(STOP_WORDS.get(lang, set()))
-        words = text.split()
-        text = ' '.join(w for w in words if w not in stop and len(w) > 2)
-    
-    # Excluir palabras custom
-    if exclude_words:
-        exclude_set = set(w.lower() for w in exclude_words)
-        words = text.split()
-        text = ' '.join(w for w in words if w not in exclude_set)
-    
-    return text
+# clean_text() ahora importado desde core.utils (máxima #3: Consistency)
 
 
 def _generate_shape_mask(shape: str, width: int, height: int) -> Optional[Any]:
