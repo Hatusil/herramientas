@@ -1,24 +1,39 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_all, collect_submodules
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files
+import os
 
-# Collect all para las librerías principales
+# Forzar inclusión de customtkinter y sus submódulos
 hiddenimports = []
 
-# Agregar todos los submódulos de estas librerías
-for lib in ['customtkinter', 'PIL', 'matplotlib', 'numpy']:
+# Collect todos los submódulos de las librerías principales
+for lib in ['customtkinter', 'PIL', 'PIL._imaging', 'matplotlib', 'matplotlib.backends', 'numpy', 'tkinter']:
     try:
         hiddenimports.extend(collect_submodules(lib))
     except:
-        hiddenimports.append(lib)
+        pass
 
-# Librerías adicionales
-for lib in ['mutagen', 'pypdf', 'reportlab', 'piexif', 'docx', 'openpyxl', 
-            'chardet', 'wordcloud', 'nltk', 'pdfplumber', 'requests', 
-            'bs4', 'beautifulsoup4', 'pptx', 'lxml', 'sklearn']:
+# Librerías adicionales que necesitamos
+libs = [
+    'mutagen', 'pypdf', 'pypdf2', 'reportlab', 'piexif',
+    'docx', 'openpyxl', 'chardet', 'wordcloud', 'nltk', 
+    'pdfplumber', 'requests', 'bs4', 'beautifulsoup4', 
+    'pptx', 'lxml', 'sklearn', 'sklearn.feature_extraction',
+    'sklearn.decomposition'
+]
+
+for lib in libs:
     hiddenimports.append(lib)
 
+# Agregar datos de las libs
+datas = []
+for lib in ['customtkinter', 'PIL', 'matplotlib', 'numpy', 'nltk']:
+    try:
+        datas += collect_data_files(lib)
+    except:
+        pass
+
 # Datos del proyecto
-datas = [
+project_datas = [
     ('core', 'core'),
     ('tools', 'tools'), 
     ('ui', 'ui'),
@@ -27,6 +42,7 @@ datas = [
     ('README.md', '.'),
     ('__main__.py', '.')
 ]
+datas.extend(project_datas)
 
 a = Analysis(
     ['ui\\app.py'],
@@ -37,7 +53,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['pytest'],
     noarchive=False,
 )
 
@@ -57,4 +73,9 @@ exe = EXE(
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
 )
