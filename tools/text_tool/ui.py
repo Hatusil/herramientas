@@ -691,53 +691,53 @@ class TextAnalyzerUI(ctk.CTkFrame):
         
         # === GRUPO 1: ENTRADA ===
         # Tab: Entrada
-        self.tab_input = self.tabview.add("📥 Entrada")
+        self.tab_input = self.tabview.add("📥")
         
         # Tab: Limpieza
-        self.tab_clean = self.tabview.add("⚙️ Limpieza")
+        self.tab_clean = self.tabview.add("⚙️")
         
         # === GRUPO 2: ESTADÍSTICAS BÁSICAS ===
         # Tab: Stats (métricas básicas del texto)
-        self.tab_stats = self.tabview.add("📉 Stats")
+        self.tab_stats = self.tabview.add("📉")
         
         # Tab: Frecuencia
-        self.tab_freq = self.tabview.add("📈 Frecuencia")
+        self.tab_freq = self.tabview.add("📈")
         
         # === GRUPO 3: VISUALIZACIONES BÁSICAS ===
         # Tab: WordCloud
-        self.tab_wc = self.tabview.add("☁️ WordCloud")
+        self.tab_wc = self.tabview.add("☁️")
         
         # Tab: N-grams
-        self.tab_ngram = self.tabview.add("🔗 N-grams")
+        self.tab_ngram = self.tabview.add("🔗")
         
         # === GRUPO 4: VISUALIZACIONES AVANZADAS ===
         # Tab: Trends
-        self.tab_trends = self.tabview.add("📊 Trends")
+        self.tab_trends = self.tabview.add("📊")
         
         # Tab: Correlations
-        self.tab_corr = self.tabview.add("🔥 Correlaciones")
+        self.tab_corr = self.tabview.add("🔥")
         
         # Tab: Scatter
-        self.tab_scatter = self.tabview.add("⬡ Scatter")
+        self.tab_scatter = self.tabview.add("⬡")
         
         # Tab: WordTree (Árbol de Palabras)
-        self.tab_wordtree = self.tabview.add("🌳 Árbol de Palabras")
+        self.tab_wordtree = self.tabview.add("🌳")
         
         # Tab: StreamGraph
-        self.tab_streamgraph = self.tabview.add("🌊 StreamGraph")
+        self.tab_streamgraph = self.tabview.add("🌊")
         
         # Tab: Bubblelines
-        self.tab_bubblelines = self.tabview.add("🫧 Bubblelines")
+        self.tab_bubblelines = self.tabview.add("🫧")
         
         # Tab: Mandala
-        self.tab_mandala = self.tabview.add("⭕ Mandala")
+        self.tab_mandala = self.tabview.add("⭕")
         
         # === GRUPO 5: ANÁLISIS AVANZADO (al final) ===
         # Tab: KWIC (Contexts)
-        self.tab_kwic = self.tabview.add("🔍 Contextos (KWIC)")
+        self.tab_kwic = self.tabview.add("🔍")
         
         # Tab: Topics (LDA)
-        self.tab_topics = self.tabview.add("📚 Temas (LDA)")
+        self.tab_topics = self.tabview.add("📚")
         
         # Set up cada tab
         self._setup_input_tab()
