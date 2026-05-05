@@ -4,11 +4,19 @@ Sidebar: Panel lateral de navegación de herramientas.
 import logging
 import sys
 import customtkinter as ctk
-from PIL import Image, ImageDraw
 from typing import List, Dict, Callable, Any
 from pathlib import Path
 from core import constants
 from core import config
+
+# Check for PIL availability
+try:
+    from PIL import Image, ImageDraw
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+    Image = None
+    ImageDraw = None
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +35,7 @@ def _create_tool_callback(tool_name: str, callback: Callable[[str], None]) -> Ca
     return lambda: callback(tool_name)
 
 
-def make_circle_image(image_path: str, size: int = 80) -> Image:
+def make_circle_image(image_path: str, size: int = 80):
     """
     Convierte una imagen a círculo con fondo transparente.
     
@@ -38,6 +46,9 @@ def make_circle_image(image_path: str, size: int = 80) -> Image:
     Returns:
         Imagen en formato círculo
     """
+    if not PIL_AVAILABLE or Image is None or ImageDraw is None:
+        raise ImportError("PIL (Pillow) is not available")
+    
     img = Image.open(image_path).convert("RGBA")
     img = img.resize((size, size), Image.Resampling.LANCZOS)
     

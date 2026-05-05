@@ -302,8 +302,14 @@ def get_class_fixtures(cls):
     result = {}
     for name in dir(cls):
         attr = getattr(cls, name, None)
-        # Check if it's a fixture (has _pytestfixture_function marker or is callable)
+        # Check for @pytest.fixture decorator (has _pytestfixture_function marker)
         if callable(attr) and hasattr(attr, '_pytestfixture_function'):
+            try:
+                result[name] = attr(cls)
+            except Exception:
+                pass
+        # Also check for fixture marker via __name__ (newer pytest versions)
+        elif callable(attr) and hasattr(attr, '__name__') and hasattr(attr, '_pytestfixturemarker'):
             try:
                 result[name] = attr(cls)
             except Exception:
@@ -452,6 +458,42 @@ def main():
     from tests import test_search_processor
     for cls_name in dir(test_search_processor):
         cls = getattr(test_search_processor, cls_name)
+        if isinstance(cls, type) and cls_name.startswith('Test'):
+            print(f'\n{cls_name}:')
+            passed, failed, skipped, errors = run_test_class(cls, cls_name)
+            total_passed += passed
+            total_failed += failed
+            total_skipped += skipped
+    
+    # Test hash_processor
+    print('\n=== test_hash_processor.py ===')
+    from tests import test_hash_processor
+    for cls_name in dir(test_hash_processor):
+        cls = getattr(test_hash_processor, cls_name)
+        if isinstance(cls, type) and cls_name.startswith('Test'):
+            print(f'\n{cls_name}:')
+            passed, failed, skipped, errors = run_test_class(cls, cls_name)
+            total_passed += passed
+            total_failed += failed
+            total_skipped += skipped
+    
+    # Test rename_processor
+    print('\n=== test_rename_processor.py ===')
+    from tests import test_rename_processor
+    for cls_name in dir(test_rename_processor):
+        cls = getattr(test_rename_processor, cls_name)
+        if isinstance(cls, type) and cls_name.startswith('Test'):
+            print(f'\n{cls_name}:')
+            passed, failed, skipped, errors = run_test_class(cls, cls_name)
+            total_passed += passed
+            total_failed += failed
+            total_skipped += skipped
+    
+    # Test scrubber_processor
+    print('\n=== test_scrubber_processor.py ===')
+    from tests import test_scrubber_processor
+    for cls_name in dir(test_scrubber_processor):
+        cls = getattr(test_scrubber_processor, cls_name)
         if isinstance(cls, type) and cls_name.startswith('Test'):
             print(f'\n{cls_name}:')
             passed, failed, skipped, errors = run_test_class(cls, cls_name)
