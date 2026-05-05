@@ -10,6 +10,13 @@ from typing import List, Callable
 
 logger = logging.getLogger(__name__)
 
+# Check win32api availability at module level (Issue #2: unhandled import)
+try:
+    import win32api
+    HAS_WIN32API = True
+except ImportError:
+    HAS_WIN32API = False
+
 
 class FilePicker(ctk.CTkFrame):
     """
@@ -165,14 +172,19 @@ class FilePicker(ctk.CTkFrame):
                 drive = f"{letter}:\\"
                 try:
                     if os.path.exists(drive):
-                        # Check if removable (simple heuristic)
-                        import win32api
-                        try:
-                            drive_type = win32api.GetDriveType(drive)
-                            if drive_type == 2:  # DRIVE_REMOVABLE
-                                drives.append(drive)
-                        except Exception as e:
-                            logger.warning(f"Error checking drive type for {drive}: {e}")
+                        # Check if removable using win32api if available
+                        if HAS_WIN32API:
+                            try:
+                                drive_type = win32api.GetDriveType(drive)
+                                if drive_type == 2:  # DRIVE_REMOVABLE
+                                    drives.append(drive)
+                            except Exception as e:
+                                logger.warning(f"Error checking drive type for {drive}: {e}")
+                                # Fallback: check common USB drive letters
+                                if letter in ['D', 'E', 'F']:
+                                    drives.append(drive)
+                        else:
+                            # Fallback for systems without win32api
                             if letter in ['D', 'E', 'F']:
                                 drives.append(drive)
                 except Exception as e:

@@ -34,6 +34,25 @@ logger = logging.getLogger(__name__)
 
 
 # =============================================================================
+# VALIDACIÓN
+# =============================================================================
+
+def _validate_encryption_password(password: str) -> bool:
+    """
+    Valida la contraseña para encriptación de PDF.
+    
+    Args:
+        password: Contraseña a validar
+        
+    Returns:
+        bool: True si la contraseña es válida
+    """
+    if not password or len(password) < 4 or len(password) > 64:
+        return False
+    return True
+
+
+# =============================================================================
 # UTILIDADES
 # =============================================================================
 
@@ -941,6 +960,10 @@ def encrypt_pdf(files: List[str], password: str) -> Dict[str, Any]:
     """
     if not check_pypdf():
         return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
+    
+    # Validate password (Issue #3: password validation)
+    if not _validate_encryption_password(password):
+        return {'success': False, 'error': 'Contraseña inválida: debe tener entre 4 y 64 caracteres', 'output_files': []}
     
     output_files = []
     errors = []

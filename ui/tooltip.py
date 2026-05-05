@@ -41,9 +41,20 @@ class ToolTip:
         if self.tooltip:
             return
         
+        # Check if widget still exists before showing tooltip
+        # Prevents race condition when widget is destroyed while timer is pending
+        try:
+            if not self.widget.winfo_exists():
+                return
+        except Exception:
+            return
+        
         # Obtener posición del widget
-        x = self.widget.winfo_rootx() + 20
-        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 5
+        try:
+            x = self.widget.winfo_rootx() + 20
+            y = self.widget.winfo_rooty() + self.widget.winfo_height() + 5
+        except Exception:
+            return
         
         # Crear tooltip window
         self.tooltip = ctk.CTkToplevel(self.widget)

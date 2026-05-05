@@ -3,6 +3,7 @@ Utilidades comunes del proyecto.
 Funciones helper que pueden ser usadas por múltiples módulos.
 """
 import logging
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -164,3 +165,46 @@ def ensure_directory(path: str) -> Path:
     dir_path = Path(path)
     dir_path.mkdir(parents=True, exist_ok=True)
     return dir_path
+
+
+# =============================================================================
+# VALIDACIÓN DE ARCHIVOS
+# =============================================================================
+
+def validate_input_file(path: str) -> dict:
+    """
+    Valida que un archivo de entrada exista y sea legible.
+    
+    Args:
+        path: Ruta al archivo
+        
+    Returns:
+        dict: {'valid': bool, 'error': str or None}
+    """
+    if not path:
+        return {'valid': False, 'error': 'No path provided'}
+    if not os.path.exists(path):
+        return {'valid': False, 'error': 'File does not exist'}
+    if not os.path.isfile(path):
+        return {'valid': False, 'error': 'Not a file'}
+    if not os.access(path, os.R_OK):
+        return {'valid': False, 'error': 'File not readable'}
+    return {'valid': True}
+
+
+def format_error_message(error: Exception, context: str = "") -> str:
+    """
+    Formatea un error con contexto opcional.
+    
+    Args:
+        error: Excepción occurring
+        context: Contexto adicional (ej: nombre de función, operación)
+        
+    Returns:
+        str: Mensaje de error formateado
+    """
+    error_type = type(error).__name__
+    error_msg = str(error)
+    if context:
+        return f"{context}: {error_type} - {error_msg}"
+    return f"{error_type}: {error_msg}"
