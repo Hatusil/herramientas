@@ -6,6 +6,9 @@ from pathlib import Path
 from PIL import Image, ImageSequence
 from typing import List, Dict, Any
 
+# Importar función compartida de core (máxima C2: Consistency)
+from core.utils import get_output_path, get_output_path_format
+
 
 def create_gif(image_paths: List[str], output_path: str = None, duration: int = 500, loop: int = 0) -> Dict[str, Any]:
     """
@@ -66,10 +69,9 @@ def create_gif(image_paths: List[str], output_path: str = None, duration: int = 
                 img = img.resize(first_size, Image.LANCZOS)
             resized.append(img)
         
-        # Determinar output
+        # Determinar output usando get_output_path (máxima C2: Consistency)
         if output_path is None:
-            first = Path(image_paths[0])
-            output_path = str(first.parent / f"{first.stem}_animated.gif")
+            output_path = get_output_path(image_paths[0], '_animated')
         
         # Guardar como GIF
         resized[0].save(
@@ -109,8 +111,9 @@ def extract_frames(gif_path: str, output_dir: str = None) -> Dict[str, Any]:
     try:
         gif = Image.open(gif_path)
         
+        # Usar get_output_path para consistencia (máxima C2)
         if output_dir is None:
-            output_dir = os.path.splitext(gif_path)[0] + "_frames"
+            output_dir = get_output_path_format(gif_path, '_frames', '')
         
         os.makedirs(output_dir, exist_ok=True)
         

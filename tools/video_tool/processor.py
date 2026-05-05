@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List
 
-from core.utils import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg
+from core.utils import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg, get_output_path
 
 logger = logging.getLogger(__name__)
 

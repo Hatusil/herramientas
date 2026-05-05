@@ -7,6 +7,9 @@ import os
 from pathlib import Path
 from typing import List, Dict, Any
 
+# Importar función compartida de core (máxima C2: Consistency)
+from core.utils import get_output_path_format
+
 
 def compress_to_zip(files: List[str], output_path: str = None, level: int = 6) -> Dict[str, Any]:
     """
@@ -45,7 +48,8 @@ def compress_to_zip(files: List[str], output_path: str = None, level: int = 6) -
     try:
         if output_path is None:
             first_file = valid_files[0]
-            output_path = Path(first_file).parent / f"{Path(first_file).stem}_compressed.zip"
+            # Usar get_output_path_format para consistencia (máxima C2)
+            output_path = get_output_path_format(first_file, '_compressed', '.zip')
         
         with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=level) as zf:
             for f in valid_files:
@@ -114,7 +118,8 @@ def compress_to_tar(files: List[str], output_path: str = None, compression: str 
     try:
         if output_path is None:
             first_file = valid_files[0]
-            output_path = Path(first_file).parent / f"{Path(first_file).stem}.tar"
+            # Usar get_output_path_format para consistencia (máxima C2)
+            output_path = get_output_path_format(first_file, '', '.tar')
         
         mode = f'w:{compression}' if compression else 'w'
         
