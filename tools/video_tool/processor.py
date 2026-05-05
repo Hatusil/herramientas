@@ -7,13 +7,30 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List
 
-from core.utils import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg, get_output_path
+from core.utils import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg, get_output_path, validate_input_file, validate_file_extension, validate_file_size
 
 logger = logging.getLogger(__name__)
 
 # Funciones importadas desde core.utils para evitar duplicación:
-# - get_ffmpeg_path()
-# - check_ffmpeg()
+# - get_ffmpeg_path(), check_ffmpeg()
+# - validate_input_file(), validate_file_extension(), validate_file_size()
+
+VIDEO_EXTENSIONS = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v']
+MAX_VIDEO_SIZE_MB = 2000  # 2GB max for video files
+
+
+def _validate_video_input(file_path: str) -> Dict[str, Any]:
+    """Valida archivo de entrada para operaciones de video."""
+    check = validate_input_file(file_path)
+    if not check['valid']:
+        return check
+    check = validate_file_extension(file_path, VIDEO_EXTENSIONS)
+    if not check['valid']:
+        return check
+    check = validate_file_size(file_path, MAX_VIDEO_SIZE_MB)
+    if not check['valid']:
+        return check
+    return {'valid': True}
 
 
 def extract_audio(video_path: str, output_format: str = 'mp3') -> Dict[str, Any]:
@@ -21,8 +38,10 @@ def extract_audio(video_path: str, output_format: str = 'mp3') -> Dict[str, Any]
     if not check_ffmpeg():
         return {'success': False, 'error': 'FFmpeg no instalado', 'output_files': []}
     
-    if not os.path.exists(video_path):
-        return {'success': False, 'error': 'Archivo no encontrado', 'output_files': []}
+    # Validate input
+    validation = _validate_video_input(video_path)
+    if not validation['valid']:
+        return {'success': False, 'error': validation['error'], 'output_files': []}
     
     try:
         p = Path(video_path)

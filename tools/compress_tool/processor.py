@@ -8,7 +8,10 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 # Importar función compartida de core (máxima C2: Consistency)
-from core.utils import get_output_path_format
+from core.utils import get_output_path_format, validate_input_file, validate_file_size
+
+# Constantes
+MAX_COMPRESS_SIZE_MB = 5000  # 5GB max for compression
 
 
 def compress_to_zip(files: List[str], output_path: str = None, level: int = 6) -> Dict[str, Any]:

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 from core import constants
-from core.utils import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg, get_output_path, get_output_path_format
+from core.utils import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg, get_output_path, get_output_path_format, validate_input_file, validate_file_extension, validate_file_size
 
 
 logger = logging.getLogger(__name__)
@@ -19,10 +19,36 @@ logger = logging.getLogger(__name__)
 # UTILIDADES
 # =============================================================================
 # Funciones importadas desde core.utils para evitar duplicación:
-# - get_ffmpeg_path()
-# - check_ffmpeg()
-# - get_output_path()
-# - get_output_path_format()
+# - get_ffmpeg_path(), check_ffmpeg(), get_output_path(), get_output_path_format()
+# - validate_input_file(), validate_file_extension(), validate_file_size()
+
+AUDIO_EXTENSIONS = ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a', '.wma', '.aiff']
+MAX_AUDIO_SIZE_MB = 500  # 500MB max for audio files
+
+
+def _validate_audio_input(file_path: str) -> Dict[str, Any]:
+    """
+    Valida archivo de entrada para operaciones de audio.
+    
+    Returns:
+        {'valid': bool, 'error': str or None}
+    """
+    # Check existence
+    check = validate_input_file(file_path)
+    if not check['valid']:
+        return check
+    
+    # Check extension
+    check = validate_file_extension(file_path, AUDIO_EXTENSIONS)
+    if not check['valid']:
+        return check
+    
+    # Check size
+    check = validate_file_size(file_path, MAX_AUDIO_SIZE_MB)
+    if not check['valid']:
+        return check
+    
+    return {'valid': True}
 
 
 # =============================================================================
@@ -453,6 +479,11 @@ def convert_audio(files: List[str], output_format: str, **options) -> Dict[str, 
     if not check_ffmpeg():
         return {'success': False, 'error': 'FFmpeg no instalado', 'output_files': []}
     
+    # Validate output format
+    valid_formats = ['mp3', 'wav', 'flac', 'ogg', 'aac', 'm4a']
+    if output_format.lower() not in valid_formats:
+        return {'success': False, 'error': f'Formato no válido: {output_format}. Usar: {", ".join(valid_formats)}', 'output_files': []}
+    
     quality = options.get('quality', 192)
     requested_bitrate = quality * 1000  # Convert to bps
     
@@ -463,8 +494,10 @@ def convert_audio(files: List[str], output_format: str, **options) -> Dict[str, 
     for file_path in files:
         input_file = Path(file_path)
         
-        if not input_file.exists():
-            errors.append(f"No encontrado: {input_file.name}")
+        # Validate with helper
+        validation = _validate_audio_input(file_path)
+        if not validation['valid']:
+            errors.append(f"{input_file.name}: {validation['error']}")
             continue
         
         # Determinar formato de entrada por extensión

@@ -7,7 +7,25 @@ from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
 # Importar funciones compartidas de core (máxima #3: Consistency)
-from core.utils import get_output_path
+from core.utils import get_output_path, validate_input_file, validate_file_extension, validate_file_size
+
+# Constantes de validación
+PDF_EXTENSIONS = ['.pdf']
+MAX_PDF_SIZE_MB = 100  # 100MB max for PDF files
+
+
+def _validate_pdf_input(file_path: str) -> Dict[str, Any]:
+    """Valida archivo de entrada para operaciones PDF."""
+    check = validate_input_file(file_path)
+    if not check['valid']:
+        return check
+    check = validate_file_extension(file_path, PDF_EXTENSIONS)
+    if not check['valid']:
+        return check
+    check = validate_file_size(file_path, MAX_PDF_SIZE_MB)
+    if not check['valid']:
+        return check
+    return {'valid': True}
 
 try:
     from pypdf import PdfReader, PdfWriter, PageObject

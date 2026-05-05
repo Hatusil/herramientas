@@ -7,9 +7,11 @@ from pathlib import Path
 from typing import Dict, Any
 
 # Importar funciones compartidas de core (máxima #4: Lo que me gusta en una herramienta debe estar en las demás)
-from core.utils import get_output_path
+from core.utils import get_output_path, validate_input_file, validate_file_size
 
 logger = logging.getLogger(__name__)
+
+MAX_SCRUB_SIZE_MB = 2000  # 2GB max for scrubbing
 
 # =============================================================================
 # IMÁGENES - EXIF

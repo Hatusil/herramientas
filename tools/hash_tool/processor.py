@@ -5,6 +5,11 @@ import hashlib
 import os
 from typing import List, Dict, Any
 
+# Importar validación de core (máxima C2: Consistency)
+from core.utils import validate_input_file, validate_file_size
+
+MAX_HASH_SIZE_MB = 10000  # 10GB max for hash calculation
+
 
 def calculate_hash(file_path: str, algorithm: str = 'sha256') -> Dict[str, Any]:
     """
