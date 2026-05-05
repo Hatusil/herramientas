@@ -843,8 +843,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
         clean_label = ctk.CTkLabel(frame, text="Texto limpio (preview):", font=ctk.CTkFont(size=12))
         clean_label.pack(anchor="w", padx=10, pady=(5, 0))
         
-        self.clean_text = ctk.CTkTextbox(frame, wrap="word")
-        self.clean_text.pack(fill="both", expand=True, padx=10, pady=5)
+        self.clean_text = ctk.CTkTextbox(frame, wrap="word", height=150)  # Reducido 30%
+        self.clean_text.pack(fill="both", expand=False, padx=10, pady=5)
         
         # Top 20 palabras
         top_words_label = ctk.CTkLabel(frame, text="Top 20 palabras:", font=ctk.CTkFont(size=12))
@@ -1712,7 +1712,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
             container, 
             font=("Courier New", 14), 
             wrap="word",
-            height=441  # Aumentado 5%
+            height=397  # Reducido 10%
         )
         self.freq_text.pack(fill="both", expand=True, padx=10, pady=(5, 10))
     
@@ -1858,11 +1858,11 @@ class TextAnalyzerUI(ctk.CTkFrame):
             number_of_steps=80,
             command=self._on_ngram_slider_change
         )
-        self.ngram_slider.set(20)
+        self.ngram_slider.set(15)
         self.ngram_slider.pack(side="left", fill="x", expand=True, padx=10)
         
         # Label showing current value
-        self.ngram_label = ctk.CTkLabel(slider_frame, text="20 resultados", font=ctk.CTkFont(size=12))
+        self.ngram_label = ctk.CTkLabel(slider_frame, text="15 resultados", font=ctk.CTkFont(size=12))
         self.ngram_label.pack(side="left", padx=10)
         
         # Text view - usar grid para que se expanda
