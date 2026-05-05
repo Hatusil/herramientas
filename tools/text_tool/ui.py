@@ -13,6 +13,163 @@ from typing import Callable, Dict, Any
 import time
 
 logger = logging.getLogger(__name__)
+
+# Diccionario de descripciones detalladas para cada sub-herramienta
+SUBTOOL_INFO = {
+    "wordcloud": {
+        "name": "WordCloud",
+        "icon": "☁️",
+        "description": "Nube de palabras visual",
+        "what_is": "Representación visual donde el tamaño de cada palabra indica su frecuencia en el texto. Las palabras más grandes aparecen más veces en el documento, creando una 'nube'.",
+        "use_for": [
+            "Identificar términos dominantes rápidamente",
+            "Ver estructura temática del documento",
+            "Crear visualizaciones para presentaciones",
+            "Detectar palabras clave de un vistazo"
+        ]
+    },
+    "frequency": {
+        "name": "Frecuencia",
+        "icon": "📈",
+        "description": "Palabras más frecuentes",
+        "what_is": "Lista ordenada de las palabras más usadas en el texto, con su conteo exacto. Muestra ranking de términos por frecuencia.",
+        "use_for": [
+            "Conocer las palabras clave del texto",
+            "Analizar vocabulario del autor",
+            "Detectar temas principales",
+            "Comparar vocabulario entre textos"
+        ]
+    },
+    "stats": {
+        "name": "Estadísticas",
+        "icon": "📉",
+        "description": "Estadísticas del texto",
+        "what_is": "Conjunto de métricas cuantitativas del texto: caracteres, palabras, oraciones, palabras únicas, promedios y Type-Token Ratio (riqueza léxica).",
+        "use_for": [
+            "Medir extensión y complejidad del texto",
+            "Evaluar riqueza de vocabulario",
+            "Comparar textos por métricas",
+            "Analizar estilo de escritura"
+        ]
+    },
+    "ngrams": {
+        "name": "N-grams",
+        "icon": "🔗",
+        "description": "Frases repetidas (bigramas/trigramas)",
+        "what_is": "Secuencias de 2 o 3 palabras que aparecen juntas frecuentemente en el texto. Revela expresiones comunes y patrones de escritura.",
+        "use_for": [
+            "Encontrar expresiones típicas del autor",
+            "Identificar frases feitas",
+            "Analizar estilo y tono",
+            "Descubrir temas recurrentes"
+        ]
+    },
+    "trends": {
+        "name": "Tendencias",
+        "icon": "📊",
+        "description": "Frecuencia por secciones",
+        "what_is": "Gráfico que muestra cómo la frecuencia de palabras clave cambia a lo largo del texto (por secciones). Revela la evolución temática.",
+        "use_for": [
+            "Ver cambios temáticos a lo largo del documento",
+            "Identificar cuándo aparecen ciertos temas",
+            "Analizar estructura narrativa",
+            "Rastrear evolución de ideas"
+        ]
+    },
+    "correlations": {
+        "name": "Correlaciones",
+        "icon": "🔥",
+        "description": "Palabras que aparecen juntas",
+        "what_is": "Análisis de asociación que encuentra palabras que statistically tienden a aparecer próximas entre sí. Revela relaciones semánticas implícitas.",
+        "use_for": [
+            "Descubrir relaciones entre conceptos",
+            "Identificar sinónimos implícitos",
+            "Analizar redes semánticas",
+            "Detectar patrones temáticos"
+        ]
+    },
+    "scatter": {
+        "name": "Scatter",
+        "icon": "⬡",
+        "description": "Distribución término vs posición",
+        "what_is": "Gráfico de dispersión que muestra la posición de cada palabra clave en el texto. Permite ver concentración o distribución de términos.",
+        "use_for": [
+            "Ver dónde aparecen términos específicos",
+            "Detectar repeticiones anómalas",
+            "Analizar distribución textual",
+            "Identificar clusters temáticos"
+        ]
+    },
+    "kwic": {
+        "name": "KWIC (Contextos)",
+        "icon": "🔍",
+        "description": "Keyword In Context / Concordancia",
+        "what_is": "Muestra cada aparición de una palabra junto con sus palabras circundantes. Esencial para análisis cualitativo de contexto de uso.",
+        "use_for": [
+            "Analizar contexto de uso de términos",
+            "Entender significados en contexto",
+            "Ver patrones de uso",
+            "Investigar acepciones específicas"
+        ]
+    },
+    "topics": {
+        "name": "Temas (LDA)",
+        "icon": "📚",
+        "description": "Latent Dirichlet Allocation",
+        "what_is": "Técnica de topic modeling que descubre automáticamente los temaslatentes en el texto. Agrupa palabras que tienden a aparecer juntas.",
+        "use_for": [
+            "Descubrir temas principales automáticamente",
+            "Segmentar documento por temas",
+            "Resumen automático",
+            "Clasificación de documentos"
+        ]
+    },
+    "wordtree": {
+        "name": "Árbol de Palabras",
+        "icon": "🌳",
+        "description": "WordTree jerárquico",
+        "what_is": "Visualización jerárquica en forma de árbol que muestra las palabras que siguen a una palabra clave, ramificando en múltiples direcciones.",
+        "use_for": [
+            "Explorar patrones de secuenciación",
+            "Ver ramificaciones después de una palabra",
+            "Analizar estructura de frases",
+            "Mapear contexto expandido"
+        ]
+    },
+    "streamgraph": {
+        "name": "StreamGraph",
+        "icon": "🌊",
+        "description": "Gráfico de área apilada estilo río",
+        "what_is": "Visualización que muestra cómo cambia la frecuencia de varios términos a través de las secciones del texto, apilando las áreas una sobre otra.",
+        "use_for": [
+            "Ver evolución de temas en documentos largos",
+            "Comparar cambios en frecuencia de términos",
+            "Identificar patrones temporales en el texto"
+        ]
+    },
+    "bubblelines": {
+        "name": "Bubblelines",
+        "icon": "🫧",
+        "description": "Líneas con burbujas",
+        "what_is": "Combina gráficos de línea con puntos (burbujas) cuyo tamaño refleja la importancia o frecuencia en cada posición.",
+        "use_for": [
+            "Comparar distribución de términos específicos",
+            "Ver patrones de aparición",
+            "Analizar concentración de términos"
+        ]
+    },
+    "mandala": {
+        "name": "Mandala",
+        "icon": "⭕",
+        "description": "Diagrama circular concéntrico",
+        "what_is": "Visualización radial donde los términos se organizan en anillos concéntricos, mostrando relaciones entre términos y secciones.",
+        "use_for": [
+            "Ver relaciones entre términos y documentos",
+            "Análisis radial de corpus",
+            "Visualizar estructura multi-sección"
+        ]
+    }
+}
 class TextAnalyzerUI(ctk.CTkFrame):
     """UI para análisis de texto."""
     
@@ -427,6 +584,54 @@ class TextAnalyzerUI(ctk.CTkFrame):
             # Help panel is set up in _setup_ui - we can modify tips there
             pass  # Tips are passed in add_help call
     
+    def _show_tab_description(self, tab_key: str, parent_frame) -> None:
+        """Muestra la descripción de una sub-herramienta en el frame dado.
+        
+        Args:
+            tab_key: clave de la sub-herramienta en SUBTOOL_INFO
+            parent_frame: frame donde mostrar la descripción
+        """
+        info = SUBTOOL_INFO.get(tab_key)
+        if not info:
+            return
+        
+        # Frame contenedor de la descripción
+        desc_frame = ctk.CTkFrame(parent_frame, fg_color=("#f0f0f0", "#2a2a2a"))
+        desc_frame.pack(fill="x", padx=10, pady=(5, 10))
+        
+        # Título con icono y nombre
+        title_text = f"{info['icon']} {info['name']}"
+        title_label = ctk.CTkLabel(
+            desc_frame,
+            text=title_text,
+            font=ctk.CTkFont(size=13, weight="bold")
+        )
+        title_label.pack(anchor="w", padx=10, pady=(8, 3))
+        
+        # Descripción corta
+        desc_label = ctk.CTkLabel(
+            desc_frame,
+            text=info['description'],
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        )
+        desc_label.pack(anchor="w", padx=10, pady=(0, 5))
+        
+        # Texto explicativo (what_is) - primera línea
+        what_is = info.get('what_is', '')
+        if what_is:
+            # Tomar primera oración breve
+            what_is_short = what_is.split('.')[0] + '.' if '.' in what_is else what_is[:100]
+            what_label = ctk.CTkLabel(
+                desc_frame,
+                text=what_is_short,
+                font=ctk.CTkFont(size=10),
+                text_color=("gray40", "gray60"),
+                wraplength=500,
+                justify="left"
+            )
+            what_label.pack(anchor="w", padx=10, pady=(0, 3))
+    
     def _setup_ui(self) -> None:
         # Título
         title = ctk.CTkLabel(
@@ -439,7 +644,7 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Panel de ayuda
         help_panel = add_help(
             self,
-            description="📊 Analiza texto: WordCloud, frecuencia, estadísticas, n-grams, Trends, Correlaciones, Scatter. Soporta texto, archivos (TXT/MD/PDF/DOCX) o URLs",
+            description="📊 Analiza texto: WordCloud, frecuencia, estadísticas, n-grams, Trends, Correlaciones, Scatter, StreamGraph, Bubblelines, Mandala. Soporta texto, archivos (TXT/MD/PDF/DOCX) o URLs",
             usage=[
                 "1. Elegir tipo: Texto/Archivo/URL",
                 "2. Ingresar o seleccionar contenido",
@@ -452,6 +657,10 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 "   📊 Trends - frecuencia por secciones",
                 "   🔥 Correlaciones - palabras que van juntas",
                 "   ⬡ Scatter - distribución de términos",
+                "   🌳 Árbol de Palabras - relaciones jerárquicas",
+                "   🌊 StreamGraph - gráfico de área apilada",
+                "   🫧 Bubblelines - líneas con burbujas",
+                "   ⭕ Mandala - diagrama circular concéntrico",
                 "5. Click en cualquier gráfico para ver en ventana emergente",
                 "   - Scroll = zoom (0.5x a 5x)",
                 "   - Arrastrar = mover imagen",
@@ -462,38 +671,46 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 "💡 Frequency/N-grams: usá los sliders para ver más resultados",
                 "💡 Gráficos: click para abrir en ventana grande, usá scroll para zoom",
                 "💡 Atajos: Ctrl+V=paste, Ctrl+O=abrir, Ctrl+S=guardar, Ctrl+Enter=analizar, Escape=cancelar",
-                "💡 Arrastrá archivos .txt/.md/.pdf sobre el área de texto para cargarlos"
+                "💡 Arrastrá archivos .txt/.md/.pdf sobre el área de texto para cargarlos",
+                "💡 StreamGraph requiere mínimo 50 palabras",
+                "💡 Bubblelines: ingresá términos separados por coma",
+                "💡 Mandala requiere mínimo 100 palabras"
             ],
             warnings=[
-                "⚠️ Trends/Correlations/Scatter requieren texto largo (>200 palabras)",
+                "⚠️ Trends/Correlations/Scatter/StreamGraph requieren texto largo (>200 palabras)",
+                "⚠️ Mandala requiere mínimo 100 palabras",
                 "⚠️ URL scraping puede fallar con anti-bot",
                 "⚠️ Textos muy grandes (>100KB) son lentos"
             ]
         )
         help_panel.pack(fill="x", padx=10, pady=5)
         
-        # Tabs
+        # Tabs - Orden lógico: entrada → limpieza → stats básicos → visualizaciones → análisis avanzado
         self.tabview = ctk.CTkTabview(self)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=5)
         
+        # === GRUPO 1: ENTRADA ===
         # Tab: Entrada
         self.tab_input = self.tabview.add("📥 Entrada")
         
-        # Tab: Limpieza (move UP to be second)
+        # Tab: Limpieza
         self.tab_clean = self.tabview.add("⚙️ Limpieza")
         
-        # Tab: WordCloud
-        self.tab_wc = self.tabview.add("☁️ WordCloud")
+        # === GRUPO 2: ESTADÍSTICAS BÁSICAS ===
+        # Tab: Stats (métricas básicas del texto)
+        self.tab_stats = self.tabview.add("📉 Stats")
         
-        # Tab: Frecuencia  
+        # Tab: Frecuencia
         self.tab_freq = self.tabview.add("📈 Frecuencia")
         
-        # Tab: stats
-        self.tab_stats = self.tabview.add("📉 Stats")
+        # === GRUPO 3: VISUALIZACIONES BÁSICAS ===
+        # Tab: WordCloud
+        self.tab_wc = self.tabview.add("☁️ WordCloud")
         
         # Tab: N-grams
         self.tab_ngram = self.tabview.add("🔗 N-grams")
         
+        # === GRUPO 4: VISUALIZACIONES AVANZADAS ===
         # Tab: Trends
         self.tab_trends = self.tabview.add("📊 Trends")
         
@@ -503,14 +720,24 @@ class TextAnalyzerUI(ctk.CTkFrame):
         # Tab: Scatter
         self.tab_scatter = self.tabview.add("⬡ Scatter")
         
+        # Tab: WordTree (Árbol de Palabras)
+        self.tab_wordtree = self.tabview.add("🌳 Árbol de Palabras")
+        
+        # Tab: StreamGraph
+        self.tab_streamgraph = self.tabview.add("🌊 StreamGraph")
+        
+        # Tab: Bubblelines
+        self.tab_bubblelines = self.tabview.add("🫧 Bubblelines")
+        
+        # Tab: Mandala
+        self.tab_mandala = self.tabview.add("⭕ Mandala")
+        
+        # === GRUPO 5: ANÁLISIS AVANZADO (al final) ===
         # Tab: KWIC (Contexts)
         self.tab_kwic = self.tabview.add("🔍 Contextos (KWIC)")
         
         # Tab: Topics (LDA)
         self.tab_topics = self.tabview.add("📚 Temas (LDA)")
-        
-        # Tab: WordTree (Árbol de Palabras)
-        self.tab_wordtree = self.tabview.add("🌳 Árbol de Palabras")
         
         # Set up cada tab
         self._setup_input_tab()
@@ -525,6 +752,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self._setup_kwic_tab()
         self._setup_topics_tab()
         self._setup_wordtree_tab()
+        self._setup_streamgraph_tab()
+        self._setup_bubblelines_tab()
+        self._setup_mandala_tab()
     
     # ============ TAB: LIMPIEZA ============
     def _setup_clean_tab(self) -> None:
@@ -1098,6 +1328,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
                 analyze_trends,
                 analyze_correlations,
                 analyze_scatter,
+                analyze_streamgraph,
+                analyze_bubblelines,
+                analyze_mandala,
                 clean_text,
                 check_text_size
             )
@@ -1177,6 +1410,21 @@ class TextAnalyzerUI(ctk.CTkFrame):
             if scatter_result.get('success') and scatter_result.get('image_data'):
                 self._show_scatter(scatter_result['image_data'])
             
+            # StreamGraph - solo si hay texto limpio
+            if cleaned and len(cleaned.split()) >= 50:
+                streamgraph_result = analyze_streamgraph(cleaned, n_terms=8, n_sections=15)
+                if streamgraph_result.get('success') and streamgraph_result.get('image_data'):
+                    self._show_streamgraph(streamgraph_result['image_data'])
+            
+            # Bubblelines - requerir texto con al menos 50 palabras y términos del usuario
+            # (se ejecuta manualmente desde el tab, no automáticamente)
+            
+            # Mandala - solo si hay texto limpio con al menos 100 palabras
+            if cleaned and len(cleaned.split()) >= 100:
+                mandala_result = analyze_mandala(cleaned, n_terms=12, n_rings=3)
+                if mandala_result.get('success') and mandala_result.get('image_data'):
+                    self._show_mandala(mandala_result['image_data'])
+            
             # State update (Phase 1) - track completed analysis
             self._update_state(last_analysis="full_analysis")
             
@@ -1191,6 +1439,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
     # ============ TAB: WORDCLOUD ============
     def _setup_wc_tab(self) -> None:
         frame = self.tab_wc
+        
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("wordcloud", frame)
         
         # === Personalization Controls Frame ===
         customize_frame = ctk.CTkFrame(frame)
@@ -1428,6 +1679,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_freq_tab(self) -> None:
         frame = self.tab_freq
         
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("frequency", frame)
+        
         # Frame contenedor que ocupa todo el espacio del tab
         container = ctk.CTkFrame(frame, fg_color="transparent")
         container.pack(fill="both", expand=True)
@@ -1519,6 +1773,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_stats_tab(self) -> None:
         frame = self.tab_stats
         
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("stats", frame)
+        
         # Frame contenedor que ocupa todo el espacio del tab
         container = ctk.CTkFrame(frame, fg_color="transparent")
         container.pack(fill="both", expand=True)
@@ -1557,6 +1814,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
     # ============ TAB: N-GRAMS ============
     def _setup_ngram_tab(self) -> None:
         frame = self.tab_ngram
+        
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("ngrams", frame)
         
         # Frame contenedor que ocupa todo el espacio del tab
         container = ctk.CTkFrame(frame, fg_color="transparent")
@@ -1679,6 +1939,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_trends_tab(self) -> None:
         frame = self.tab_trends
         
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("trends", frame)
+        
         self.trends_label = ctk.CTkLabel(
             frame,
             text="Tendencias aparecerá aquí",
@@ -1726,6 +1989,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
     # ============ TAB: CORRELATIONS ============
     def _setup_corr_tab(self) -> None:
         frame = self.tab_corr
+        
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("correlations", frame)
         
         self.corr_label = ctk.CTkLabel(
             frame,
@@ -1775,6 +2041,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_scatter_tab(self) -> None:
         frame = self.tab_scatter
         
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("scatter", frame)
+        
         self.scatter_label = ctk.CTkLabel(
             frame,
             text="Scatter plot aparecerá aquí",
@@ -1822,6 +2091,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
     # ============ TAB: KWIC (CONTEXTOS) ============
     def _setup_kwic_tab(self) -> None:
         frame = self.tab_kwic
+        
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("kwic", frame)
         
         # Frame contenedor que ocupa todo el espacio del tab
         container = ctk.CTkFrame(frame, fg_color="transparent")
@@ -2003,6 +2275,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
     def _setup_topics_tab(self) -> None:
         frame = self.tab_topics
         
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("topics", frame)
+        
         # Frame contenedor que ocupa todo el espacio del tab
         container = ctk.CTkFrame(frame, fg_color="transparent")
         container.pack(fill="both", expand=True)
@@ -2030,8 +2305,8 @@ class TextAnalyzerUI(ctk.CTkFrame):
         self.topics_count_slider = ctk.CTkSlider(
             topic_count_row,
             from_=3,
-            to=10,
-            number_of_steps=7,
+            to=15,
+            number_of_steps=12,
             command=self._on_topics_count_change
         )
         self.topics_count_slider.set(5)
@@ -2173,6 +2448,9 @@ class TextAnalyzerUI(ctk.CTkFrame):
     # ============ TAB: WORDTREE (ÁRBOL DE PALABRAS) ============
     def _setup_wordtree_tab(self) -> None:
         frame = self.tab_wordtree
+        
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("wordtree", frame)
         
         # === Controls Frame ===
         controls_frame = ctk.CTkFrame(frame)
@@ -2593,6 +2871,421 @@ class TextAnalyzerUI(ctk.CTkFrame):
             
         except Exception as e:
             self.wordtree_label.configure(text=f"Error: {e}")
+    
+    # ============ TAB: STREAMGRAPH ============
+    def _setup_streamgraph_tab(self) -> None:
+        frame = self.tab_streamgraph
+        
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("streamgraph", frame)
+        
+        # === Controls Frame ===
+        customize_frame = ctk.CTkFrame(frame)
+        customize_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(customize_frame, text="Parámetros:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=5, pady=(5, 10))
+        
+        # Row 1: n_terms slider
+        terms_row = ctk.CTkFrame(customize_frame)
+        terms_row.pack(fill="x", padx=5, pady=2)
+        
+        ctk.CTkLabel(terms_row, text="Términos:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.streamgraph_terms_slider = ctk.CTkSlider(
+            terms_row,
+            from_=5,
+            to=12,
+            number_of_steps=7,
+            command=self._on_streamgraph_terms_change
+        )
+        self.streamgraph_terms_slider.set(8)
+        self.streamgraph_terms_slider.pack(side="left", fill="x", expand=True, padx=5)
+        
+        self.streamgraph_terms_label = ctk.CTkLabel(terms_row, text="8", width=40)
+        self.streamgraph_terms_label.pack(side="left", padx=5)
+        
+        # Row 2: n_sections slider
+        sections_row = ctk.CTkFrame(customize_frame)
+        sections_row.pack(fill="x", padx=5, pady=2)
+        
+        ctk.CTkLabel(sections_row, text="Secciones:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.streamgraph_sections_slider = ctk.CTkSlider(
+            sections_row,
+            from_=5,
+            to=20,
+            number_of_steps=15,
+            command=self._on_streamgraph_sections_change
+        )
+        self.streamgraph_sections_slider.set(15)
+        self.streamgraph_sections_slider.pack(side="left", fill="x", expand=True, padx=5)
+        
+        self.streamgraph_sections_label = ctk.CTkLabel(sections_row, text="15", width=40)
+        self.streamgraph_sections_label.pack(side="left", padx=5)
+        
+        # Generate button
+        generate_btn = ctk.CTkButton(
+            customize_frame,
+            text="Generar StreamGraph",
+            command=self._run_streamgraph_analysis,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        generate_btn.pack(pady=10)
+        
+        # StreamGraph display area
+        self.streamgraph_label = ctk.CTkLabel(
+            frame,
+            text="StreamGraph aparecerá aquí",
+            text_color="gray"
+        )
+        self.streamgraph_label.pack(expand=True)
+    
+    def _on_streamgraph_terms_change(self, value: float) -> None:
+        """Handle n_terms slider change."""
+        n = int(value)
+        self.streamgraph_terms_label.configure(text=str(n))
+    
+    def _on_streamgraph_sections_change(self, value: float) -> None:
+        """Handle n_sections slider change."""
+        n = int(value)
+        self.streamgraph_sections_label.configure(text=str(n))
+    
+    def _run_streamgraph_analysis(self) -> None:
+        """Run StreamGraph analysis."""
+        if not self._check_text_size(show_warning=True):
+            return
+        
+        if not self.cleaned_content:
+            self.status_label.configure(text="Cargue y analice el texto primero", text_color="orange")
+            return
+        
+        n_terms = int(self.streamgraph_terms_slider.get())
+        n_sections = int(self.streamgraph_sections_slider.get())
+        
+        try:
+            from tools.text_tool.processor import analyze_streamgraph
+            
+            result = analyze_streamgraph(self.cleaned_content, n_terms=n_terms, n_sections=n_sections)
+            
+            if result.get('success') and result.get('image_data'):
+                self._show_streamgraph(result['image_data'])
+                self.status_label.configure(text=f"StreamGraph generado con {n_terms} términos", text_color="green")
+            else:
+                self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
+        except Exception as e:
+            logger.error(f"StreamGraph error: {e}")
+            self.status_label.configure(text=f"Error: {str(e)[:50]}", text_color="red")
+    
+    def _show_streamgraph(self, image_data) -> None:
+        """Display StreamGraph."""
+        try:
+            from PIL import Image
+            from io import BytesIO
+            
+            if not isinstance(image_data, (bytes, bytearray)):
+                raise ValueError(f"image_data debe ser bytes, recibido: {type(image_data)}")
+            
+            img = Image.open(BytesIO(image_data))
+            img.thumbnail((700, 350))
+            
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
+            
+            ctk_img = ctk.CTkImage(
+                light_image=img,
+                dark_image=img,
+                size=img.size
+            )
+            
+            self.streamgraph_label.configure(image=ctk_img, text="")
+            self.streamgraph_label.image = ctk_img
+            
+            self.streamgraph_label.unbind("<Button-1>")
+            self.streamgraph_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "StreamGraph"))
+            
+            self.streamgraph_label.configure(cursor="hand2")
+            
+        except Exception as e:
+            self.streamgraph_label.configure(text=f"Error: {e}")
+    
+    # ============ TAB: BUBBLELINES ============
+    def _setup_bubblelines_tab(self) -> None:
+        frame = self.tab_bubblelines
+        
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("bubblelines", frame)
+        
+        # === Controls Frame ===
+        customize_frame = ctk.CTkFrame(frame)
+        customize_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(customize_frame, text="Parámetros:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=5, pady=(5, 10))
+        
+        # Row 1: terms entry
+        terms_row = ctk.CTkFrame(customize_frame)
+        terms_row.pack(fill="x", padx=5, pady=2)
+        
+        ctk.CTkLabel(terms_row, text="Términos:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.bubblelines_terms_entry = ctk.CTkEntry(terms_row, placeholder_text="palabra1, palabra2, palabra3")
+        self.bubblelines_terms_entry.pack(side="left", fill="x", expand=True, padx=5)
+        
+        # Row 2: show_bubbles checkbox
+        bubbles_row = ctk.CTkFrame(customize_frame)
+        bubbles_row.pack(fill="x", padx=5, pady=2)
+        
+        ctk.CTkLabel(bubbles_row, text="Opciones:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.bubblelines_show_bubbles = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(bubbles_row, text="Mostrar burbujas", variable=self.bubblelines_show_bubbles).pack(side="left", padx=5)
+        
+        # Row 3: bubble_scale slider
+        scale_row = ctk.CTkFrame(customize_frame)
+        scale_row.pack(fill="x", padx=5, pady=2)
+        
+        ctk.CTkLabel(scale_row, text="Escala:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.bubblelines_scale_slider = ctk.CTkSlider(
+            scale_row,
+            from_=0.5,
+            to=3.0,
+            number_of_steps=25,
+            command=self._on_bubblelines_scale_change
+        )
+        self.bubblelines_scale_slider.set(1.5)
+        self.bubblelines_scale_slider.pack(side="left", fill="x", expand=True, padx=5)
+        
+        self.bubblelines_scale_label = ctk.CTkLabel(scale_row, text="1.5", width=40)
+        self.bubblelines_scale_label.pack(side="left", padx=5)
+        
+        # Generate button
+        generate_btn = ctk.CTkButton(
+            customize_frame,
+            text="Generar Bubblelines",
+            command=self._run_bubblelines_analysis,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        generate_btn.pack(pady=10)
+        
+        # Bubblelines display area
+        self.bubblelines_label = ctk.CTkLabel(
+            frame,
+            text="Bubblelines aparecerá aquí",
+            text_color="gray"
+        )
+        self.bubblelines_label.pack(expand=True)
+    
+    def _on_bubblelines_scale_change(self, value: float) -> None:
+        """Handle bubble_scale slider change."""
+        n = round(value, 1)
+        self.bubblelines_scale_label.configure(text=str(n))
+    
+    def _run_bubblelines_analysis(self) -> None:
+        """Run Bubblelines analysis."""
+        if not self._check_text_size(show_warning=True):
+            return
+        
+        if not self.cleaned_content:
+            self.status_label.configure(text="Cargue y analice el texto primero", text_color="orange")
+            return
+        
+        # Get terms from entry
+        terms_text = self.bubblelines_terms_entry.get().strip()
+        if not terms_text:
+            self.status_label.configure(text="Ingrese términos separados por coma", text_color="orange")
+            return
+        
+        terms_list = [t.strip() for t in terms_text.split(',') if t.strip()]
+        
+        if not terms_list:
+            self.status_label.configure(text="Ingrese términos válidos", text_color="orange")
+            return
+        
+        show_bubbles = self.bubblelines_show_bubbles.get()
+        bubble_scale = round(self.bubblelines_scale_slider.get(), 1)
+        
+        try:
+            from tools.text_tool.processor import analyze_bubblelines
+            
+            result = analyze_bubblelines(self.cleaned_content, terms_list=terms_list, 
+                                         show_bubbles=show_bubbles, bubble_scale=bubble_scale)
+            
+            if result.get('success') and result.get('image_data'):
+                self._show_bubblelines(result['image_data'])
+                self.status_label.configure(text=f"Bubblelines generado: {len(terms_list)} términos", text_color="green")
+            else:
+                self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
+        except Exception as e:
+            logger.error(f"Bubblelines error: {e}")
+            self.status_label.configure(text=f"Error: {str(e)[:50]}", text_color="red")
+    
+    def _show_bubblelines(self, image_data) -> None:
+        """Display Bubblelines."""
+        try:
+            from PIL import Image
+            from io import BytesIO
+            
+            if not isinstance(image_data, (bytes, bytearray)):
+                raise ValueError(f"image_data debe ser bytes, recibido: {type(image_data)}")
+            
+            img = Image.open(BytesIO(image_data))
+            img.thumbnail((700, 350))
+            
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
+            
+            ctk_img = ctk.CTkImage(
+                light_image=img,
+                dark_image=img,
+                size=img.size
+            )
+            
+            self.bubblelines_label.configure(image=ctk_img, text="")
+            self.bubblelines_label.image = ctk_img
+            
+            self.bubblelines_label.unbind("<Button-1>")
+            self.bubblelines_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "Bubblelines"))
+            
+            self.bubblelines_label.configure(cursor="hand2")
+            
+        except Exception as e:
+            self.bubblelines_label.configure(text=f"Error: {e}")
+    
+    # ============ TAB: MANDALA ============
+    def _setup_mandala_tab(self) -> None:
+        frame = self.tab_mandala
+        
+        # Mostrar descripción de la herramienta
+        self._show_tab_description("mandala", frame)
+        
+        # === Controls Frame ===
+        customize_frame = ctk.CTkFrame(frame)
+        customize_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(customize_frame, text="Parámetros:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=5, pady=(5, 10))
+        
+        # Row 1: n_terms slider
+        terms_row = ctk.CTkFrame(customize_frame)
+        terms_row.pack(fill="x", padx=5, pady=2)
+        
+        ctk.CTkLabel(terms_row, text="Términos:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.mandala_terms_slider = ctk.CTkSlider(
+            terms_row,
+            from_=5,
+            to=15,
+            number_of_steps=10,
+            command=self._on_mandala_terms_change
+        )
+        self.mandala_terms_slider.set(12)
+        self.mandala_terms_slider.pack(side="left", fill="x", expand=True, padx=5)
+        
+        self.mandala_terms_label = ctk.CTkLabel(terms_row, text="12", width=40)
+        self.mandala_terms_label.pack(side="left", padx=5)
+        
+        # Row 2: n_rings slider
+        rings_row = ctk.CTkFrame(customize_frame)
+        rings_row.pack(fill="x", padx=5, pady=2)
+        
+        ctk.CTkLabel(rings_row, text="Anillos:", width=80, anchor="w").pack(side="left", padx=5)
+        
+        self.mandala_rings_slider = ctk.CTkSlider(
+            rings_row,
+            from_=2,
+            to=6,
+            number_of_steps=4,
+            command=self._on_mandala_rings_change
+        )
+        self.mandala_rings_slider.set(3)
+        self.mandala_rings_slider.pack(side="left", fill="x", expand=True, padx=5)
+        
+        self.mandala_rings_label = ctk.CTkLabel(rings_row, text="3", width=40)
+        self.mandala_rings_label.pack(side="left", padx=5)
+        
+        # Generate button
+        generate_btn = ctk.CTkButton(
+            customize_frame,
+            text="Generar Mandala",
+            command=self._run_mandala_analysis,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        generate_btn.pack(pady=10)
+        
+        # Mandala display area
+        self.mandala_label = ctk.CTkLabel(
+            frame,
+            text="Mandala aparecerá aquí",
+            text_color="gray"
+        )
+        self.mandala_label.pack(expand=True)
+    
+    def _on_mandala_terms_change(self, value: float) -> None:
+        """Handle n_terms slider change."""
+        n = int(value)
+        self.mandala_terms_label.configure(text=str(n))
+    
+    def _on_mandala_rings_change(self, value: float) -> None:
+        """Handle n_rings slider change."""
+        n = int(value)
+        self.mandala_rings_label.configure(text=str(n))
+    
+    def _run_mandala_analysis(self) -> None:
+        """Run Mandala analysis."""
+        if not self._check_text_size(show_warning=True):
+            return
+        
+        if not self.cleaned_content:
+            self.status_label.configure(text="Cargue y analice el texto primero", text_color="orange")
+            return
+        
+        n_terms = int(self.mandala_terms_slider.get())
+        n_rings = int(self.mandala_rings_slider.get())
+        
+        try:
+            from tools.text_tool.processor import analyze_mandala
+            
+            result = analyze_mandala(self.cleaned_content, n_terms=n_terms, n_rings=n_rings)
+            
+            if result.get('success') and result.get('image_data'):
+                self._show_mandala(result['image_data'])
+                self.status_label.configure(text=f"Mandala generado: {n_terms} términos, {n_rings} anillos", text_color="green")
+            else:
+                self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
+        except Exception as e:
+            logger.error(f"Mandala error: {e}")
+            self.status_label.configure(text=f"Error: {str(e)[:50]}", text_color="red")
+    
+    def _show_mandala(self, image_data) -> None:
+        """Display Mandala."""
+        try:
+            from PIL import Image
+            from io import BytesIO
+            
+            if not isinstance(image_data, (bytes, bytearray)):
+                raise ValueError(f"image_data debe ser bytes, recibido: {type(image_data)}")
+            
+            img = Image.open(BytesIO(image_data))
+            img.thumbnail((500, 500))
+            
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
+            
+            ctk_img = ctk.CTkImage(
+                light_image=img,
+                dark_image=img,
+                size=img.size
+            )
+            
+            self.mandala_label.configure(image=ctk_img, text="")
+            self.mandala_label.image = ctk_img
+            
+            self.mandala_label.unbind("<Button-1>")
+            self.mandala_label.bind("<Button-1>", lambda e: self._open_chart_modal(image_data, "Mandala"))
+            
+            self.mandala_label.configure(cursor="hand2")
+            
+        except Exception as e:
+            self.mandala_label.configure(text=f"Error: {e}")
     
     # ============ CHART MODAL ============
     def _open_chart_modal(self, image_data, title: str) -> None:

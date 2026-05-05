@@ -1096,6 +1096,345 @@ def analyze_topics(text: str, n_topics: int = 5, max_iter: int = 10,
         return {'success': False, 'error': str(e), 'data': None}
 
 
+def analyze_streamgraph(text: str, n_terms: int = 8, n_sections: int = 15) -> Dict[str, Any]:
+    """
+    Análisis StreamGraph - gráfico de área apilada estilo río.
+    Muestra cómo cambia la frecuencia de términos a través de las secciones del texto.
+    
+    Args:
+        text: Texto de entrada
+        n_terms: Número de términos a mostrar (default: 8, rango: 5-12)
+        n_sections: Número de secciones del texto (default: 15, rango: 5-20)
+        
+    Returns:
+        Dict con 'success', 'image_data' (bytes), 'top_words' (list), 'data' (dict), 'error': str
+    """
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from collections import Counter
+    except ImportError:
+        return {'success': False, 'error': 'matplotlib no instalado', 'image_data': None, 'top_words': [], 'data': {}}
+    
+    # Validación de parámetros
+    if n_terms < 5 or n_terms > 12:
+        return {'success': False, 'error': 'n_terms debe estar entre 5 y 12', 'image_data': None}
+    
+    if n_sections < 5 or n_sections > 20:
+        return {'success': False, 'error': 'n_sections debe estar entre 5 y 20', 'image_data': None}
+    
+    cleaned = clean_text(text, remove_stopwords=True)
+    words = cleaned.split()
+    
+    # Validación de texto mínimo
+    if len(words) < 50:
+        return {'success': False, 'error': 'Texto muy corto para StreamGraph (mínimo 50 palabras)', 'image_data': None}
+    
+    # Encontrar términos más frecuentes
+    freq = Counter(words)
+    top_words = [w for w, _ in freq.most_common(n_terms)]
+    
+    if not top_words:
+        return {'success': False, 'error': 'No hay palabras suficientes', 'image_data': None}
+    
+    # Dividir texto en secciones y contar frecuencia de cada término
+    section_size = len(words) // n_sections
+    stream_data = {word: [] for word in top_words}
+    
+    for i in range(n_sections):
+        start = i * section_size
+        end = start + section_size if i < n_sections - 1 else len(words)
+        section_words = words[start:end]
+        section_freq = Counter(section_words)
+        
+        for word in top_words:
+            stream_data[word].append(section_freq.get(word, 0))
+    
+    try:
+        # Crear gráfico streamgraph (stackplot)
+        fig, ax = plt.subplots(figsize=(12, 6))
+        
+        x = list(range(n_sections))
+        
+        # Colors para los términos
+        colors = plt.cm.viridis([i / n_terms for i in range(n_terms)])
+        
+        # Stackplot
+        stacks = []
+        labels = []
+        for word in top_words:
+            stacks.append(stream_data[word])
+            labels.append(word)
+        
+        ax.stackplot(x, *stacks, labels=labels, colors=colors, alpha=0.8)
+        
+        ax.set_xlabel('Sección del texto')
+        ax.set_ylabel('Frecuencia')
+        ax.set_title('StreamGraph - Evolución de términos a través del texto')
+        ax.legend(loc='upper right', fontsize=8)
+        ax.grid(True, alpha=0.3)
+        
+        # Convertir a imagen
+        img_buffer = BytesIO()
+        plt.tight_layout()
+        plt.savefig(img_buffer, format='PNG', dpi=100)
+        img_buffer.seek(0)
+        plt.close(fig)
+        
+        return {
+            'success': True,
+            'image_data': img_buffer.getvalue(),
+            'top_words': top_words,
+            'data': stream_data,
+            'error': ''
+        }
+    except Exception as e:
+        logger.error(f"Error generating streamgraph: {e}")
+        return {'success': False, 'error': f'Error al generar gráfico: {str(e)}', 'image_data': None}
+
+
+def analyze_bubblelines(text: str, terms_list: list = None, show_bubbles: bool = True, 
+                        bubble_scale: float = 1.5) -> Dict[str, Any]:
+    """
+    Análisis Bubblelines - líneas con burbujas superpuestas.
+    Muestra la distribución de términos específicos a lo largo del documento.
+    
+    Args:
+        text: Texto de entrada
+        terms_list: Lista de términos a comparar (default: [])
+        show_bubbles: Si mostrar burbujas en posiciones (default: True)
+        bubble_scale: Escala del tamaño de burbujas (default: 1.5, rango: 0.5-3.0)
+        
+    Returns:
+        Dict con 'success', 'image_data' (bytes), 'terms' (list), 'data' (dict), 'error': str
+    """
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from collections import Counter
+    except ImportError:
+        return {'success': False, 'error': 'matplotlib no instalado', 'image_data': None, 'terms': [], 'data': {}}
+    
+    # Default vacío si no se proporciona
+    if terms_list is None:
+        terms_list = []
+    
+    # Validación de escala
+    if bubble_scale < 0.5 or bubble_scale > 3.0:
+        return {'success': False, 'error': 'bubble_scale debe estar entre 0.5 y 3.0', 'image_data': None}
+    
+    cleaned = clean_text(text, remove_stopwords=True)
+    words = cleaned.split()
+    
+    # Validación de texto mínimo
+    if len(words) < 50:
+        return {'success': False, 'error': 'Texto muy corto para Bubblelines (mínimo 50 palabras)', 'image_data': None}
+    
+    # Validar que los términos estén en el texto
+    valid_terms = []
+    word_counter = Counter(words)
+    for term in terms_list:
+        term_clean = term.strip().lower()
+        if term_clean and word_counter.get(term_clean, 0) > 0:
+            valid_terms.append(term_clean)
+    
+    if not valid_terms:
+        return {'success': False, 'error': 'No se encontraron los términos especificados en el texto', 'image_data': None}
+    
+    # Crear datos para líneas y posiciones
+    n_sections = 15
+    section_size = len(words) // n_sections
+    bubblelines_data = {term: {'line': [], 'bubbles': []} for term in valid_terms}
+    
+    for i in range(n_sections):
+        start = i * section_size
+        end = start + section_size if i < n_sections - 1 else len(words)
+        section_words = words[start:end]
+        section_freq = Counter(section_words)
+        
+        for term in valid_terms:
+            count = section_freq.get(term, 0)
+            bubblelines_data[term]['line'].append(count)
+            
+            # Posiciones de ocurrencias para burbujas
+            if show_bubbles:
+                positions = [j for j, w in enumerate(section_words) if w == term]
+                # Escalar posiciones a la sección actual
+                scaled_positions = [(i + (p / section_size)) for p in positions]
+                bubblelines_data[term]['bubbles'].extend(scaled_positions)
+    
+    try:
+        fig, ax = plt.subplots(figsize=(12, 6))
+        
+        # Colores para cada término
+        colors = plt.cm.tab10([i / len(valid_terms) for i in range(len(valid_terms))])
+        
+        for idx, term in enumerate(valid_terms):
+            # Línea de distribución
+            ax.plot(range(n_sections), bubblelines_data[term]['line'], 
+                   marker='o', label=term, linewidth=2, color=colors[idx])
+            
+            # Burbujas en posiciones de ocurrencia (tamaño variable según frecuencia total del término)
+            if show_bubbles and bubblelines_data[term]['bubbles']:
+                # Tamaño basado en frecuencia total del término en el texto
+                total_freq = Counter(words).get(term, 1)
+                # Escalar: frecuencia mayor = burbuja más grande
+                bubble_sizes = [50 + (total_freq * 5) * bubble_scale for _ in bubblelines_data[term]['bubbles']]
+                ax.scatter(bubblelines_data[term]['bubbles'], 
+                          [bubblelines_data[term]['line'][int(p)] for p in bubblelines_data[term]['bubbles']],
+                          s=bubble_sizes, alpha=0.5, color=colors[idx])
+        
+        ax.set_xlabel('Sección del texto')
+        ax.set_ylabel('Frecuencia')
+        ax.set_title('Bubblelines - Distribución de términos')
+        ax.legend(loc='upper right', fontsize=9)
+        ax.grid(True, alpha=0.3)
+        
+        # Convertir a imagen
+        img_buffer = BytesIO()
+        plt.tight_layout()
+        plt.savefig(img_buffer, format='PNG', dpi=100)
+        img_buffer.seek(0)
+        plt.close(fig)
+        
+        return {
+            'success': True,
+            'image_data': img_buffer.getvalue(),
+            'terms': valid_terms,
+            'data': bubblelines_data,
+            'error': ''
+        }
+    except Exception as e:
+        logger.error(f"Error generating bubblelines: {e}")
+        return {'success': False, 'error': f'Error al generar gráfico: {str(e)}', 'image_data': None}
+
+
+def analyze_mandala(text: str, n_terms: int = 12, n_rings: int = 3) -> Dict[str, Any]:
+    """
+    Análisis Mandala - diagrama circular concéntrico.
+    Visualización radial donde los términos se organizan en anillos concéntricos.
+    
+    Args:
+        text: Texto de entrada
+        n_terms: Número de términos a mostrar (default: 12, rango: 5-15)
+        n_rings: Número de anillos concéntricos (default: 3, rango: 2-6)
+        
+    Returns:
+        Dict con 'success', 'image_data' (bytes), 'terms' (list), 'rings' (list), 'error': str
+    """
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import numpy as np
+        from collections import Counter
+    except ImportError:
+        return {'success': False, 'error': 'matplotlib no instalado', 'image_data': None, 'terms': [], 'rings': []}
+    
+    # Validación de parámetros
+    if n_terms < 5 or n_terms > 15:
+        return {'success': False, 'error': 'n_terms debe estar entre 5 y 15', 'image_data': None}
+    
+    if n_rings < 2 or n_rings > 6:
+        return {'success': False, 'error': 'n_rings debe estar entre 2 y 6', 'image_data': None}
+    
+    cleaned = clean_text(text, remove_stopwords=True)
+    words = cleaned.split()
+    
+    # Validación de texto mínimo
+    if len(words) < 100:
+        return {'success': False, 'error': 'Texto muy corto para Mandala (mínimo 100 palabras)', 'image_data': None}
+    
+    # Encontrar términos más frecuentes
+    freq = Counter(words)
+    top_words = [w for w, _ in freq.most_common(n_terms)]
+    
+    if not top_words:
+        return {'success': False, 'error': 'No hay palabras suficientes', 'image_data': None}
+    
+    # Dividir texto en secciones para los anillos
+    section_size = len(words) // n_rings
+    mandala_data = {word: [] for word in top_words}
+    
+    for i in range(n_rings):
+        start = i * section_size
+        end = start + section_size if i < n_rings - 1 else len(words)
+        section_words = words[start:end]
+        section_freq = Counter(section_words)
+        
+        for word in top_words:
+            mandala_data[word].append(section_freq.get(word, 0))
+    
+    try:
+        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw={'projection': 'polar'})
+        
+        # Ángulos para cada término
+        angles = np.linspace(0, 2 * np.pi, n_terms, endpoint=False)
+        
+        # Radio de cada anillo
+        radii = list(range(1, n_rings + 1))
+        
+        # Normalizar datos para mejor visualización
+        max_val = max(max(values) for values in mandala_data.values()) if mandala_data else 1
+        
+        # Colores
+        colors = plt.cm.viridis(np.linspace(0, 1, n_terms))
+        
+        # Dibujar cada término en todos los anillos
+        for ring_idx, radius in enumerate(radii):
+            for term_idx, (word, values) in enumerate(mandala_data.items()):
+                if ring_idx < len(values):
+                    # Valor normalizado
+                    val = values[ring_idx] / max_val if max_val > 0 else 0
+                    
+                    # Posición angular
+                    angle = angles[term_idx]
+                    
+                    # Tamaño del punto según valor
+                    size = 50 + (val * 200)
+                    
+                    # Posición radial (invertida para que an outer = mayor)
+                    r = radius
+                    
+                    ax.scatter(angle, r, s=size, c=[colors[term_idx]], alpha=0.7)
+                    
+                    # Añadir etiqueta en el anillo exterior
+                    if ring_idx == n_rings - 1:
+                        ax.annotate(word, (angle, r + 0.15), fontsize=8, 
+                                   ha='center', va='center', fontweight='bold')
+        
+        # Configurar el gráfico polar
+        ax.set_ylim(0, n_rings + 0.5)
+        ax.set_yticklabels([])
+        ax.set_title('Mandala - Diagrama circular concéntrico', pad=20, fontsize=14, fontweight='bold')
+        
+        # Leyenda
+        legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
+                                      markerfacecolor=colors[i], markersize=10, 
+                                      label=f'Término {i+1}') for i in range(min(5, n_terms))]
+        ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.3, 1.0), fontsize=8)
+        
+        # Convertir a imagen
+        img_buffer = BytesIO()
+        plt.tight_layout()
+        plt.savefig(img_buffer, format='PNG', dpi=100)
+        img_buffer.seek(0)
+        plt.close(fig)
+        
+        return {
+            'success': True,
+            'image_data': img_buffer.getvalue(),
+            'terms': top_words,
+            'rings': list(radii),
+            'error': ''
+        }
+    except Exception as e:
+        logger.error(f"Error generating mandala: {e}")
+        return {'success': False, 'error': f'Error al generar gráfico: {str(e)}', 'image_data': None}
+
+
 def analyze_wordtree(text: str, phrase: str, max_depth: int = 5) -> Dict[str, Any]:
     """
     Análisis WordTree - visualiza relaciones de palabras en estructura de árbol.
@@ -1356,6 +1695,27 @@ def _register_analyzers():
             'returns': 'image',
             'description': 'WordTree - Árbol de palabras',
             'min_words': 50
+        },
+        'streamgraph': {
+            'func': analyze_streamgraph,
+            'requires': ['matplotlib'],
+            'returns': 'image',
+            'description': 'StreamGraph - gráfico de área apilada',
+            'min_words': 50
+        },
+        'bubblelines': {
+            'func': analyze_bubblelines,
+            'requires': ['matplotlib'],
+            'returns': 'image',
+            'description': 'Bubblelines - líneas con burbujas',
+            'min_words': 50
+        },
+        'mandala': {
+            'func': analyze_mandala,
+            'requires': ['matplotlib'],
+            'returns': 'image',
+            'description': 'Mandala - diagrama circular concéntrico',
+            'min_words': 100
         }
     })
 
