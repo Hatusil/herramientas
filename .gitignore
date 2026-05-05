@@ -84,5 +84,8 @@ coverage.xml
 # --- Proyecto ---
 !Herramientas.spec  # Este SÍ se necesita para PyInstaller
 
+# --- Agent Rules (locales, no versionar) ---
+.agent/
+
 # --- Otros ---
 informes/
