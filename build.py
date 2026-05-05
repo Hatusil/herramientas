@@ -79,12 +79,13 @@ args.extend(["--collect-all", "beautifulsoup4"])
 
 PyInstaller.__main__.run(args)
 
-# Mover al directorio final
-if os.path.exists("dist"):
-    shutil.rmtree("dist")
+# Mover al directorio final solo si dist_new existe
 if os.path.exists(dist_dir):
+    if os.path.exists("dist"):
+        shutil.rmtree("dist")
     os.rename(dist_dir, "dist")
-if os.path.exists(build_dir):
-    shutil.rmtree(build_dir)
-
-print(f"\nDone! Executable at: dist/{APP_NAME}.exe")
+    if os.path.exists(build_dir):
+        shutil.rmtree(build_dir)
+    print(f"\nDone! Executable at: dist/{APP_NAME}.exe")
+else:
+    print(f"\nError: No se generó {dist_dir}, revisar errores arriba")
