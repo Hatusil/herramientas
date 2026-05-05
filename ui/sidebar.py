@@ -27,7 +27,7 @@ def _create_tool_callback(tool_name: str, callback: Callable[[str], None]) -> Ca
     return lambda: callback(tool_name)
 
 
-def make_circle_image(image_path: str, size: int = 80) -> Image.Image:
+def make_circle_image(image_path: str, size: int = 80) -> Image:
     """
     Convierte una imagen a círculo con fondo transparente.
     

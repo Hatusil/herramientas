@@ -16,10 +16,41 @@ class MockModule:
     def __getattr__(self, name):
         return lambda *args, **kwargs: None
 
+# Better PIL mock that returns proper Image class
+class MockPIL:
+    class Image:
+        class Resampling:
+            LANCZOS = 0
+        @staticmethod
+        def open(path):
+            return MockPIL._MockImage()
+        def convert(self, mode):
+            return self
+        def resize(self, size, resample):
+            return self
+        @staticmethod
+        def new(mode, size, color=0):
+            return MockPIL._MockImage()
+        def paste(self, img, pos, mask=None):
+            pass
+    
+    class _MockImage:
+        def __init__(self):
+            pass
+    
+    class ImageDraw:
+        @staticmethod
+        def Draw(size):
+            return MockPIL._MockDraw()
+    
+    class _MockDraw:
+        def ellipse(self, *args, **kwargs):
+            pass
+
 sys.modules['customtkinter'] = MockModule()
 sys.modules['tkinter'] = MockModule()
 sys.modules['tkinter.ttk'] = MockModule()
-sys.modules['PIL'] = MockModule()
+sys.modules['PIL'] = MockPIL()
 
 
 # Simple fixture implementation
