@@ -57,6 +57,9 @@ class PDFToolUI(BaseToolUI):
         # Call BaseToolUI __init__ which calls _setup_ui()
         super().__init__(master, on_process, **kwargs)
         
+        # Estado: evitar doble click
+        self.is_processing = False
+        
         # Setup progress bar
         self._setup_progress_bar()
         

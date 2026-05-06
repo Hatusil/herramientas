@@ -33,6 +33,7 @@ class BaseToolUI(ctk.CTkFrame):
         self.status_label: Optional[ctk.CTkLabel] = None
         self.progress_bar: Optional[ctk.CTkProgressBar] = None
         self._processing = False
+        self.is_processing = False
         
         self._setup_ui()
     
@@ -298,9 +299,20 @@ class BaseToolUI(ctk.CTkFrame):
         Returns:
             None (usa callback para mostrar resultado)
         """
+        # Evitar doble click si hay is_processing
+        if hasattr(self, 'is_processing') and self.is_processing:
+            return
+        
         def on_done(result: Dict[str, Any]) -> None:
             self.stop_progress()
+            # Reset estado
+            if hasattr(self, 'is_processing'):
+                self.is_processing = False
             self._show_result(result)
+        
+        # Set estado procesando
+        if hasattr(self, 'is_processing'):
+            self.is_processing = True
         
         self.start_progress()
         

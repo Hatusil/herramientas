@@ -23,6 +23,9 @@ class AudioToolUI(BaseToolUI):
         # Call BaseToolUI __init__ which calls _setup_ui()
         super().__init__(master, on_process, **kwargs)
         
+        # Estado: evitar doble click
+        self.is_processing = False
+        
         # Setup progress bar
         self._setup_progress_bar()
         
@@ -188,8 +191,15 @@ class AudioToolUI(BaseToolUI):
         ).pack(pady=20)
     
     def _normalize(self) -> None:
+        # Evitar doble click
+        if self.is_processing:
+            return
+        
         if not self._check_files():
             return
+        
+        # Cambiar estado
+        self.is_processing = True
         
         options = {
             'target_lufs': int(self.lufs_var.get()),
@@ -233,9 +243,12 @@ class AudioToolUI(BaseToolUI):
         ).pack(pady=20)
     
     def _clean_metadata(self) -> None:
+        if self.is_processing:
+            return
         if not self._check_files():
             return
         
+        self.is_processing = True
         # Usar async para no bloquear UI
         self.process_async('clean', self.files, {})
     
@@ -288,6 +301,8 @@ class AudioToolUI(BaseToolUI):
         ).grid(row=4, column=0, columnspan=4, pady=20)
     
     def _edit_metadata(self) -> None:
+        if self.is_processing:
+            return
         if not self._check_files():
             return
         
@@ -297,6 +312,7 @@ class AudioToolUI(BaseToolUI):
             self.status_label.configure(text="Ingresa al menos un campo", text_color="#FFA500")
             return
         
+        self.is_processing = True
         # Usar async para no bloquear UI
         self.process_async('edit_metadata', self.files, options)
     
@@ -360,9 +376,12 @@ class AudioToolUI(BaseToolUI):
         ).pack(pady=20)
     
     def _convert(self) -> None:
+        if self.is_processing:
+            return
         if not self._check_files():
             return
         
+        self.is_processing = True
         # Usar async para no bloquear UI
         self.process_async('convert', self.files, {
             'format': self.format_var.get(),
@@ -482,6 +501,8 @@ class AudioToolUI(BaseToolUI):
             self.status_label.configure(text=f"Error: {str(e)}", text_color="red")
     
     def _do_repair(self, mode: str) -> None:
+        if self.is_processing:
+            return
         if mode == 'corrupt':
             files = self.verify_state['corrupt']
             if not files:
@@ -489,6 +510,7 @@ class AudioToolUI(BaseToolUI):
         else:
             files = self._get_selected_files()
         
+        self.is_processing = True
         # Usar async para no bloquear UI
         self.process_async('repair', files, {})
     
