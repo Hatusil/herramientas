@@ -9,13 +9,13 @@ Este paquete contiene módulos separados para diferentes funcionalidades de PDF:
 - conversion: Conversión entre PDFs e imágenes, redacción
 """
 
-# Importar módulos directamente (evitar imports que carguen el paquete padre)
-import info
-import watermarks
-import security
-import transform
-import conversion
-import watermark_removal
+# Importar módulos usando import relativo
+from . import info
+from . import watermarks
+from . import security
+from . import transform
+from . import conversion
+from . import watermark_removal
 
 # Exportar funciones principales para acceso directo
 # Info
@@ -37,6 +37,12 @@ rotate_pages = transform.rotate_pages
 reorder_pages = transform.reorder_pages
 merge_pdfs = transform.merge_pdfs
 extract_pages = transform.extract_pages
+extract_page = transform.extract_page
+extract_range = transform.extract_range
+reorder_pages_advanced = transform.reorder_pages_advanced
+validate_page_number = transform.validate_page_number
+validate_page_range = transform.validate_page_range
+validate_new_order = transform.validate_new_order
 
 # Conversion
 images_to_pdf = conversion.images_to_pdf
@@ -64,6 +70,12 @@ __all__ = [
     'reorder_pages',
     'merge_pdfs',
     'extract_pages',
+    'extract_page',
+    'extract_range',
+    'reorder_pages_advanced',
+    'validate_page_number',
+    'validate_page_range',
+    'validate_new_order',
     # Conversion
     'images_to_pdf',
     'pdf_to_images',

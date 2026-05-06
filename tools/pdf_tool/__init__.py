@@ -109,6 +109,13 @@ class PDFTool(BaseTool):
                     pages=options.get('pages', []),
                 )
             
+            elif action == 'extract_range':
+                return processor.extract_range(
+                    files,
+                    start=options.get('start', 1),
+                    end=options.get('end', 1),
+                )
+            
             elif action == 'page_numbers':
                 return processor.add_page_numbers(
                     files,

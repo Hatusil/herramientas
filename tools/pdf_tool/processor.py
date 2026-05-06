@@ -762,6 +762,83 @@ def extract_pages(files: List[str], pages: List[int]) -> Dict[str, Any]:
     }
 
 
+def extract_range(files: List[str], start: int, end: int) -> Dict[str, Any]:
+    """
+    Extrae un rango de páginas de un PDF.
+    
+    Args:
+        files: Lista de rutas de PDFs
+        start: Página inicial (1-indexed)
+        end: Página final (1-indexed)
+        
+    Returns:
+        dict: Resultado de la operación
+    """
+    if not check_pypdf():
+        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
+    
+    output_files = []
+    errors = []
+    
+    for file_path in files:
+        if not os.path.exists(file_path):
+            errors.append(f"Archivo no encontrado: {file_path}")
+            continue
+        
+        try:
+            reader = PdfReader(file_path)
+            writer = PdfWriter()
+            
+            num_pages = len(reader.pages)
+            
+            # Validar rango
+            if start < 1:
+                errors.append(f"Página inicial inválida: {start}")
+                continue
+            if end > num_pages:
+                errors.append(f"Página final {end} excede el total ({num_pages})")
+                continue
+            if start > end:
+                errors.append(f"Inicio ({start}) mayor que final ({end})")
+                continue
+            
+            # Extraer páginas
+            for i in range(start - 1, end):
+                writer.add_page(reader.pages[i])
+            
+            output_path = get_output_path(file_path, f'_page_{start}-{end}')
+            with open(output_path, 'wb') as f:
+                writer.write(f)
+            
+            output_files.append(output_path)
+            logger.info(f"Páginas {start}-{end} extraídas: {file_path}")
+            
+        except Exception as e:
+            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
+    
+    success = len(output_files) > 0
+    return {
+        'success': success,
+        'message': f"Extraídas páginas {start}-{end} de {len(output_files)}/{len(files)} archivos",
+        'output_files': output_files,
+        'error': '; '.join(errors) if errors else None
+    }
+
+
+def extract_page(files: List[str], page_number: int) -> Dict[str, Any]:
+    """
+    Extrae una página específica de un PDF.
+    
+    Args:
+        files: Lista de rutas de PDFs
+        page_number: Número de página a extraer (1-indexed)
+        
+    Returns:
+        dict: Resultado de la operación
+    """
+    return extract_range(files, start=page_number, end=page_number)
+
+
 # =============================================================================
 # NÚMEROS DE PÁGINA
 # =============================================================================

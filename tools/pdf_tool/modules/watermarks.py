@@ -51,8 +51,8 @@ def _create_text_watermark_pdf(text: str, page_size: Tuple, position: str = 'cen
     Args:
         text: Texto del watermark
         page_size: Tupla (width, height) de la página
-        position: Posición del watermark ('center', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'diagonal')
-        **options: font_size, color, opacity, rotation
+        position: Posición del watermark ('center', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'diagonal', 'custom')
+        **options: font_size, color, opacity, rotation, position_x, position_y
         
     Returns:
         bytes: Contenido del PDF temporal
@@ -68,6 +68,8 @@ def _create_text_watermark_pdf(text: str, page_size: Tuple, position: str = 'cen
     color = options.get('color', '#888888')
     opacity = options.get('opacity', 0.3)
     rotation = options.get('rotation', 45)
+    position_x = options.get('position_x')
+    position_y = options.get('position_y')
     
     # Convertir color hex a RGB
     r = int(color[1:3], 16) / 255
@@ -81,7 +83,12 @@ def _create_text_watermark_pdf(text: str, page_size: Tuple, position: str = 'cen
     # Posicionar según el parámetro
     c.saveState()
     
-    if position == 'center':
+    if position == 'custom' and position_x is not None and position_y is not None:
+        # Posición personalizada exacta
+        c.translate(position_x, position_y)
+        c.rotate(rotation)
+        c.drawCentredString(0, 0, text)
+    elif position == 'center':
         c.translate(width / 2, height / 2)
         c.rotate(rotation)
         c.drawCentredString(0, 0, text)
@@ -123,7 +130,9 @@ def add_text_watermark(files: List[str], text: str, **options) -> Dict[str, Any]
             - color: Color hex (default: '#888888')
             - opacity: Opacidad 0-1 (default: 0.3)
             - rotation: Rotación en grados (default: 45)
-            - position: Posición - 'center', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'diagonal' (default: 'center')
+            - position: Posición - 'center', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'diagonal', 'custom' (default: 'center')
+            - position_x: Coordenada X exacta (solo para position='custom')
+            - position_y: Coordenada Y exacta (solo para position='custom')
         
     Returns:
         dict: Resultado de la operación
@@ -191,6 +200,8 @@ def add_image_watermark(files: List[str], image_path: str, **options) -> Dict[st
             - scale: Escala de la imagen (default: 0.5)
             - opacity: Opacidad 0-1 (default: 0.3)
             - position: Posición - 'center', 'top-left', 'top-right', 'bottom-left', 'bottom-right' (default: 'center')
+            - position_x: Coordenada X exacta (solo para position='custom')
+            - position_y: Coordenada Y exacta (solo para position='custom')
         
     Returns:
         dict: Resultado de la operación
@@ -205,6 +216,8 @@ def add_image_watermark(files: List[str], image_path: str, **options) -> Dict[st
     scale = options.get('scale', 0.5)  # 50% del tamaño de página
     opacity = options.get('opacity', 0.3)
     position = options.get('position', 'center')
+    position_x = options.get('position_x')
+    position_y = options.get('position_y')
     
     # Crear página de watermark como PDF
     if not os.path.exists(image_path):
@@ -234,7 +247,10 @@ def add_image_watermark(files: List[str], image_path: str, **options) -> Dict[st
                 scaled_height = scaled_width * (img_height / img_width)
                 
                 # Calcular posición
-                if position == 'center':
+                if position == 'custom' and position_x is not None and position_y is not None:
+                    x = position_x
+                    y = position_y
+                elif position == 'center':
                     x = (page_width - scaled_width) / 2
                     y = (page_height - scaled_height) / 2
                 elif position == 'top-left':

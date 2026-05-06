@@ -7,13 +7,49 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
-from typing import List, Callable, Dict, Any
+from typing import List, Callable, Dict, Any, Optional
+from PIL import Image, ImageTk
 
 # Import BaseToolUI from core
 from core.base_tool_ui import BaseToolUI
 
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# UTILIDADES - THUMBNAIL
+# =============================================================================
+
+def get_pdf_thumbnail(file_path: str, size: tuple = (200, 250)) -> Optional[Image.Image]:
+    """
+    Genera un thumbnail de la primera página de un PDF usando Fitz.
+    
+    Args:
+        file_path: Ruta al archivo PDF
+        size: Tamaño del thumbnail (ancho, alto)
+        
+    Returns:
+        PIL Image o None si falla
+    """
+    try:
+        import fitz
+        doc = fitz.open(file_path)
+        if doc.page_count < 1:
+            doc.close()
+            return None
+        
+        page = doc[0]
+        pix = page.get_pixmap(matrix=fitz.Matrix(0.5, 0.5))  # Reducir resolución
+        img = pix.pil_image()
+        doc.close()
+        
+        # Redimensionar
+        img.thumbnail(size, Image.Resampling.LANCZOS)
+        return img
+    except Exception as e:
+        logger.warning(f"Error generando thumbnail: {e}")
+        return None
 
 
 class PDFToolUI(BaseToolUI):
@@ -31,25 +67,32 @@ class PDFToolUI(BaseToolUI):
         self.tabview = ctk.CTkTabview(self)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Crear tabs
-        self.tab_watermark = self.tabview.add("Watermark")
+        # Reorganizar pestañas en orden funcional:
+        # 1. INFO (propiedades)
+        # 2. EDITAR (extract, reorder)
+        # 3. TRANSFORMAR (rotate, optimize)
+        # 4. WATERMARK (add/remove)
+        # 5. SEGURIDAD (password, encrypt)
+        # 6. COMBINAR (merge)
+        
+        self.tab_info = self.tabview.add("Info")
         self.tab_edit = self.tabview.add("Editar")
         self.tab_transform = self.tabview.add("Transformar")
+        self.tab_watermark = self.tabview.add("Watermark")
+        self.tab_security = self.tabview.add("Seguridad")
         self.tab_combine = self.tabview.add("Combinar")
         self.tab_numbers = self.tabview.add("Números")
-        self.tab_security = self.tabview.add("Seguridad")
         self.tab_optimize = self.tabview.add("Optimizar")
-        self.tab_info = self.tabview.add("Info")
         
         # Configurar cada tab
-        self._setup_watermark_tab()
+        self._setup_info_tab()
         self._setup_edit_tab()
         self._setup_transform_tab()
+        self._setup_watermark_tab()
+        self._setup_security_tab()
         self._setup_combine_tab()
         self._setup_numbers_tab()
-        self._setup_security_tab()
         self._setup_optimize_tab()
-        self._setup_info_tab()
     
     def _get_file_label(self) -> str:
         """Override: Label for file section."""
@@ -102,38 +145,129 @@ class PDFToolUI(BaseToolUI):
     def _setup_watermark_tab(self) -> None:
         frame = self.tab_watermark
         
+        # Toggle para tipo de watermark (texto vs imagen)
+        self.watermark_type = ctk.StringVar(value="text")
+        
+        type_frame = ctk.CTkFrame(frame)
+        type_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(type_frame, text="Tipo:").pack(side="left", padx=5)
+        ctk.CTkRadioButton(
+            type_frame,
+            text="Texto",
+            variable=self.watermark_type,
+            value="text",
+            command=self._update_watermark_inputs
+        ).pack(side="left", padx=5)
+        ctk.CTkRadioButton(
+            type_frame,
+            text="Imagen",
+            variable=self.watermark_type,
+            value="image",
+            command=self._update_watermark_inputs
+        ).pack(side="left", padx=5)
+        
+        # Contenedor para inputs (se actualiza según el tipo)
+        self.watermark_inputs_frame = ctk.CTkFrame(frame)
+        self.watermark_inputs_frame.pack(fill="x", padx=10, pady=5)
+        
         # Texto
-        text_frame = ctk.CTkFrame(frame)
-        text_frame.pack(fill="x", padx=10, pady=5)
+        text_frame = ctk.CTkFrame(self.watermark_inputs_frame)
+        text_frame.pack(fill="x", padx=5, pady=5)
         
         ctk.CTkLabel(text_frame, text="Texto:").pack(side="left", padx=5)
         self.watermark_text = ctk.CTkEntry(text_frame, width=200)
         self.watermark_text.insert(0, "WATERMARK")
         self.watermark_text.pack(side="left", padx=5)
         
-        # Opciones
+        # Imagen (inicialmente oculto)
+        self.image_frame = ctk.CTkFrame(self.watermark_inputs_frame)
+        
+        ctk.CTkLabel(self.image_frame, text="Imagen:").pack(side="left", padx=5)
+        self.watermark_image_path = ctk.CTkEntry(self.image_frame, width=200)
+        self.watermark_image_path.pack(side="left", padx=5)
+        
+        ctk.CTkButton(
+            self.image_frame,
+            text="Examinar...",
+            command=self._select_watermark_image,
+            width=80
+        ).pack(side="left", padx=5)
+        
+        # Opciones avanzadas
         options_frame = ctk.CTkFrame(frame)
         options_frame.pack(fill="x", padx=10, pady=5)
         
+        # Tamaño de fuente
         ctk.CTkLabel(options_frame, text="Tamaño:").pack(side="left", padx=5)
         self.watermark_size = ctk.CTkEntry(options_frame, width=60)
         self.watermark_size.insert(0, "48")
         self.watermark_size.pack(side="left", padx=5)
         
+        # Color
         ctk.CTkLabel(options_frame, text="Color:").pack(side="left", padx=5)
         self.watermark_color = ctk.CTkEntry(options_frame, width=80)
         self.watermark_color.insert(0, "#888888")
         self.watermark_color.pack(side="left", padx=5)
         
-        ctk.CTkLabel(options_frame, text="Opacidad:").pack(side="left", padx=5)
-        self.watermark_opacity = ctk.CTkEntry(options_frame, width=60)
-        self.watermark_opacity.insert(0, "0.3")
-        self.watermark_opacity.pack(side="left", padx=5)
+        # opacity slider (0-100)
+        opacity_frame = ctk.CTkFrame(frame)
+        opacity_frame.pack(fill="x", padx=10, pady=5)
         
-        ctk.CTkLabel(options_frame, text="Rotación:").pack(side="left", padx=5)
-        self.watermark_rotation = ctk.CTkEntry(options_frame, width=60)
-        self.watermark_rotation.insert(0, "45")
-        self.watermark_rotation.pack(side="left", padx=5)
+        ctk.CTkLabel(opacity_frame, text="Opacidad:").pack(side="left", padx=5)
+        self.watermark_opacity_slider = ctk.CTkSlider(
+            opacity_frame,
+            from_=0,
+            to=100,
+            number_of_steps=100,
+            command=self._on_opacity_slider_change
+        )
+        self.watermark_opacity_slider.set(30)
+        self.watermark_opacity_slider.pack(side="left", padx=5, fill="x", expand=True)
+        
+        self.watermark_opacity_label = ctk.CTkLabel(opacity_frame, text="30%", width=50)
+        self.watermark_opacity_label.pack(side="left", padx=5)
+        
+        # Rotation slider (0-360)
+        rotation_frame = ctk.CTkFrame(frame)
+        rotation_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(rotation_frame, text="Rotación:").pack(side="left", padx=5)
+        self.watermark_rotation_slider = ctk.CTkSlider(
+            rotation_frame,
+            from_=0,
+            to=360,
+            number_of_steps=36,
+            command=self._on_rotation_slider_change
+        )
+        self.watermark_rotation_slider.set(45)
+        self.watermark_rotation_slider.pack(side="left", padx=5, fill="x", expand=True)
+        
+        self.watermark_rotation_label = ctk.CTkLabel(rotation_frame, text="45°", width=50)
+        self.watermark_rotation_label.pack(side="left", padx=5)
+        
+        # Position
+        position_frame = ctk.CTkFrame(frame)
+        position_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(position_frame, text="Posición:").pack(side="left", padx=5)
+        self.watermark_position = ctk.CTkOptionMenu(
+            position_frame,
+            values=["center", "top-left", "top-right", "bottom-left", "bottom-right", "diagonal", "custom"],
+            width=120
+        )
+        self.watermark_position.set("center")
+        self.watermark_position.pack(side="left", padx=5)
+        
+        ctk.CTkLabel(position_frame, text="X:").pack(side="left", padx=5)
+        self.watermark_pos_x = ctk.CTkEntry(position_frame, width=60)
+        self.watermark_pos_x.insert(0, "")
+        self.watermark_pos_x.pack(side="left", padx=5)
+        
+        ctk.CTkLabel(position_frame, text="Y:").pack(side="left", padx=5)
+        self.watermark_pos_y = ctk.CTkEntry(position_frame, width=60)
+        self.watermark_pos_y.insert(0, "")
+        self.watermark_pos_y.pack(side="left", padx=5)
         
         # Botones
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
@@ -141,7 +275,7 @@ class PDFToolUI(BaseToolUI):
         
         ctk.CTkButton(
             btn_frame,
-            text="Aplicar Watermark de Texto",
+            text="Aplicar Watermark",
             command=self._apply_text_watermark,
             height=40
         ).pack(side="left", padx=5, fill="x", expand=True)
@@ -153,21 +287,98 @@ class PDFToolUI(BaseToolUI):
             height=40
         ).pack(side="left", padx=5, fill="x", expand=True)
     
+    def _on_opacity_slider_change(self, value: float) -> None:
+        """Actualiza la etiqueta de opacidad."""
+        self.watermark_opacity_label.configure(text=f"{int(value)}%")
+    
+    def _on_rotation_slider_change(self, value: float) -> None:
+        """Actualiza la etiqueta de rotación."""
+        self.watermark_rotation_label.configure(text=f"{int(value)}°")
+    
+    def _update_watermark_inputs(self) -> None:
+        """Actualiza los inputs según el tipo de watermark."""
+        # Limpiar frame de inputs
+        for widget in self.watermark_inputs_frame.winfo_children():
+            widget.destroy()
+        
+        if self.watermark_type.get() == "text":
+            text_frame = ctk.CTkFrame(self.watermark_inputs_frame)
+            text_frame.pack(fill="x", padx=5, pady=5)
+            
+            ctk.CTkLabel(text_frame, text="Texto:").pack(side="left", padx=5)
+            self.watermark_text = ctk.CTkEntry(text_frame, width=200)
+            self.watermark_text.insert(0, "WATERMARK")
+            self.watermark_text.pack(side="left", padx=5)
+        else:
+            img_frame = ctk.CTkFrame(self.watermark_inputs_frame)
+            img_frame.pack(fill="x", padx=5, pady=5)
+            
+            ctk.CTkLabel(img_frame, text="Imagen:").pack(side="left", padx=5)
+            self.watermark_image_path = ctk.CTkEntry(img_frame, width=200)
+            self.watermark_image_path.pack(side="left", padx=5)
+            
+            ctk.CTkButton(
+                img_frame,
+                text="Examinar...",
+                command=self._select_watermark_image,
+                width=80
+            ).pack(side="left", padx=5)
+    
+    def _select_watermark_image(self) -> None:
+        """Selecciona una imagen para watermark."""
+        file_path = filedialog.askopenfilename(
+            title="Seleccionar imagen",
+            filetypes=[("Imágenes", "*.png *.jpg *.jpeg *.gif *.bmp"), ("Todos", "*.*")]
+        )
+        if file_path:
+            self.watermark_image_path.delete(0, tk.END)
+            self.watermark_image_path.insert(0, file_path)
+    
     def _apply_text_watermark(self) -> None:
         if not self._check_files():
             return
         
-        text = self.watermark_text.get() or "WATERMARK"
-        
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('text_watermark', self.files, {
-            'text': text,
-            'font_size': int(self.watermark_size.get() or 48),
-            'color': self.watermark_color.get() or '#888888',
-            'opacity': float(self.watermark_opacity.get() or 0.3),
-            'rotation': int(self.watermark_rotation.get() or 45),
-        })
+        # Determinar tipo de watermark
+        if self.watermark_type.get() == "image":
+            image_path = self.watermark_image_path.get()
+            if not image_path:
+                self.status_label.configure(text="Seleccione una imagen", text_color="#FFA500")
+                return
+            
+            result = self.on_process('image_watermark', self.files, {
+                'image_path': image_path,
+                'scale': 0.5,
+                'opacity': self.watermark_opacity_slider.get() / 100.0,
+                'position': self.watermark_position.get(),
+            })
+        else:
+            text = self.watermark_text.get() or "WATERMARK"
+            
+            # Posición personalizada
+            position = self.watermark_position.get()
+            position_x = None
+            position_y = None
+            
+            if position == 'custom':
+                try:
+                    position_x = float(self.watermark_pos_x.get()) if self.watermark_pos_x.get() else None
+                    position_y = float(self.watermark_pos_y.get()) if self.watermark_pos_y.get() else None
+                except ValueError:
+                    self.status_label.configure(text="Coordenadas inválidas", text_color="red")
+                    return
+            
+            result = self.on_process('text_watermark', self.files, {
+                'text': text,
+                'font_size': int(self.watermark_size.get() or 48),
+                'color': self.watermark_color.get() or '#888888',
+                'opacity': self.watermark_opacity_slider.get() / 100.0,
+                'rotation': int(self.watermark_rotation_slider.get()),
+                'position': position,
+                'position_x': position_x,
+                'position_y': position_y,
+            })
         
         self._show_result(result)
     
@@ -260,6 +471,31 @@ class PDFToolUI(BaseToolUI):
             text="Censurar",
             command=self._redact_area
         ).pack(pady=5)
+        
+        # Extraer rango de páginas
+        extract_frame = ctk.CTkFrame(frame)
+        extract_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(extract_frame, text="Extraer páginas:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", pady=5)
+        
+        range_frame = ctk.CTkFrame(extract_frame, fg_color="transparent")
+        range_frame.pack(fill="x", padx=5)
+        
+        ctk.CTkLabel(range_frame, text="Desde:").pack(side="left", padx=5)
+        self.extract_start = ctk.CTkEntry(range_frame, width=50)
+        self.extract_start.insert(0, "1")
+        self.extract_start.pack(side="left", padx=5)
+        
+        ctk.CTkLabel(range_frame, text="Hasta:").pack(side="left", padx=5)
+        self.extract_end = ctk.CTkEntry(range_frame, width=50)
+        self.extract_end.insert(0, "1")
+        self.extract_end.pack(side="left", padx=5)
+        
+        ctk.CTkButton(
+            extract_frame,
+            text="Extraer Rango",
+            command=self._extract_range
+        ).pack(pady=5)
     
     def _add_annotation(self) -> None:
         if not self._check_files():
@@ -288,6 +524,35 @@ class PDFToolUI(BaseToolUI):
             'y': float(self.redact_y.get() or 100),
             'width': float(self.redact_w.get() or 100),
             'height': float(self.redact_h.get() or 30),
+        })
+        
+        self._show_result(result)
+    
+    def _extract_range(self) -> None:
+        """Extrae un rango de páginas."""
+        if not self._check_files():
+            return
+        
+        try:
+            start = int(self.extract_start.get())
+            end = int(self.extract_end.get())
+        except ValueError:
+            self.status_label.configure(text="Números de página inválidos", text_color="red")
+            return
+        
+        if start < 1 or end < 1:
+            self.status_label.configure(text="Los números deben ser >= 1", text_color="red")
+            return
+        
+        if start > end:
+            self.status_label.configure(text="Inicio debe ser menor que fin", text_color="red")
+            return
+        
+        self.status_label.configure(text="Procesando...", text_color="blue")
+        
+        result = self.on_process('extract_range', self.files, {
+            'start': start,
+            'end': end,
         })
         
         self._show_result(result)
