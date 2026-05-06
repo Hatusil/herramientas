@@ -18,9 +18,12 @@ logger = logging.getLogger(__name__)
 class DuplicateToolUI(BaseToolUI):
     """UI para encontrar archivos duplicados."""
     
-    def __init__(self, master, on_process: Callable, **kwargs):
-        # Call BaseToolUI __init__ but we skip file selector
+def __init__(self, master, on_process: Callable, **kwargs):
+        # Call BaseToolUI but we skip file selector
         super().__init__(master, on_process, **kwargs)
+        
+        # Estado: evitar doble click
+        self.is_processing = False
         
         # Build tool-specific UI
         self._build_options()

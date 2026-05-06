@@ -181,6 +181,9 @@ class TextAnalyzerUI(BaseToolUI):
         self.text_content: str = ""
         self.sources: Dict[str, Any] = {"text": [], "files": [], "urls": []}
         
+        # Estado: evitar doble click
+        self.is_processing = False
+        
         # Phase 1: Centralized state management
         self._state: Dict[str, Any] = {
             'text': "",

@@ -19,6 +19,12 @@ class VideoToolUI(BaseToolUI):
         # Call BaseToolUI __init__
         super().__init__(master, on_process, **kwargs)
         
+        # Estado: evitar doble click
+        self.is_processing = False
+        
+        # Setup progress bar
+        self._setup_progress_bar()
+        
         # Build tool-specific tabs
         self._build_tabs()
     

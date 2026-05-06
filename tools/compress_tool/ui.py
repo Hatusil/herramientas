@@ -19,9 +19,11 @@ logger = logging.getLogger(__name__)
 class CompressToolUI(BaseToolUI):
     """UI para comprimir y descomprimir archivos."""
     
-    def __init__(self, master, on_process: Callable, **kwargs):
-        # Call BaseToolUI __init__
+def __init__(self, master, on_process: Callable, **kwargs):
         super().__init__(master, on_process, **kwargs)
+        
+        # Estado: evitar doble click
+        self.is_processing = False
         
         # Build tool-specific tabs after base selector
         self._build_tabs()

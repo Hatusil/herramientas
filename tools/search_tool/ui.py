@@ -21,6 +21,9 @@ class SearchToolUI(BaseToolUI):
         # Call BaseToolUI __init__ but we skip file selector
         super().__init__(master, on_process, **kwargs)
         
+        # Estado: evitar doble click
+        self.is_processing = False
+        
         # Inicializar variables necesarias para search_tool
         self.folder = None
         self.results = []

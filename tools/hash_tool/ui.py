@@ -21,6 +21,9 @@ class HashToolUI(BaseToolUI):
         # Call BaseToolUI __init__ which calls _setup_ui()
         super().__init__(master, on_process, **kwargs)
         
+        # Estado: evitar doble click
+        self.is_processing = False
+        
         # Build tool-specific UI after base selector
         self._build_tabs()
     

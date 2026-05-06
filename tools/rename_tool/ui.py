@@ -17,6 +17,9 @@ class RenameToolUI(BaseToolUI):
         # Call BaseToolUI __init__
         super().__init__(master, on_process, **kwargs)
         
+        # Estado: evitar doble click
+        self.is_processing = False
+        
         # Build tool-specific tabs
         self._build_tabs()
     
