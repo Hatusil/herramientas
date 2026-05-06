@@ -240,6 +240,7 @@ def remove_watermark_from_page(page, watermark_regions: List[Dict[str, Any]]) ->
         return False
     
     try:
+        # Agregar anotaciones de redact para cada región
         for region in watermark_regions:
             x = region['x']
             y = region['y']
@@ -249,11 +250,10 @@ def remove_watermark_from_page(page, watermark_regions: List[Dict[str, Any]]) ->
             # Crear rectángulo de la región
             rect = fitz.Rect(x, y, x + width, y + height)
             
-            # Eliminar contenido en esa región
-            # Primero probar con redact (más preciso)
-            page.add_redact_annot(rect, fill=(1, 1, 1))  # Blanco como fondo
+            # Agregar anotación de redact con fondo blanco
+            page.add_redact_annot(rect, fill=(1, 1, 1))
         
-        # Aplicar-redact elimina el contenido y llena con color
+        # Aplicar-redact elimina el contenido y llena con color (UNA SOLA VEZ al final)
         page.apply_redactions(images=fitz.PDF_REdaction_IMAGE_REMOVE)
         
         return True

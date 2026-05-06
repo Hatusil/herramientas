@@ -198,14 +198,6 @@ class PDFPipeline:
                 if current_file != self.input_file:
                     temp_files.append(current_file)
             
-            # Limpiar archivos temporales intermedios
-            for tf in temp_files:
-                if tf and os.path.exists(tf):
-                    try:
-                        os.remove(tf)
-                    except Exception:
-                        pass
-            
             logger.info(f"Pipeline ejecutado: {len(self.operations)} operaciones completadas")
             
             return {
@@ -222,6 +214,15 @@ class PDFPipeline:
                 'error': str(e),
                 'output_file': None
             }
+        
+        finally:
+            # Limpiar archivos temporales intermedios (siempre se ejecuta)
+            for tf in temp_files:
+                if tf and os.path.exists(tf):
+                    try:
+                        os.remove(tf)
+                    except Exception:
+                        pass
     
     def _execute_single_operation(
         self, 
