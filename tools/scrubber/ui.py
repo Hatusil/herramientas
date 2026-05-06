@@ -1,5 +1,6 @@
 import sys
 import os
+import logging
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ui.help_panel import add_help
 import customtkinter as ctk
@@ -7,16 +8,49 @@ import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
 from typing import List, Callable
-class ScrubberToolUI(ctk.CTkFrame):
+
+# Import BaseToolUI from core
+from core.base_tool_ui import BaseToolUI
+
+
+logger = logging.getLogger(__name__)
+
+
+class ScrubberToolUI(BaseToolUI):
     """UI para limpiar metadatos de archivos."""
     
-    def __init__(self, master, on_process: Callable):
-        super().__init__(master)
+    def __init__(self, master, on_process: Callable, **kwargs):
+        # Call BaseToolUI __init__ which calls _setup_ui()
+        super().__init__(master, on_process, **kwargs)
         
-        self.on_process = on_process
-        self.files: List[str] = []
+        # Build tool-specific tabs after base selector
+        self._build_tabs()
+    
+    def _build_tabs(self) -> None:
+        """Build tool-specific tabs."""
+        self.tabview = ctk.CTkTabview(self)
+        self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
         
-        self._setup_ui()
+        self.tab_images = self.tabview.add("Imágenes")
+        self.tab_docs = self.tabview.add("Documentos")
+        self.tab_preview = self.tabview.add("Preview")
+        
+        self._setup_images_tab()
+        self._setup_docs_tab()
+        self._setup_preview_tab()
+    
+    def _get_file_label(self) -> str:
+        """Override: Label for file section."""
+        return "Archivos:"
+    
+    def _get_file_dialog_filters(self) -> List[tuple]:
+        """Override: Filters for file dialog."""
+        return [
+            ("Todos los archivos", "*.*"),
+            ("Imágenes", "*.jpg;*.jpeg;*.png;*.bmp"),
+            ("Documentos", "*.docx;*.xlsx"),
+            ("PDF", "*.pdf")
+        ]
     
     def _setup_ui(self) -> None:
         """Configura los widgets de la UI."""
@@ -48,147 +82,10 @@ class ScrubberToolUI(ctk.CTkFrame):
         )
         help_panel.pack(fill="x", padx=10, pady=5)
         
-        # Selector de archivos
+        # File selector (from BaseToolUI)
         self._setup_file_selector()
         
-        # Tabs
-        self._setup_tabs()
-    
-    def _setup_file_selector(self) -> None:
-        """Configura el selector de archivos."""
-        files_frame = ctk.CTkFrame(self)
-        files_frame.pack(fill="x", pady=(0, 10), padx=10)
-        
-        ctk.CTkLabel(
-            files_frame,
-            text="Archivos:",
-            font=ctk.CTkFont(weight="bold")
-        ).pack(anchor="w", padx=10, pady=(10, 5))
-        
-        # Lista de archivos
-        list_container = ctk.CTkFrame(files_frame, fg_color="transparent")
-        list_container.pack(fill="both", expand=True, padx=10, pady=5)
-        
-        self.file_listbox = tk.Listbox(
-            list_container,
-            height=4,
-            selectmode=tk.EXTENDED
-        )
-        scrollbar = tk.Scrollbar(list_container, orient="vertical")
-        self.file_listbox.config(yscrollcommand=scrollbar.set)
-        scrollbar.config(command=self.file_listbox.yview)
-        
-        self.file_listbox.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        
-        # Botones
-        btn_frame = ctk.CTkFrame(files_frame, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=10, pady=(0, 10))
-        
-        ctk.CTkButton(
-            btn_frame,
-            text="+ Agregar archivos...",
-            command=self._add_files
-        ).pack(side="left", padx=2)
-        
-        ctk.CTkButton(
-            btn_frame,
-            text="✓ Todos",
-            command=self._select_all
-        ).pack(side="left", padx=2)
-        
-        ctk.CTkButton(
-            btn_frame,
-            text="✗ Ninguno",
-            command=self._deselect_all
-        ).pack(side="left", padx=2)
-        
-        ctk.CTkButton(
-            btn_frame,
-            text="🗑️",
-            command=self._clear_files,
-            fg_color="#dc2626",
-            width=40
-        ).pack(side="left", padx=2)
-        
-        self.file_listbox.bind('<<ListboxSelect>>', lambda e: self._update_selection_status())
-    
-    def _setup_tabs(self) -> None:
-        """Configura los tabs."""
-        self.tabview = ctk.CTkTabview(self)
-        self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        self.tab_images = self.tabview.add("Imágenes")
-        self.tab_docs = self.tabview.add("Documentos")
-        self.tab_preview = self.tabview.add("Preview")
-        
-        self._setup_images_tab()
-        self._setup_docs_tab()
-        self._setup_preview_tab()
-        
-        # Status
-        self.status_label = ctk.CTkLabel(
-            self,
-            text="",
-            text_color="gray"
-        )
-        self.status_label.pack(pady=5)
-    
-    def _add_files(self) -> None:
-        """Abre diálogo para seleccionar archivos."""
-        files = filedialog.askopenfilenames(
-            title="Seleccionar archivos",
-            filetypes=[
-                ("Todos los archivos", "*.*"),
-                ("Imágenes", "*.jpg;*.jpeg;*.png;*.bmp"),
-                ("Documentos", "*.docx;*.xlsx"),
-                ("PDF", "*.pdf")
-            ]
-        )
-        
-        for f in files:
-            if f not in self.files:
-                self.files.append(f)
-                self.file_listbox.insert(tk.END, Path(f).name)
-        if files:
-            self._update_selection_status()
-    
-    def _clear_files(self) -> None:
-        """Limpia la lista de archivos."""
-        self.files.clear()
-        self.file_listbox.delete(0, tk.END)
-        self.status_label.configure(text="Lista vacía", text_color="gray")
-    
-    def _select_all(self) -> None:
-        self.file_listbox.select_set(0, tk.END)
-        self._update_selection_status()
-    
-    def _deselect_all(self) -> None:
-        self.file_listbox.select_clear(0, tk.END)
-        self._update_selection_status()
-    
-    def _get_selected_files(self) -> List[str]:
-        selected = self.file_listbox.curselection()
-        if not selected:
-            return []
-        return [self.files[i] for i in selected]
-    
-    def _update_selection_status(self) -> None:
-        selected = self._get_selected_files()
-        total = len(self.files)
-        if not selected:
-            self.status_label.configure(text=f"{total} archivos (ninguno seleccionado)", text_color="gray")
-        elif len(selected) == total:
-            self.status_label.configure(text=f"{total} seleccionados", text_color="blue")
-        else:
-            self.status_label.configure(text=f"{len(selected)}/{total} seleccionados", text_color="blue")
-    
-    def _check_files(self) -> bool:
-        """Verifica que haya archivos seleccionados."""
-        if not self.files:
-            self.status_label.configure(text="No hay archivos seleccionados", text_color="#FFA500")
-            return False
-        return True
+        # Status label (from BaseToolUI sets self.status_label)
     
     # =========================================================================
     # TAB: IMÁGENES

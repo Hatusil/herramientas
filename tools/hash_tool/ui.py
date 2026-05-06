@@ -5,34 +5,55 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ui.help_panel import add_help
 from ui.radiobutton import RadioButton
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import customtkinter as ctk
 import tkinter as tk
-from tkinter import filedialog
-from pathlib import Path
 from typing import List, Callable
+
+# Import BaseToolUI from core
+from core.base_tool_ui import BaseToolUI
 
 
 logger = logging.getLogger(__name__)
 
 
-class HashToolUI(ctk.CTkFrame):
+class HashToolUI(BaseToolUI):
     """UI para calcular y verificar checksums."""
     
-    def __init__(self, master, on_process: Callable):
-        super().__init__(master)
+    def __init__(self, master, on_process: Callable, **kwargs):
+        # Call BaseToolUI __init__ which calls _setup_ui()
+        super().__init__(master, on_process, **kwargs)
         
-        self.on_process = on_process
-        self.files: List[str] = []
+        # Build tool-specific UI after base selector
+        self._build_tabs()
+    
+    def _build_tabs(self) -> None:
+        """Build tool-specific tabs."""
+        # Tab view
+        self.tabview = ctk.CTkTabview(self)
+        self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
         
-        self._setup_ui()
+        self.tab_calc = self.tabview.add("Calcular")
+        self.tab_verify = self.tabview.add("Verificar")
+        self.tab_list = self.tabview.add("Lista de Archivos")
+        
+        self._setup_calc_tab()
+        self._setup_verify_tab()
+        self._setup_list_tab()
+    
+    def _get_file_label(self) -> str:
+        """Override: Label for file section."""
+        return "Archivos:"
     
     def _setup_ui(self) -> None:
-        # Título
-        title = ctk.CTkLabel(self, text="Hash y Checksums", font=ctk.CTkFont(size=20, weight="bold"))
+        # Title
+        title = ctk.CTkLabel(
+            self, 
+            text="Hash y Checksums", 
+            font=ctk.CTkFont(size=20, weight="bold")
+        )
         title.pack(pady=(0, 10))
         
-        # Panel de ayuda
+        # Help panel
         help_panel = add_help(
             self,
             description="🔐 Calcula y verifica hashes (MD5/SHA1/SHA256/SHA512) para verificar integridad de archivos descargados o copiar/mover sin cambios",
@@ -56,102 +77,21 @@ class HashToolUI(ctk.CTkFrame):
         )
         help_panel.pack(fill="x", padx=10, pady=5)
         
-        # Selector
+        # File selector (from BaseToolUI)
         self._setup_file_selector()
         
-        # Tabs
-        self.tabview = ctk.CTkTabview(self)
-        self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        self.tab_calc = self.tabview.add("Calcular")
-        self.tab_verify = self.tabview.add("Verificar")
-        self.tab_list = self.tabview.add("Lista de Archivos")
-        
-        self._setup_calc_tab()
-        self._setup_verify_tab()
-        self._setup_list_tab()
-        
-        self.status_label = ctk.CTkLabel(self, text="", text_color="gray")
-        self.status_label.pack(pady=5)
-    
-    def _setup_file_selector(self) -> None:
-        frame = ctk.CTkFrame(self)
-        frame.pack(fill="x", pady=(0, 10), padx=10)
-        
-        ctk.CTkLabel(frame, text="Archivos:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=10, pady=(10, 5))
-        
-        list_cont = ctk.CTkFrame(frame, fg_color="transparent")
-        list_cont.pack(fill="both", expand=True, padx=10, pady=5)
-        
-        self.file_listbox = tk.Listbox(list_cont, height=3, selectmode=tk.EXTENDED)
-        scroll = tk.Scrollbar(list_cont, orient="vertical")
-        self.file_listbox.config(yscrollcommand=scroll.set)
-        scroll.config(command=self.file_listbox.yview)
-        self.file_listbox.pack(side="left", fill="both", expand=True)
-        scroll.pack(side="right", fill="y")
-        
-        btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=10, pady=(0, 10))
-        
-        ctk.CTkButton(btn_frame, text="Agregar...", command=self._add_files, height=35).pack(side="left", padx=2)
-        ctk.CTkButton(btn_frame, text="✓ Todos", command=self._select_all, height=35).pack(side="left", padx=2)
-        ctk.CTkButton(btn_frame, text="✗ Ninguno", command=self._deselect_all, height=35).pack(side="left", padx=2)
-        ctk.CTkButton(btn_frame, text="🗑️", command=self._clear_files, fg_color="#dc2626", width=40, height=35).pack(side="left", padx=2)
-        
-        # Bind selection change
-        self.file_listbox.bind('<<ListboxSelect>>', lambda e: self._update_selection_status())
-    
-    def _add_files(self) -> None:
-        files = filedialog.askopenfilenames(title="Seleccionar archivos")
-        for f in files:
-            if f not in self.files:
-                self.files.append(f)
-                self.file_listbox.insert(tk.END, Path(f).name)
-        if files:
-            self._update_selection_status()
-    
-    def _clear_files(self) -> None:
-        self.files.clear()
-        self.file_listbox.delete(0, tk.END)
-        self.status_label.configure(text="Lista vacía", text_color="gray")
-    
-    def _select_all(self) -> None:
-        self.file_listbox.select_set(0, tk.END)
-        self._update_selection_status()
-    
-    def _deselect_all(self) -> None:
-        self.file_listbox.select_clear(0, tk.END)
-        self._update_selection_status()
-    
-    def _get_selected_files(self) -> List[str]:
-        selected = self.file_listbox.curselection()
-        if not selected:
-            return []
-        return [self.files[i] for i in selected]
-    
-    def _update_selection_status(self) -> None:
-        selected = self._get_selected_files()
-        total = len(self.files)
-        if not selected:
-            self.status_label.configure(text=f"{total} archivos (ninguno seleccionado)", text_color="gray")
-        elif len(selected) == total:
-            self.status_label.configure(text=f"{total} seleccionados", text_color="blue")
-        else:
-            self.status_label.configure(text=f"{len(selected)}/{total} seleccionados", text_color="blue")
-    
-    def _check_files(self) -> bool:
-        selected = self._get_selected_files()
-        if not selected:
-            self.status_label.configure(text="Seleccioná al menos un archivo", text_color="#FFA500")
-            return False
-        return True
+        # Status label (from BaseToolUI sets self.status_label)
     
     def _setup_calc_tab(self) -> None:
         frame = self.tab_calc
         
-        ctk.CTkLabel(frame, text="Calcular hash (huella única del archivo):", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        ctk.CTkLabel(
+            frame, 
+            text="Calcular hash (huella única del archivo):", 
+            font=ctk.CTkFont(weight="bold")
+        ).pack(pady=10)
         
-        # Explicación
+        # Explanation
         info = ctk.CTkLabel(
             frame,
             text="SHA256 = recommended | MD5 = only for old downloads",
@@ -165,9 +105,14 @@ class HashToolUI(ctk.CTkFrame):
         for algo in [("md5", "MD5"), ("sha1", "SHA1"), ("sha256", "SHA256"), ("sha512", "SHA512")]:
             RadioButton(frame, text=algo[1], variable=self.algo_var, value=algo[0]).pack(pady=2)
         
-        ctk.CTkButton(frame, text="🔢 Calcular Hash", command=self._calculate, height=40).pack(pady=20)
+        ctk.CTkButton(
+            frame, 
+            text="🔢 Calcular Hash", 
+            command=self._calculate, 
+            height=40
+        ).pack(pady=20)
         
-        # Resultado
+        # Result
         self.calc_result = ctk.CTkTextbox(frame, width=400, height=150)
         self.calc_result.pack(padx=10, pady=10)
     
@@ -194,7 +139,11 @@ class HashToolUI(ctk.CTkFrame):
     def _setup_verify_tab(self) -> None:
         frame = self.tab_verify
         
-        ctk.CTkLabel(frame, text="Verificar hash (comparar con valor conocido):", font=ctk.CTkFont(weight="bold")).pack(pady=5)
+        ctk.CTkLabel(
+            frame, 
+            text="Verificar hash (comparar con valor conocido):", 
+            font=ctk.CTkFont(weight="bold")
+        ).pack(pady=5)
         
         # Info labels
         info = ctk.CTkLabel(
@@ -221,7 +170,12 @@ class HashToolUI(ctk.CTkFrame):
         for algo in [("md5", "MD5"), ("sha1", "SHA1"), ("sha256", "SHA256")]:
             RadioButton(algo_frame, text=algo[1], variable=self.verify_algo, value=algo[0]).pack(side="left", padx=10)
         
-        ctk.CTkButton(frame, text="✓ Verificar", command=self._verify, height=40).pack(pady=10)
+        ctk.CTkButton(
+            frame, 
+            text="✓ Verificar", 
+            command=self._verify, 
+            height=40
+        ).pack(pady=10)
         
         self.verify_result = ctk.CTkTextbox(frame, width=400, height=150)
         self.verify_result.pack(padx=10, pady=10)
@@ -241,7 +195,7 @@ class HashToolUI(ctk.CTkFrame):
         
         from tools.hash_tool.processor import verify_hash
         
-        # Procesar TODOS los archivos
+        # Process ALL files
         for file_path in self.files:
             result = verify_hash(file_path, expected, algo)
             
@@ -249,14 +203,27 @@ class HashToolUI(ctk.CTkFrame):
                 if result['match']:
                     self.verify_result.insert(tk.END, f"[OK] {result['file_name']}: ✅ CORRESPIDE\n")
                 else:
-                    self.verify_result.insert(tk.END, f"[FAIL] {result['file_name']}: ❌ NO CORRESPIDE\n  Esperado: {result['expected'][:20]}...\n  Actual: {result['actual'][:20]}...\n")
+                    self.verify_result.insert(
+                        tk.END, 
+                        f"[FAIL] {result['file_name']}: ❌ NO CORRESPIDE\n"
+                        f"  Esperado: {result['expected'][:20]}...\n"
+                        f"  Actual: {result['actual'][:20]}...\n"
+                    )
     
     def _setup_list_tab(self) -> None:
         frame = self.tab_list
         
-        ctk.CTkLabel(frame, text="Lista de archivos con todos los hashes:", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        ctk.CTkLabel(
+            frame, 
+            text="Lista de archivos con todos los hashes:", 
+            font=ctk.CTkFont(weight="bold")
+        ).pack(pady=10)
         
-        ctk.CTkButton(frame, text="📋 Calcular Todos los Hashes", command=self._calc_all).pack(pady=10)
+        ctk.CTkButton(
+            frame, 
+            text="📋 Calcular Todos los Hashes", 
+            command=self._calc_all
+        ).pack(pady=10)
         
         self.all_hashes = ctk.CTkTextbox(frame, width=400, height=250)
         self.all_hashes.pack(padx=10, pady=10)

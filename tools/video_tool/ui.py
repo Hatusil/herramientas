@@ -1,31 +1,62 @@
 """UI: Interfaz para herramienta de video."""
 import sys
-import threading
-from ui.help_panel import add_help
 import os
+import threading
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from ui.help_panel import add_help
 from ui.radiobutton import RadioButton
 import customtkinter as ctk
 import tkinter as tk
-from tkinter import filedialog
 from pathlib import Path
 from typing import List, Callable
 
+# Import BaseToolUI from core
+from core.base_tool_ui import BaseToolUI
 
-class VideoToolUI(ctk.CTkFrame):
+
+class VideoToolUI(BaseToolUI):
     """UI para procesamiento básico de video."""
     
-    def __init__(self, master, on_process: Callable):
-        super().__init__(master)
-        self.on_process = on_process
-        self.files: List[str] = []
-        self._setup_ui()
+    def __init__(self, master, on_process: Callable, **kwargs):
+        # Call BaseToolUI __init__
+        super().__init__(master, on_process, **kwargs)
+        
+        # Build tool-specific tabs
+        self._build_tabs()
+    
+    def _build_tabs(self) -> None:
+        """Build tool-specific tabs."""
+        self.tabview = ctk.CTkTabview(self)
+        self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        self.tab_extract = self.tabview.add("Extraer Audio")
+        self.tab_convert = self.tabview.add("Convertir")
+        self.tab_info = self.tabview.add("Info")
+        
+        self._setup_extract_tab()
+        self._setup_convert_tab()
+        self._setup_info_tab()
+    
+    def _get_file_label(self) -> str:
+        """Override: Label for file section."""
+        return "Archivo de video:"
+    
+    def _get_file_dialog_filters(self) -> List[tuple]:
+        """Override: Filter for video files."""
+        return [
+            ("Videos", "*.mp4 *.avi *.mkv *.mov *.webm *.wmv *.flv"),
+            ("Todos", "*.*")
+        ]
     
     def _setup_ui(self) -> None:
-        title = ctk.CTkLabel(self, text="Herramienta de Video", font=ctk.CTkFont(size=20, weight="bold"))
+        title = ctk.CTkLabel(
+            self, 
+            text="Herramienta de Video", 
+            font=ctk.CTkFont(size=20, weight="bold")
+        )
         title.pack(pady=(0, 10))
         
-        # Panel de ayuda
+        # Help panel
         help_panel = add_help(
             self,
             description="🎬 Procesa video: extrae audio, convierte formato, muestra info (bitrate, fps)",
@@ -47,112 +78,24 @@ class VideoToolUI(ctk.CTkFrame):
         )
         help_panel.pack(fill="x", padx=10, pady=5)
         
+        # File selector (from BaseToolUI)
         self._setup_file_selector()
         
-        self.tabview = ctk.CTkTabview(self)
-        self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        self.tab_extract = self.tabview.add("Extraer Audio")
-        self.tab_convert = self.tabview.add("Convertir")
-        self.tab_info = self.tabview.add("Info")
-        
-        self._setup_extract_tab()
-        self._setup_convert_tab()
-        self._setup_info_tab()
-        
-        self.status_label = ctk.CTkLabel(self, text="", text_color="gray")
-        self.status_label.pack(pady=5)
-    
-    def _setup_file_selector(self) -> None:
-        frame = ctk.CTkFrame(self)
-        frame.pack(fill="x", pady=(0, 10), padx=10)
-        
-        ctk.CTkLabel(frame, text="Archivo de video:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=10, pady=(10, 5))
-        
-        list_cont = ctk.CTkFrame(frame, fg_color="transparent")
-        list_cont.pack(fill="both", expand=True, padx=10, pady=5)
-        
-        self.file_listbox = tk.Listbox(list_cont, height=3, selectmode=tk.EXTENDED)
-        scroll = tk.Scrollbar(list_cont, orient="vertical")
-        self.file_listbox.config(yscrollcommand=scroll.set)
-        scroll.config(command=self.file_listbox.yview)
-        self.file_listbox.pack(side="left", fill="both", expand=True)
-        scroll.pack(side="right", fill="y")
-        
-        # Bind selection change to update status
-        self.file_listbox.bind('<<ListboxSelect>>', lambda e: self._update_selection_status())
-        
-        btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=10, pady=(0, 10))
-        
-        ctk.CTkButton(btn_frame, text="+ Agregar videos...", command=self._add_files).pack(side="left", padx=2)
-        ctk.CTkButton(btn_frame, text="✓ Todos", command=self._select_all).pack(side="left", padx=2)
-        ctk.CTkButton(btn_frame, text="✗ Ninguno", command=self._deselect_all).pack(side="left", padx=2)
-        ctk.CTkButton(btn_frame, text="🗑️", command=self._clear_files, fg_color="#dc2626", width=40).pack(side="left", padx=2)
-    
-    def _add_files(self) -> None:
-        files = filedialog.askopenfilenames(
-            title="Seleccionar video",
-            filetypes=[("Videos", "*.mp4 *.avi *.mkv *.mov *.webm *.wmv *.flv"), ("Todos", "*.*")]
-        )
-        
-        for f in files:
-            if f not in self.files:
-                self.files.append(f)
-                self.file_listbox.insert(tk.END, Path(f).name)
-        
-        if files:
-            self._update_selection_status()
-    
-    def _clear_files(self) -> None:
-        self.files.clear()
-        self.file_listbox.delete(0, tk.END)
-        self.status_label.configure(text="Lista vacía", text_color="gray")
-    
-    def _select_all(self) -> None:
-        """Selecciona todos los archivos de la lista."""
-        self.file_listbox.select_set(0, tk.END)
-        self._update_selection_status()
-    
-    def _deselect_all(self) -> None:
-        """Deselecciona todos los archivos."""
-        self.file_listbox.select_clear(0, tk.END)
-        self._update_selection_status()
-    
-    def _update_selection_status(self) -> None:
-        """Actualiza el status con la selección actual."""
-        selected = self._get_selected_files()
-        total = len(self.files)
-        if not selected:
-            self.status_label.configure(text=f"{total} archivos (ninguno seleccionado)", text_color="gray")
-        elif len(selected) == total:
-            self.status_label.configure(text=f"{total} seleccionados", text_color="blue")
-        else:
-            self.status_label.configure(text=f"{len(selected)}/{total} seleccionados", text_color="blue")
+        # Status label (from BaseToolUI)
     
     def _hide_progress_bar(self, progress_bar) -> None:
         """Oculta la barra de progreso."""
         progress_bar.set(0)
         progress_bar.pack_forget()
     
-    def _get_selected_files(self) -> List[str]:
-        """Retorna lista de archivos seleccionados (no todos)."""
-        selected = self.file_listbox.curselection()
-        if not selected:
-            return []
-        return [self.files[i] for i in selected]
-    
-    def _check_files(self) -> bool:
-        selected = self._get_selected_files()
-        if not selected:
-            self.status_label.configure(text="Seleccioná al menos un video", text_color="#FFA500")
-            return False
-        return True
-    
     def _setup_extract_tab(self) -> None:
         frame = self.tab_extract
         
-        ctk.CTkLabel(frame, text="Extraer audio de video:", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        ctk.CTkLabel(
+            frame, 
+            text="Extraer audio de video:", 
+            font=ctk.CTkFont(weight="bold")
+        ).pack(pady=10)
         
         fmt_frame = ctk.CTkFrame(frame)
         fmt_frame.pack(pady=10)
@@ -171,7 +114,12 @@ class VideoToolUI(ctk.CTkFrame):
         self.extract_progress.pack_forget()
         self.extract_progress.set(0)
         
-        ctk.CTkButton(frame, text="🎵 Extraer Audio", command=self._extract_audio, height=40).pack(pady=10)
+        ctk.CTkButton(
+            frame, 
+            text="💿 Extraer Audio", 
+            command=self._extract_audio, 
+            height=40
+        ).pack(pady=10)
     
     def _extract_audio(self) -> None:
         if not self._check_files():
@@ -231,7 +179,11 @@ class VideoToolUI(ctk.CTkFrame):
     def _setup_convert_tab(self) -> None:
         frame = self.tab_convert
         
-        ctk.CTkLabel(frame, text="Convertir video a otro formato:", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        ctk.CTkLabel(
+            frame, 
+            text="Convertir video a otro formato:", 
+            font=ctk.CTkFont(weight="bold")
+        ).pack(pady=10)
         
         fmt_frame = ctk.CTkFrame(frame)
         fmt_frame.pack(pady=5)
@@ -259,7 +211,12 @@ class VideoToolUI(ctk.CTkFrame):
         self.convert_progress.pack_forget()
         self.convert_progress.set(0)
         
-        ctk.CTkButton(frame, text="🔄 Convertir", command=self._convert_video, height=40).pack(pady=10)
+        ctk.CTkButton(
+            frame, 
+            text="🔄 Convertir", 
+            command=self._convert_video, 
+            height=40
+        ).pack(pady=10)
     
     def _convert_video(self) -> None:
         if not self._check_files():
@@ -332,9 +289,17 @@ class VideoToolUI(ctk.CTkFrame):
     def _setup_info_tab(self) -> None:
         frame = self.tab_info
         
-        ctk.CTkLabel(frame, text="Información del video:", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        ctk.CTkLabel(
+            frame, 
+            text="Información del video:", 
+            font=ctk.CTkFont(weight="bold")
+        ).pack(pady=10)
         
-        ctk.CTkButton(frame, text="👁️ Ver Info", command=self._show_info).pack(pady=10)
+        ctk.CTkButton(
+            frame, 
+            text="👁️ Ver Info", 
+            command=self._show_info
+        ).pack(pady=10)
         
         self.info_text = ctk.CTkTextbox(frame, width=500, height=300, wrap="word")
         self.info_text.pack(padx=10, pady=10)
@@ -366,7 +331,7 @@ class VideoToolUI(ctk.CTkFrame):
             result = get_video_info(video_path)
             
             if result['success']:
-                # Formatear FPS más limpio
+                # Format FPS cleaner
                 fps = result['video_fps']
                 if '/' in str(fps):
                     try:
@@ -375,12 +340,12 @@ class VideoToolUI(ctk.CTkFrame):
                     except (ValueError, ZeroDivisionError):
                         pass
                 
-                # Formato: mostrar solo el primero (ej: "mov" en lugar de "mov,mp4,m4a,3gp,3g2,mj2")
+                # Show only first format
                 fmt = result['format'] or 'N/A'
                 if ',' in fmt:
                     fmt = fmt.split(',')[0]
                 
-                # Acortar resolución para que no sea tan larga
+                # Shorten resolution
                 res = result['video_resolution'] or 'N/A'
                 
                 info = f"""📹 {result['file_name']}

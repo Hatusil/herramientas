@@ -2,6 +2,7 @@
 Utilidades comunes del proyecto.
 Funciones helper que pueden ser usadas por múltiples módulos.
 """
+import functools
 import logging
 import os
 import platform
@@ -80,6 +81,7 @@ def clean_text(text: str, remove_stopwords: bool = True, languages: List[str] = 
     return text
 
 
+@functools.lru_cache(maxsize=1)
 def get_ffmpeg_path() -> str:
     """
     Obtiene el path de ffmpeg (local o del sistema).
@@ -95,6 +97,7 @@ def get_ffmpeg_path() -> str:
     return "ffmpeg"  # Usar del PATH
 
 
+@functools.lru_cache(maxsize=1)
 def get_ffprobe_path() -> str:
     """
     Obtiene el path de ffprobe (local o del sistema).
@@ -110,6 +113,7 @@ def get_ffprobe_path() -> str:
     return "ffprobe"  # Usar del PATH
 
 
+@functools.lru_cache(maxsize=1)
 def check_ffmpeg() -> bool:
     """
     Verifica si FFmpeg está instalado y disponible.
@@ -131,6 +135,16 @@ def check_ffmpeg() -> bool:
     except Exception as e:
         logger.warning(f"FFmpeg check failed: {e}")
         return False
+
+
+def clear_ffmpeg_cache() -> None:
+    """
+    Limpia la caché de las funciones FFmpeg.
+    Útil para testing o cuando se reinstala FFmpeg.
+    """
+    get_ffmpeg_path.cache_clear()
+    get_ffprobe_path.cache_clear()
+    check_ffmpeg.cache_clear()
 
 
 def get_output_path(input_path: str, suffix: str) -> str:

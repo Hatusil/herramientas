@@ -108,6 +108,9 @@ class MockPIL:
     
     class _MockImage:
         def __init__(self):
+            self.size = (100, 100)
+        
+        def save(self, path=None, format=None):
             pass
     
     class ImageDraw:
@@ -118,6 +121,9 @@ class MockPIL:
     class _MockDraw:
         def ellipse(self, *args, **kwargs):
             pass
+
+    # Add __version__ for compatibility
+    __version__ = "10.0.0"
 
 
 # Mock tkinter with proper classes
@@ -206,6 +212,10 @@ class MockCustomTkinter:
         def __init__(self, *args, **kwargs):
             pass
     class CTkFont:
+        def __init__(self, *args, **kwargs):
+            pass
+    
+    class CTkToplevel:
         def __init__(self, *args, **kwargs):
             pass
     
