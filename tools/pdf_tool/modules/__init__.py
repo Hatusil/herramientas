@@ -15,6 +15,7 @@ import watermarks
 import security
 import transform
 import conversion
+import watermark_removal
 
 # Exportar funciones principales para acceso directo
 # Info
@@ -42,6 +43,10 @@ images_to_pdf = conversion.images_to_pdf
 pdf_to_images = conversion.pdf_to_images
 redact_area = conversion.redact_area
 
+# Watermark Removal (Fitz)
+remove_watermark = watermark_removal.remove_watermark
+check_fitz = watermark_removal.check_fitz
+
 __all__ = [
     # Info
     'get_pdf_info',
@@ -63,4 +68,7 @@ __all__ = [
     'images_to_pdf',
     'pdf_to_images',
     'redact_area',
+    # Watermark Removal
+    'remove_watermark',
+    'check_fitz',
 ]
