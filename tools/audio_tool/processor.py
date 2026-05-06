@@ -748,3 +748,93 @@ def repair_audio(files: List[str]) -> Dict[str, Any]:
 def get_metadata(file_path: str) -> Dict[str, Any]:
     """Alias para get_audio_info."""
     return get_audio_info(file_path)
+
+
+# =============================================================================
+# ASYNC VERSIONS - No bloquean UI
+# =============================================================================
+from core.async_utils import run_in_background
+
+def normalize_audio_async(files: List[str], callback, **options):
+    """
+    Versión async de normalize_audio().
+    
+    Args:
+        files: Lista de rutas de archivos
+        callback: Función(result) a llamar al terminar
+        **options: Opciones (target_lufs, limit_clipping, sample_rate, quality)
+    
+    Returns:
+        Future
+    """
+    return run_in_background(normalize_audio, files, callback=callback, **options)
+
+
+def convert_audio_async(files: List[str], output_format: str, callback, **options):
+    """
+    Versión async de convert_audio().
+    
+    Args:
+        files: Lista de rutas de archivos
+        output_format: Formato de salida (mp3/wav/flac/ogg)
+        callback: Función(result) a llamar al terminar
+        **options: Opciones (quality)
+    
+    Returns:
+        Future
+    """
+    return run_in_background(convert_audio, files, output_format, callback=callback, **options)
+
+
+def clean_audio_metadata_async(files: List[str], callback):
+    """
+    Versión async de clean_audio_metadata().
+    
+    Args:
+        files: Lista de rutas de archivos
+        callback: Función(result) a llamar al terminar
+    
+    Returns:
+        Future
+    """
+    return run_in_background(clean_audio_metadata, files, callback=callback)
+
+
+def edit_audio_metadata_async(files: List[str], callback, **metadata):
+    """
+    Versión async de edit_audio_metadata().
+    
+    Args:
+        files: Lista de rutas de archivos
+        callback: Función(result) a llamar al terminar
+        **metadata: title, artist, album, genre, year, track, comment, composer
+    
+    Returns:
+        Future
+    """
+    return run_in_background(
+        edit_audio_metadata, files,
+        title=metadata.get('title'),
+        artist=metadata.get('artist'),
+        album=metadata.get('album'),
+        genre=metadata.get('genre'),
+        year=metadata.get('year'),
+        track=metadata.get('track'),
+        comment=metadata.get('comment'),
+        composer=metadata.get('composer'),
+        callback=callback
+    )
+
+
+def repair_audio_async(files: List[str], callback):
+    """
+    Versión async de repair_audio().
+    
+    Args:
+        files: Lista de rutas de archivos
+        callback: Función(result) a llamar al terminar
+    
+    Returns:
+        Future
+    """
+    return run_in_background(repair_audio, files, callback=callback)

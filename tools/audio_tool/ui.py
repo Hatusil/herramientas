@@ -23,6 +23,9 @@ class AudioToolUI(BaseToolUI):
         # Call BaseToolUI __init__ which calls _setup_ui()
         super().__init__(master, on_process, **kwargs)
         
+        # Setup progress bar
+        self._setup_progress_bar()
+        
         # Build tool-specific tabs after base selector
         self._build_tabs()
     
@@ -188,8 +191,6 @@ class AudioToolUI(BaseToolUI):
         if not self._check_files():
             return
         
-        self.status_label.configure(text="Procesando...", text_color="blue")
-        
         options = {
             'target_lufs': int(self.lufs_var.get()),
             'limit_clipping': self.limit_var.get(),
@@ -200,8 +201,8 @@ class AudioToolUI(BaseToolUI):
         if sample != "0":
             options['sample_rate'] = int(sample)
         
-        result = self.on_process('normalize', self.files, options)
-        self._show_result(result)
+        # Usar async para no bloquear UI
+        self.process_async('normalize', self.files, options)
     
     # =========================================================================
     # TAB: LIMPIAR
@@ -235,10 +236,8 @@ class AudioToolUI(BaseToolUI):
         if not self._check_files():
             return
         
-        self.status_label.configure(text="Procesando...", text_color="blue")
-        
-        result = self.on_process('clean', self.files, {})
-        self._show_result(result)
+        # Usar async para no bloquear UI
+        self.process_async('clean', self.files, {})
     
     # =========================================================================
     # TAB: EDITAR METADATOS
@@ -298,10 +297,8 @@ class AudioToolUI(BaseToolUI):
             self.status_label.configure(text="Ingresa al menos un campo", text_color="#FFA500")
             return
         
-        self.status_label.configure(text="Procesando...", text_color="blue")
-        
-        result = self.on_process('edit_metadata', self.files, options)
-        self._show_result(result)
+        # Usar async para no bloquear UI
+        self.process_async('edit_metadata', self.files, options)
     
     # =========================================================================
     # TAB: CONVERTIR
@@ -366,14 +363,11 @@ class AudioToolUI(BaseToolUI):
         if not self._check_files():
             return
         
-        self.status_label.configure(text="Procesando...", text_color="blue")
-        
-        result = self.on_process('convert', self.files, {
+        # Usar async para no bloquear UI
+        self.process_async('convert', self.files, {
             'format': self.format_var.get(),
             'quality': int(self.conv_quality_var.get())
         })
-        
-        self._show_result(result)
     
     # =========================================================================
     # TAB: REPARAR
@@ -492,13 +486,11 @@ class AudioToolUI(BaseToolUI):
             files = self.verify_state['corrupt']
             if not files:
                 return
-            self.status_label.configure(text=f"Reparando {len(files)} corruptos...", text_color="#FFD700")
         else:
             files = self._get_selected_files()
-            self.status_label.configure(text=f"Reparando {len(files)} archivos...", text_color="#FFD700")
         
-        result = self.on_process('repair', files, {})
-        self._show_result(result)
+        # Usar async para no bloquear UI
+        self.process_async('repair', files, {})
     
     # =========================================================================
     # TAB: VERIFICAR

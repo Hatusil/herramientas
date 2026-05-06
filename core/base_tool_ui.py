@@ -11,7 +11,7 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
-from typing import List, Callable, Optional
+from typing import List, Callable, Optional, Dict, Any
 
 
 class BaseToolUI(ctk.CTkFrame):
@@ -31,6 +31,8 @@ class BaseToolUI(ctk.CTkFrame):
         self.files: List[str] = []
         self.file_listbox: Optional[tk.Listbox] = None
         self.status_label: Optional[ctk.CTkLabel] = None
+        self.progress_bar: Optional[ctk.CTkProgressBar] = None
+        self._processing = False
         
         self._setup_ui()
     
@@ -260,3 +262,70 @@ class BaseToolUI(ctk.CTkFrame):
             )
             return False
         return True
+    
+    # =============================================================================
+    # ASYNC PROCESSING
+    # =============================================================================
+    
+    def _setup_progress_bar(self) -> None:
+        """Crea una barra de progreso (llamar después de status_label)."""
+        self.progress_bar = ctk.CTkProgressBar(self, mode='indeterminate')
+        self.progress_bar.set(0)
+    
+    def start_progress(self) -> None:
+        """Inicia la barra de progreso."""
+        if self.progress_bar and not self._processing:
+            self._processing = True
+            self.progress_bar.pack(fill="x", padx=10, pady=5)
+            self.progress_bar.start()
+    
+    def stop_progress(self) -> None:
+        """Detiene la barra de progreso."""
+        if self.progress_bar and self._processing:
+            self._processing = False
+            self.progress_bar.stop()
+            self.progress_bar.pack_forget()
+    
+    def process_async(self, action: str, files: List[str], options: Dict[str, Any]) -> None:
+        """
+        Procesa en background con callback automático.
+        
+        Args:
+            action: Acción a realizar
+            files: Lista de archivos
+            options: Opciones
+        
+        Returns:
+            None (usa callback para mostrar resultado)
+        """
+        def on_done(result: Dict[str, Any]) -> None:
+            self.stop_progress()
+            self._show_result(result)
+        
+        self.start_progress()
+        
+        # Intentar process_async del tool si existe, si no usar on_process
+        tool = getattr(self, 'tool', None)
+        if tool and hasattr(tool, 'process_async'):
+            tool.process_async(files, {'action': action, **options}, on_done)
+        else:
+            # Fallback a sync via on_process callback
+            def run_sync():
+                return self.on_process(action, files, options)
+            
+            from core.async_utils import run_in_background
+            run_in_background(run_sync, callback=on_done)
+    
+    def _show_result(self, result: Dict[str, Any]) -> None:
+        """Muestra el resultado (override en subclasses si needed)."""
+        if self.status_label:
+            if result.get('success'):
+                self.status_label.configure(
+                    text=result.get('message', 'Completado'),
+                    text_color="green"
+                )
+            else:
+                self.status_label.configure(
+                    text=result.get('message', 'Error'),
+                    text_color="red"
+                )

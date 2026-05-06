@@ -119,3 +119,43 @@ class AudioTool(BaseTool):
         """
         action = options.get('action', 'normalize')
         return self._on_process(action, files, options)
+
+    # =============================================================================
+    # ASYNC PROCESSING - No bloquea UI
+    # =============================================================================
+    def process_async(self, files: List[str], options: Dict[str, Any], callback) -> None:
+        """
+        Procesa archivos en background con callback.
+        
+        Args:
+            files: Lista de rutas de archivos
+            options: Opciones de procesamiento
+            callback: Función(result) a llamar al terminar
+        """
+        action = options.get('action', 'normalize')
+        
+        # Usar función async del processor si existe
+        if action == 'normalize':
+            from tools.audio_tool.processor import normalize_audio_async
+            normalize_audio_async(files, callback, **options)
+        elif action == 'clean':
+            from tools.audio_tool.processor import clean_audio_metadata_async
+            clean_audio_metadata_async(files, callback)
+        elif action == 'convert':
+            from tools.audio_tool.processor import convert_audio_async
+            convert_audio_async(
+                files,
+                options.get('format', 'mp3'),
+                callback,
+                quality=options.get('quality', 192)
+            )
+        elif action == 'repair':
+            from tools.audio_tool.processor import repair_audio_async
+            repair_audio_async(files, callback)
+        elif action == 'edit_metadata':
+            from tools.audio_tool.processor import edit_audio_metadata_async
+            edit_audio_metadata_async(files, callback, **options)
+        else:
+            # Fallback a sync
+            result = self._on_process(action, files, options)
+            callback(result)

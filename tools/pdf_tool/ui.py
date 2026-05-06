@@ -57,6 +57,9 @@ class PDFToolUI(BaseToolUI):
         # Call BaseToolUI __init__ which calls _setup_ui()
         super().__init__(master, on_process, **kwargs)
         
+        # Setup progress bar
+        self._setup_progress_bar()
+        
         # Build tool-specific tabs after base selector
         self._build_tabs()
     
@@ -347,7 +350,7 @@ class PDFToolUI(BaseToolUI):
                 self.status_label.configure(text="Seleccione una imagen", text_color="#FFA500")
                 return
             
-            result = self.on_process('image_watermark', self.files, {
+            result = self.process_async('image_watermark', self.files, {
                 'image_path': image_path,
                 'scale': 0.5,
                 'opacity': self.watermark_opacity_slider.get() / 100.0,
@@ -369,7 +372,7 @@ class PDFToolUI(BaseToolUI):
                     self.status_label.configure(text="Coordenadas inválidas", text_color="red")
                     return
             
-            result = self.on_process('text_watermark', self.files, {
+            result = self.process_async('text_watermark', self.files, {
                 'text': text,
                 'font_size': int(self.watermark_size.get() or 48),
                 'color': self.watermark_color.get() or '#888888',
@@ -388,7 +391,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('remove_watermark', self.files, {})
+        result = self.process_async('remove_watermark', self.files, {})
         
         self._show_result(result)
     
@@ -503,7 +506,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('add_annotation', self.files, {
+        result = self.process_async('add_annotation', self.files, {
             'text': self.annot_text.get(),
             'page': int(self.annot_page.get() or 0),
             'x': float(self.annot_x.get() or 100),
@@ -518,7 +521,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('redact', self.files, {
+        result = self.process_async('redact', self.files, {
             'page': int(self.redact_page.get() or 0),
             'x': float(self.redact_x.get() or 100),
             'y': float(self.redact_y.get() or 100),
@@ -550,7 +553,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('extract_range', self.files, {
+        result = self.process_async('extract_range', self.files, {
             'start': start,
             'end': end,
         })
@@ -620,7 +623,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('rotate', self.files, {
+        result = self.process_async('rotate', self.files, {
             'degrees': degrees,
             'pages': pages
         })
@@ -644,7 +647,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('reorder', self.files, {
+        result = self.process_async('reorder', self.files, {
             'new_order': new_order
         })
         
@@ -698,7 +701,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('merge', self.files, {})
+        result = self.process_async('merge', self.files, {})
         
         self._show_result(result)
     
@@ -729,7 +732,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('extract', self.files, {'pages': pages})
+        result = self.process_async('extract', self.files, {'pages': pages})
         
         self._show_result(result)
     
@@ -775,7 +778,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('page_numbers', self.files, {
+        result = self.process_async('page_numbers', self.files, {
             'position': self.num_position.get(),
             'start': int(self.num_start.get() or 1),
             'format': self.num_format.get() or "Página {n} de {total}",
@@ -840,7 +843,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('encrypt', self.files, {'password': password})
+        result = self.process_async('encrypt', self.files, {'password': password})
         
         self._show_result(result)
     
@@ -855,7 +858,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('decrypt', self.files, {'password': password})
+        result = self.process_async('decrypt', self.files, {'password': password})
         
         self._show_result(result)
     
@@ -1199,7 +1202,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('compress', self.files, {
+        result = self.process_async('compress', self.files, {
             'level': self.compress_level.get()
         })
         
@@ -1211,7 +1214,7 @@ class PDFToolUI(BaseToolUI):
         
         self.status_label.configure(text="Procesando...", text_color="blue")
         
-        result = self.on_process('clean_metadata', self.files, {})
+        result = self.process_async('clean_metadata', self.files, {})
         
         self._show_result(result)
     

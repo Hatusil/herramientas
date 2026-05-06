@@ -267,3 +267,39 @@ def get_video_info(video_path: str) -> Dict[str, Any]:
         
     except Exception as e:
         return {'success': False, 'error': str(e)}
+
+
+# =============================================================================
+# ASYNC VERSIONS - No bloquean UI
+# =============================================================================
+from core.async_utils import run_in_background
+
+def extract_audio_async(video_path: str, output_format: str, callback):
+    """
+    Versión async de extract_audio().
+    
+    Args:
+        video_path: Ruta al video
+        output_format: Formato de salida (mp3/ogg/wav)
+        callback: Función(result) a llamar al terminar
+    
+    Returns:
+        Future
+    """
+    return run_in_background(extract_audio, video_path, output_format, callback=callback)
+
+
+def convert_video_async(files: List[str], output_format: str, callback, **options):
+    """
+    Versión async de convert_video().
+    
+    Args:
+        files: Lista de rutas de videos
+        output_format: Formato de salida (mp4/avi/mkv)
+        callback: Función(result) a llamar al terminar
+        **options: crf, etc.
+    
+    Returns:
+        Future
+    """
+    return run_in_background(convert_video, files, output_format, callback=callback, **options)

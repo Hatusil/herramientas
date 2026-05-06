@@ -686,3 +686,29 @@ def execute_pipeline(files: List[str], operations: List[Dict[str, Any]]) -> Dict
     input_file = files[0]
     
     return _execute_pipeline_operations_module(input_file, operations)
+
+
+# =============================================================================
+# ASYNC VERSIONS - No bloquean UI
+# =============================================================================
+from core.async_utils import run_in_background
+
+def rotate_pages_async(files: List[str], callback, degrees: int = 90, pages: List[int] = None):
+    """
+    Versión async de rotate_pages().
+    """
+    return run_in_background(rotate_pages, files, callback=callback, degrees=degrees, pages=pages)
+
+
+def merge_pdfs_async(files: List[str], callback, output_path: str = None):
+    """
+    Versión async de merge_pdfs().
+    """
+    return run_in_background(merge_pdfs, files, callback=callback, output_path=output_path)
+
+
+def extract_pages_async(files: List[str], callback, pages: List[int]):
+    """
+    Versión async de extract_pages().
+    """
+    return run_in_background(extract_pages, files, callback=callback, pages=pages)
