@@ -97,7 +97,7 @@ class DuplicateToolUI(BaseToolUI):
         ctk.CTkLabel(opts_frame, text="Método:").pack(side="left", padx=5)
         self.method_var = ctk.StringVar(value="size")
         
-        RadioButton(opts_frame, text="Por tama��o (rápido)", variable=self.method_var, value="size").pack(side="left", padx=10)
+        RadioButton(opts_frame, text="Por tamaño (rápido)", variable=self.method_var, value="size").pack(side="left", padx=10)
         RadioButton(opts_frame, text="Por hash (exacto)", variable=self.method_var, value="hash").pack(side="left", padx=10)
         
         ext_frame = ctk.CTkFrame(self)
