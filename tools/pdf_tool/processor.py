@@ -304,69 +304,6 @@ def add_text_annotation(files: List[str], text: str, page: int = 0,
     }
 
 
-def redact_area(files: List[str], page: int = 0, x: float = 100, y: float = 100,
-                width: float = 100, height: float = 50) -> Dict[str, Any]:
-    """
-    Censa un área del PDF (la pinta de negro/blanco).
-    
-    Args:
-        files: Lista de rutas de PDFs
-        page: Número de página (0-indexed)
-        x, y: Posición superior izquierda
-        width, height: Dimensiones del área
-        
-    Returns:
-        dict: Resultado de la operación
-    """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            for i, page_obj in enumerate(reader.pages):
-                if i == page:
-                    # Crear rectángulo de censurado
-                    # Usamos una anotación de cuadrado como overlay
-                    from pypdf.annotations import Square
-                    annotation = Square(
-                        rect=(x, y, x + width, y + height),
-                        # No hay color de fondo directo, usamos Border
-                    )
-                    # Simplemente dibujar un rectángulo negro
-                    # En pypdf esto es limitado, usamosapproach alternativo
-                    
-                writer.add_page(page_obj)
-            
-            output_path = get_output_path(file_path, '_redacted')
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"Área censurada: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    # Función no implementada - requiere biblioteca de renderizado
-    # Volver a esto después
-    return {
-        'success': False,
-        'message': 'Funcionalidad no implementada',
-        'output_files': [],
-        'error': 'PDF a imágenes requiere implementación adicional (renderizado con pdf2image o similar)'
-    }
-
-
 # =============================================================================
 # TRANSFORMACIONES - Delegado a modules/transform.py (máxima C2: no duplicar código)
 # =============================================================================
