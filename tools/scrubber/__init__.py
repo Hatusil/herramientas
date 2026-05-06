@@ -16,7 +16,7 @@ class ScrubberTool(BaseTool):
     """Herramienta para limpiar metadatos de archivos."""
     
     def __init__(self):
-        self.ui = None
+        self.ui = ScrubberToolUI
     
     def get_name(self) -> str:
         return "Scrubber"

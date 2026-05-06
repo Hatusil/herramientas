@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 
 # Importar función compartida de core (máxima C2: Consistency)
 from core.utils import get_output_path, get_output_path_format
+from core.file_utils import validate_input_file
 
 # Métricas
 from core.metrics import Counter, Timer, increment

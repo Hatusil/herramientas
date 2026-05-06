@@ -9,6 +9,7 @@ from typing import List, Dict, Any
 
 # Importar función compartida de core (máxima C2: Consistency)
 from core.utils import get_output_path_format, validate_input_file, validate_file_size
+from core.file_utils import get_output_path
 
 # Métricas
 from core.metrics import Counter, Timer, increment

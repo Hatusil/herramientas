@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 
 # Importar validación de core (máxima C2: Consistency)
 from core.utils import validate_input_file, validate_file_size
+from core.file_utils import get_output_path
 
 # Métricas
 from core.metrics import Counter, Timer, increment

@@ -9,7 +9,7 @@ class CompressTool(BaseTool):
     """Herramienta para comprimir archivos."""
     
     def __init__(self):
-        self.ui = None
+        self.ui = CompressToolUI
     
     def get_name(self) -> str:
         return "Comprimir"

@@ -9,7 +9,7 @@ class VideoTool(BaseTool):
     """Herramienta para video."""
     
     def __init__(self):
-        self.ui = None
+        self.ui = VideoToolUI
     
     def get_name(self) -> str:
         return "Video"

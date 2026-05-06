@@ -9,7 +9,7 @@ class DuplicateTool(BaseTool):
     """Herramienta para encontrar duplicados."""
     
     def __init__(self):
-        self.ui = None
+        self.ui = DuplicateToolUI
     
     def get_name(self) -> str:
         return "Duplicados"

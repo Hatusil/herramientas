@@ -9,7 +9,7 @@ class SearchTool(BaseTool):
     """Herramienta de búsqueda avanzada."""
     
     def __init__(self):
-        self.ui = None
+        self.ui = SearchToolUI
     
     def get_name(self) -> str:
         return "Search"

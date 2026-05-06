@@ -8,6 +8,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import List, Dict, Any, Callable, Optional
 
+# Importar funciones compartidas de core (máxima C2: Consistency)
+from core.utils import validate_input_file, get_output_path
+
 logger = logging.getLogger(__name__)
 
 # Métricas

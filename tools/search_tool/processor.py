@@ -11,7 +11,8 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
-# Métricas
+# Importar funciones compartidas de core (máxima C2: Consistency)
+from core.utils import validate_input_file, get_output_path
 from core.metrics import Timer, Counter, get_metric
 
 # Flag para cancelar búsqueda

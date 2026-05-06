@@ -25,6 +25,7 @@ from collections import Counter
 
 # Importar funciones compartidas de core
 from core.utils import clean_text, STOP_WORDS
+from core.file_utils import validate_input_file, get_output_path
 from core.metrics import Timer, Counter, get_metric
 
 logger = logging.getLogger(__name__)

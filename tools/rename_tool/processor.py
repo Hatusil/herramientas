@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any
 
+# Importar funciones compartidas de core (máxima C2: Consistency)
+from core.file_utils import validate_input_file, get_output_path
 # Métricas
 from core.metrics import Counter, Timer, increment
 
