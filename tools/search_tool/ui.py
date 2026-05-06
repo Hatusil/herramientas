@@ -8,23 +8,34 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from ui.help_panel import add_help
-from typing import Callable, Dict, Any
+from typing import Callable, Dict, Any, List
+
+# Import BaseToolUI from core
+from core.base_tool_ui import BaseToolUI
 
 logger = logging.getLogger(__name__)
 
 
-class SearchToolUI(ctk.CTkFrame):
+class SearchToolUI(BaseToolUI):
     """UI para búsqueda avanzada de archivos."""
     
-    def __init__(self, master, on_process: Callable):
-        super().__init__(master)
-        self.on_process = on_process
-        self.folder = ""
-        self.results = []
-        self._setup_ui()
+    def __init__(self, master, on_process: Callable, **kwargs):
+        # Call BaseToolUI __init__ but we skip file selector
+        super().__init__(master, on_process, **kwargs)
+        
+        # Build rest of tool UI
+        self._build_search_ui()
+    
+    def _get_file_label(self) -> str:
+        """Override: Label for folder section."""
+        return "Carpeta:"
+    
+    def _add_folder_custom(self) -> bool:
+        """Override: Use custom folder selector."""
+        return True  # We use label + button instead
     
     def _setup_ui(self) -> None:
-        # Título
+        # Title
         title = ctk.CTkLabel(
             self,
             text="🔍 Buscador Avanzado",
@@ -32,7 +43,7 @@ class SearchToolUI(ctk.CTkFrame):
         )
         title.pack(pady=(10, 5))
         
-        # Panel de ayuda
+        # Help panel
         help_panel = add_help(
             self,
             description="🔍 Busca archivos por nombre, contenido (DOCX/PDF/XLSX/PPTX), fecha y extensión.",
@@ -51,19 +62,9 @@ class SearchToolUI(ctk.CTkFrame):
         )
         help_panel.pack(fill="x", padx=10, pady=5)
         
-        # Panel de opciones - usando grid para mejor responsividad
-        options_frame = ctk.CTkFrame(self)
-        options_frame.pack(fill="x", padx=10, pady=5)
-        options_frame.grid_columnconfigure((0, 1, 2), weight=1, uniform="col")
-        
-        # Columna 1: Carpeta
-        folder_col = ctk.CTkFrame(options_frame)
-        folder_col.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-        
-        ctk.CTkLabel(folder_col, text="Carpeta:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", pady=(5, 2))
-        
-        folder_btn_frame = ctk.CTkFrame(folder_col, fg_color="transparent")
-        folder_btn_frame.pack(fill="x", pady=2)
+        # Custom folder selector (skip BaseToolUI file selector)
+        folder_btn_frame = ctk.CTkFrame(self)
+        folder_btn_frame.pack(fill="x", padx=10, pady=5)
         
         self.folder_label = ctk.CTkLabel(
             folder_btn_frame,
@@ -79,19 +80,32 @@ class SearchToolUI(ctk.CTkFrame):
             width=60
         ).pack(side="right")
         
-        # Info de ayuda
-        ctk.CTkLabel(
-            folder_col, 
-            text="Use 'Elegir' para seleccionar cualquier carpeta", 
-            font=ctk.CTkFont(size=14),
-            text_color="gray"
-        ).pack(anchor="w", pady=2)
+        # Status label (from BaseToolUI)
+    
+    def _select_folder(self) -> None:
+        """Select folder to search."""
+        folder = filedialog.askdirectory(title="Seleccionar carpeta")
+        if folder:
+            self.folder = folder
+            self.folder_label.configure(text=os.path.basename(folder))
+            self.status_label.configure(text=f"Carpeta: {folder}")
+    
+    def _build_search_ui(self) -> None:
+        """Build search-specific UI."""
+        # Panel de opciones - usando grid para mejor responsividad
+        options_frame = ctk.CTkFrame(self)
+        options_frame.pack(fill="x", padx=10, pady=5)
+        options_frame.grid_columnconfigure((0, 1), weight=1, uniform="col")
         
-        # Columna 2: Búsqueda por nombre
+        # Columna 1: Búsqueda por nombre
         name_col = ctk.CTkFrame(options_frame)
-        name_col.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        name_col.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         
-        ctk.CTkLabel(name_col, text="Buscar por nombre:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", pady=(5, 2))
+        ctk.CTkLabel(
+            name_col,
+            text="Buscar por nombre:",
+            font=ctk.CTkFont(weight="bold")
+        ).pack(anchor="w", pady=(5, 2))
         
         self.name_entry = ctk.CTkEntry(name_col, placeholder_text="Patrón de búsqueda")
         self.name_entry.pack(fill="x", pady=2)
@@ -108,11 +122,15 @@ class SearchToolUI(ctk.CTkFrame):
         self.case_sensitive = ctk.BooleanVar(value=False)
         ctk.CTkCheckBox(opts_row, text="Aa", variable=self.case_sensitive).pack(side="left", padx=5)
         
-        # Columna 3: Filtros
+        # Columna 2: Filtros
         filter_col = ctk.CTkFrame(options_frame)
-        filter_col.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
+        filter_col.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
         
-        ctk.CTkLabel(filter_col, text="Filtros:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", pady=(5, 2))
+        ctk.CTkLabel(
+            filter_col,
+            text="Filtros:",
+            font=ctk.CTkFont(weight="bold")
+        ).pack(anchor="w", pady=(5, 2))
         
         # Extensiones
         ext_frame = ctk.CTkFrame(filter_col, fg_color="transparent")
@@ -174,7 +192,11 @@ class SearchToolUI(ctk.CTkFrame):
         results_frame = ctk.CTkFrame(self)
         results_frame.pack(fill="x", padx=10, pady=5)
         
-        ctk.CTkLabel(results_frame, text="Resultados:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=10, pady=(5, 0))
+        ctk.CTkLabel(
+            results_frame,
+            text="Resultados:",
+            font=ctk.CTkFont(weight="bold")
+        ).pack(anchor="w", padx=10, pady=(5, 0))
         
         # Lista de resultados - altura reducida
         list_cont = ctk.CTkFrame(results_frame, fg_color="transparent")
@@ -198,20 +220,10 @@ class SearchToolUI(ctk.CTkFrame):
         ctk.CTkButton(export_frame, text="📊 CSV", command=self._export_csv).pack(side="left", padx=5)
         ctk.CTkButton(export_frame, text="📝 TXT", command=self._export_txt).pack(side="left", padx=5)
         ctk.CTkButton(export_frame, text="📂 Abrir", command=self._open_selected).pack(side="left", padx=5)
-        
-        # Status
-        self.status_label = ctk.CTkLabel(self, text="Seleccione una carpeta para comenzar", text_color="gray")
-        self.status_label.pack(pady=5)
-    
-    def _select_folder(self) -> None:
-        folder = filedialog.askdirectory(title="Seleccionar carpeta")
-        if folder:
-            self.folder = folder
-            self.folder_label.configure(text=os.path.basename(folder))
-            self.status_label.configure(text=f"Carpeta: {folder}")
     
     def _do_search(self) -> None:
-        if not self.folder:
+        """Execute the search."""
+        if not hasattr(self, 'folder') or not self.folder:
             self.status_label.configure(text="Seleccione una carpeta", text_color="#FFA500")
             return
         
@@ -302,6 +314,7 @@ class SearchToolUI(ctk.CTkFrame):
         self.status_label.configure(text=f"Error: {error}", text_color="red")
     
     def _show_results(self) -> None:
+        """Show search results."""
         self.results_listbox.delete(0, tk.END)
         
         for r in self.results:
@@ -313,6 +326,7 @@ class SearchToolUI(ctk.CTkFrame):
         self.results_info.configure(text=f"Total: {len(self.results)} archivos")
     
     def _export_csv(self) -> None:
+        """Export results to CSV."""
         if not self.results:
             messagebox.showwarning("Advertencia", "No hay resultados para exportar")
             return
@@ -331,6 +345,7 @@ class SearchToolUI(ctk.CTkFrame):
                 messagebox.showerror("Error", "No se pudo exportar")
     
     def _export_txt(self) -> None:
+        """Export results to TXT."""
         if not self.results:
             messagebox.showwarning("Advertencia", "No hay resultados para exportar")
             return

@@ -1,35 +1,48 @@
-"""
-UI: Interfaz para encontrar archivos duplicados.
-"""
+"""UI: Interfaz para encontrar archivos duplicados."""
 import logging
 import os
 import customtkinter as ctk
 from ui.help_panel import add_help
+from ui.radiobutton import RadioButton
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from pathlib import Path
 from typing import Callable
 
+# Import BaseToolUI from core
+from core.base_tool_ui import BaseToolUI
+
 logger = logging.getLogger(__name__)
 
-def RadioButton(parent, **kwargs):
-    return tk.Radiobutton(parent, **kwargs)
 
-
-class DuplicateToolUI(ctk.CTkFrame):
+class DuplicateToolUI(BaseToolUI):
     """UI para encontrar archivos duplicados."""
     
-    def __init__(self, master, on_process: Callable):
-        super().__init__(master)
-        self.on_process = on_process
-        self.duplicate_groups = []  # Almacena grupos de duplicados
-        self._setup_ui()
+    def __init__(self, master, on_process: Callable, **kwargs):
+        # Call BaseToolUI __init__ but we skip file selector
+        super().__init__(master, on_process, **kwargs)
+        
+        # Build tool-specific UI
+        self._build_options()
+    
+    def _get_file_label(self) -> str:
+        """Override: Label for folder section."""
+        return "Carpeta a escanear:"
+    
+    def _add_folder_custom(self) -> bool:
+        """Override: Use custom folder entry instead of default selector."""
+        return True  # Use our custom UI below
     
     def _setup_ui(self) -> None:
-        title = ctk.CTkLabel(self, text="Encontrar Duplicados", font=ctk.CTkFont(size=20, weight="bold"))
+        # Title
+        title = ctk.CTkLabel(
+            self,
+            text="Encontrar Duplicados",
+            font=ctk.CTkFont(size=20, weight="bold")
+        )
         title.pack(pady=(0, 10))
         
-        # Panel de ayuda
+        # Help panel
         help_panel = add_help(
             self,
             description="📋 Encuentra y elimina duplicados por tamaño o hash MD5.",
@@ -49,10 +62,9 @@ class DuplicateToolUI(ctk.CTkFrame):
         )
         help_panel.pack(fill="x", padx=10, pady=5)
         
+        # Custom folder selection - NOT using BaseToolUI's file selector
         folder_frame = ctk.CTkFrame(self)
         folder_frame.pack(fill="x", padx=10, pady=10)
-        
-        ctk.CTkLabel(folder_frame, text="Carpeta a escanear:").pack(anchor="w", padx=10, pady=5)
         
         input_frame = ctk.CTkFrame(folder_frame, fg_color="transparent")
         input_frame.pack(fill="x", padx=10, pady=5)
@@ -60,15 +72,32 @@ class DuplicateToolUI(ctk.CTkFrame):
         self.folder_entry = ctk.CTkEntry(input_frame, width=350)
         self.folder_entry.pack(side="left", padx=5)
         
-        ctk.CTkButton(input_frame, text="Elegir", width=60, command=self._select_folder).pack(side="left")
+        ctk.CTkButton(
+            input_frame,
+            text="Elegir",
+            width=60,
+            command=self._select_folder
+        ).pack(side="left")
         
+        # Status label (from BaseToolUI)
+    
+    def _select_folder(self) -> None:
+        """Select folder using file dialog."""
+        folder = filedialog.askdirectory(title="Seleccionar carpeta")
+        if folder:
+            self.folder_entry.delete(0, tk.END)
+            self.folder_entry.insert(0, folder)
+            self.status_label.configure(text=f"Carpeta: {folder}", text_color="gray")
+    
+    def _build_options(self) -> None:
+        """Build tool-specific options."""
         opts_frame = ctk.CTkFrame(self)
         opts_frame.pack(fill="x", padx=10, pady=5)
         
         ctk.CTkLabel(opts_frame, text="Método:").pack(side="left", padx=5)
         self.method_var = ctk.StringVar(value="size")
         
-        RadioButton(opts_frame, text="Por tamaño (rápido)", variable=self.method_var, value="size").pack(side="left", padx=10)
+        RadioButton(opts_frame, text="Por tama��o (rápido)", variable=self.method_var, value="size").pack(side="left", padx=10)
         RadioButton(opts_frame, text="Por hash (exacto)", variable=self.method_var, value="hash").pack(side="left", padx=10)
         
         ext_frame = ctk.CTkFrame(self)
@@ -84,14 +113,22 @@ class DuplicateToolUI(ctk.CTkFrame):
         self.audio_var = ctk.BooleanVar(value=True)
         ctk.CTkCheckBox(ext_frame, text="Audio/Video", variable=self.audio_var).pack(side="left", padx=5)
         
-        ctk.CTkButton(self, text="🔍 Buscar Duplicados", command=self._find_duplicates, height=40).pack(pady=10)
+        ctk.CTkButton(
+            self,
+            text="🔍 Buscar Duplicados",
+            command=self._find_duplicates,
+            height=40
+        ).pack(pady=10)
         
         # Resultados con checkboxes para seleccionar
         results_frame = ctk.CTkFrame(self)
         results_frame.pack(fill="both", expand=True, padx=10, pady=5)
         
-        ctk.CTkLabel(results_frame, text="Resultados (seleccione los que quiere eliminar):", 
-                     font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=10, pady=(5, 0))
+        ctk.CTkLabel(
+            results_frame,
+            text="Resultados (seleccione los que quiere eliminar):",
+            font=ctk.CTkFont(weight="bold")
+        ).pack(anchor="w", padx=10, pady=(5, 0))
         
         # Scrollable frame para los resultados
         self.results_scroll = ctk.CTkScrollableFrame(results_frame)
@@ -105,26 +142,26 @@ class DuplicateToolUI(ctk.CTkFrame):
         action_frame = ctk.CTkFrame(self, fg_color="transparent")
         action_frame.pack(fill="x", padx=10, pady=5)
         
-        ctk.CTkButton(action_frame, text="✅ Seleccionar Todos", 
-                      command=self._select_all).pack(side="left", padx=5)
-        ctk.CTkButton(action_frame, text="⭕ Deseleccionar Todos", 
-                      command=self._deselect_all).pack(side="left", padx=5)
-        ctk.CTkButton(action_frame, text="🗑️ Eliminar Seleccionados", 
-                      command=self._delete_selected, fg_color="red", 
-                      hover_color="darkred").pack(side="left", padx=5)
-        
-        # Status
-        self.status_label = ctk.CTkLabel(self, text="", text_color="gray")
-        self.status_label.pack(pady=5)
-    
-    def _select_folder(self) -> None:
-        folder = filedialog.askdirectory(title="Seleccionar carpeta")
-        if folder:
-            self.folder_entry.delete(0, tk.END)
-            self.folder_entry.insert(0, folder)
-            self.status_label.configure(text=f"Carpeta: {folder}", text_color="gray")
+        ctk.CTkButton(
+            action_frame,
+            text="✅ Seleccionar Todos",
+            command=self._select_all
+        ).pack(side="left", padx=5)
+        ctk.CTkButton(
+            action_frame,
+            text="⭕ Deseleccionar Todos",
+            command=self._deselect_all
+        ).pack(side="left", padx=5)
+        ctk.CTkButton(
+            action_frame,
+            text="🗑️ Eliminar Seleccionados",
+            command=self._delete_selected,
+            fg_color="red",
+            hover_color="darkred"
+        ).pack(side="left", padx=5)
     
     def _find_duplicates(self) -> None:
+        """Find duplicates in selected folder."""
         folder = self.folder_entry.get().strip()
         if not folder or not Path(folder).exists():
             self.status_label.configure(text="Seleccione una carpeta válida", text_color="#FFA500")
@@ -164,8 +201,11 @@ class DuplicateToolUI(ctk.CTkFrame):
             dups = result.get('potential_duplicates', {}) if method == 'size' else result.get('duplicates', {})
             
             if not dups:
-                ctk.CTkLabel(self.results_scroll, text="✅ No se encontraron duplicados", 
-                            text_color="green").pack(pady=20)
+                ctk.CTkLabel(
+                    self.results_scroll,
+                    text="✅ No se encontraron duplicados",
+                    text_color="green"
+                ).pack(pady=20)
                 self.status_label.configure(text="Sin duplicados", text_color="green")
                 self.results_info.configure(text="0 archivos duplicados")
             else:
@@ -184,7 +224,11 @@ class DuplicateToolUI(ctk.CTkFrame):
                     group_frame = ctk.CTkFrame(self.results_scroll)
                     group_frame.pack(fill="x", pady=2, padx=5)
                     
-                    ctk.CTkLabel(group_frame, text=group_label, font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=5)
+                    ctk.CTkLabel(
+                        group_frame,
+                        text=group_label,
+                        font=ctk.CTkFont(weight="bold")
+                    ).pack(anchor="w", padx=5)
                     
                     for f in files:
                         total_files += 1
@@ -198,8 +242,11 @@ class DuplicateToolUI(ctk.CTkFrame):
                 self.status_label.configure(text=f"Encontrados: {result['count']} grupos", text_color="green")
                 self.results_info.configure(text=f"Total: {total_files} archivos duplicados (seleccione para eliminar)")
         else:
-            ctk.CTkLabel(self.results_scroll, text=f"❌ Error: {result.get('error', 'Error')}", 
-                        text_color="red").pack(pady=20)
+            ctk.CTkLabel(
+                self.results_scroll,
+                text=f"❌ Error: {result.get('error', 'Error')}",
+                text_color="red"
+            ).pack(pady=20)
             self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
     
     def _select_all(self) -> None:
@@ -221,8 +268,10 @@ class DuplicateToolUI(ctk.CTkFrame):
             return
         
         # Confirmar eliminación
-        if not messagebox.askyesno("Confirmar", 
-                                    f"¿Eliminar {len(selected)} archivos seleccionados?\n\nEsta acción no se puede deshacer."):
+        if not messagebox.askyesno(
+            "Confirmar",
+            f"¿Eliminar {len(selected)} archivos seleccionados?\n\nEsta acción no se puede deshacer."
+        ):
             return
         
         deleted = 0
@@ -250,4 +299,4 @@ class DuplicateToolUI(ctk.CTkFrame):
             messagebox.showinfo("Éxito", f"Se eliminaron {deleted} archivos")
         
         if errors > 0:
-            messagebox.showwarning("Errores", f"No se pudieron eliminar {errors} archivos")
+            messagebox.showwarning("Errores", f"No se podían eliminar {errors} archivos")

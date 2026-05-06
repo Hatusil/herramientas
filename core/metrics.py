@@ -5,26 +5,32 @@ Proporciona clases para contar, gauge y temporizadores.
 import logging
 import time
 import os
-from typing import Optional
+from typing import Optional, Dict, Union
 
 logger = logging.getLogger(__name__)
 
 # Configuración global - controlado por variable de entorno
 _METRICS_ENABLED = os.environ.get('METRICS_ENABLED', 'false').lower() == 'true'
 
+# Registry global para métricas persistentes
+_metrics_registry: Dict[str, Union['Counter', 'Gauge']] = {}
+
 
 class Counter:
     """Contador de métricas con incremento simple."""
     
-    def __init__(self, name: str):
+    def __init__(self, name: str, auto_register: bool = True):
         """
         Inicializa un contador.
         
         Args:
             name: Nombre identificador del contador
+            auto_register: Si True, registra automáticamente en el registry global
         """
         self.name = name
         self._value = 0
+        if auto_register:
+            _metrics_registry[name] = self
     
     def increment(self, value: int = 1) -> None:
         """
@@ -52,15 +58,18 @@ class Counter:
 class Gauge:
     """Métrica de gauge - valor actual instantáneo."""
     
-    def __init__(self, name: str):
+    def __init__(self, name: str, auto_register: bool = True):
         """
         Inicializa un gauge.
         
         Args:
             name: Nombre identificador del gauge
+            auto_register: Si True, registra automáticamente en el registry global
         """
         self.name = name
         self._value = 0.0
+        if auto_register:
+            _metrics_registry[name] = self
     
     def set(self, value: float) -> None:
         """
@@ -156,3 +165,37 @@ def timer(name: str) -> Timer:
         Timer: Instancia de temporizador lista para usar como context manager
     """
     return Timer(name)
+
+
+def get_metric(name: str) -> Union[Counter, Gauge]:
+    """
+    Obtiene una métrica existente del registry o crea una nueva.
+    
+    Args:
+        name: Nombre de la métrica a obtener
+        
+    Returns:
+        Counter o Gauge según corresponda (crea Counter por defecto si no existe)
+    """
+    if name in _metrics_registry:
+        return _metrics_registry[name]
+    # Por defecto crea un Counter si no existe
+    return Counter(name)
+
+
+def get_all_metrics() -> Dict[str, Union[Counter, Gauge]]:
+    """
+    Retorna todas las métricas registradas.
+    
+    Returns:
+        Dict con todas las métricas del registry
+    """
+    return _metrics_registry.copy()
+
+
+def reset_all_metrics() -> None:
+    """Reinicia todas las métricas del registry."""
+    for metric in _metrics_registry.values():
+        metric.reset()
+    if _METRICS_ENABLED:
+        logger.info("[METRIC] All metrics reset")

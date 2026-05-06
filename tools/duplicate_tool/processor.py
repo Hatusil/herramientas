@@ -10,6 +10,9 @@ from typing import List, Dict, Any, Callable, Optional
 
 logger = logging.getLogger(__name__)
 
+# Métricas
+from core.metrics import Timer, Counter, Gauge, get_metric
+
 
 def find_duplicates_by_hash(folder_path: str, extensions: List[str] = None) -> Dict[str, Any]:
     """
@@ -143,57 +146,75 @@ def find_duplicates_async(
     Returns:
         dict: Archivos duplicados encontrados
     """
-    if not os.path.exists(folder_path):
-        return {'success': False, 'error': 'Carpeta no encontrada'}
+    # Métricas - crear explícitamente los tipos correctos
+    duration_timer = Timer('duplicates_duration')
+    processed_counter = Counter('duplicates_files_processed')
+    total_counter = Counter('duplicates_files_total', auto_register=False)
+    progress_gauge = Gauge('duplicates_progress')
     
-    if extensions is None:
-        extensions = ['.jpg', '.jpeg', '.png', '.mp3', '.mp4', '.pdf', '.doc', '.docx', '.xls', '.xlsx']
-    
-    # Recolectar archivos a procesar
-    files_to_hash: List[str] = []
-    for root, dirs, files in os.walk(folder_path):
-        for filename in files:
-            ext = Path(filename).suffix.lower()
-            if ext in extensions:
-                files_to_hash.append(os.path.join(root, filename))
-    
-    total_files = len(files_to_hash)
-    if total_files == 0:
-        return {'success': True, 'duplicates': {}, 'count': 0, 'total_duplicates': 0}
-    
-    # Diccionario de hash -> lista de archivos
-    hash_dict: Dict[str, List[str]] = {}
-    completed = 0
-    
-    # Procesar archivos en paralelo
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit todos los trabajos
-        future_to_file = {
-            executor.submit(_hash_file_worker, file_path): file_path 
-            for file_path in files_to_hash
-        }
+    with duration_timer:
+        if not os.path.exists(folder_path):
+            return {'success': False, 'error': 'Carpeta no encontrada'}
         
-        # Recolectar resultados
-        for future in as_completed(future_to_file):
-            file_path, file_hash = future.result()
-            completed += 1
+        if extensions is None:
+            extensions = ['.jpg', '.jpeg', '.png', '.mp3', '.mp4', '.pdf', '.doc', '.docx', '.xls', '.xlsx']
+        
+        # Recolectar archivos a procesar
+        files_to_hash: List[str] = []
+        for root, dirs, files in os.walk(folder_path):
+            for filename in files:
+                ext = Path(filename).suffix.lower()
+                if ext in extensions:
+                    files_to_hash.append(os.path.join(root, filename))
+        
+        total_files = len(files_to_hash)
+        total_counter._value = total_files  # Asignar valor directamente al Counter
+        
+        if total_files == 0:
+            return {'success': True, 'duplicates': {}, 'count': 0, 'total_duplicates': 0}
+        
+        # Diccionario de hash -> lista de archivos
+        hash_dict: Dict[str, List[str]] = {}
+        completed = 0
+        progress_gauge.set(0.0)
+        
+        # Procesar archivos en paralelo
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit todos los trabajos
+            future_to_file = {
+                executor.submit(_hash_file_worker, file_path): file_path 
+                for file_path in files_to_hash
+            }
             
-            # Reportar progreso
-            if progress_callback:
-                progress_callback(completed, total_files)
-            
-            # Agregar al diccionario de hashes
-            if file_hash is not None:
-                if file_hash not in hash_dict:
-                    hash_dict[file_hash] = []
-                hash_dict[file_hash].append(file_path)
-    
-    # Filtrar solo duplicados (más de un archivo con el mismo hash)
-    duplicates = {h: files for h, files in hash_dict.items() if len(files) > 1}
-    
-    return {
-        'success': True,
-        'duplicates': duplicates,
-        'count': len(duplicates),
-        'total_duplicates': sum(len(files) - 1 for files in duplicates.values())
-    }
+            # Recolectar resultados
+            for future in as_completed(future_to_file):
+                file_path, file_hash = future.result()
+                completed += 1
+                processed_counter.increment(1)
+                
+                # Actualizar gauge de progreso (0-100)
+                progress = (completed / total_files) * 100 if total_files > 0 else 0
+                progress_gauge.set(progress)
+                
+                # Reportar progreso
+                if progress_callback:
+                    progress_callback(completed, total_files)
+                
+                # Agregar al diccionario de hashes
+                if file_hash is not None:
+                    if file_hash not in hash_dict:
+                        hash_dict[file_hash] = []
+                    hash_dict[file_hash].append(file_path)
+        
+        # Completar gauge
+        progress_gauge.set(100.0)
+        
+        # Filtrar solo duplicados (más de un archivo con el mismo hash)
+        duplicates = {h: files for h, files in hash_dict.items() if len(files) > 1}
+        
+        return {
+            'success': True,
+            'duplicates': duplicates,
+            'count': len(duplicates),
+            'total_duplicates': sum(len(files) - 1 for files in duplicates.values())
+        }

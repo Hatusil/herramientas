@@ -18,11 +18,6 @@ from core.base_tool_ui import BaseToolUI
 logger = logging.getLogger(__name__)
 
 
-# Wrapper para RadioButton ya que CTk no tiene
-def RadioButton(parent, **kwargs):
-    return tk.Radiobutton(parent, **kwargs)
-
-
 class AudioToolUI(BaseToolUI):
     """UI para procesamiento de archivos de audio."""
     
