@@ -839,6 +839,64 @@ def extract_page(files: List[str], page_number: int) -> Dict[str, Any]:
     return extract_range(files, start=page_number, end=page_number)
 
 
+def reorder_pages_advanced(files: List[str], new_order: List[int]) -> Dict[str, Any]:
+    """
+    Reordena las páginas de un PDF con validación mejorada.
+    
+    Args:
+        files: Lista de rutas de PDFs
+        new_order: Lista con el nuevo orden de páginas (1-indexed)
+        
+    Returns:
+        dict: Resultado de la operación
+    """
+    if not check_pypdf():
+        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
+    
+    output_files = []
+    errors = []
+    
+    for file_path in files:
+        if not os.path.exists(file_path):
+            errors.append(f"Archivo no encontrado: {file_path}")
+            continue
+        
+        try:
+            reader = PdfReader(file_path)
+            writer = PdfWriter()
+            
+            num_pages = len(reader.pages)
+            
+            # Validar nuevo orden
+            for p in new_order:
+                if p < 1 or p > num_pages:
+                    errors.append(f"Número de página inválido: {p}")
+                    continue
+            
+            # Reordenar según el nuevo orden
+            for new_pos in new_order:
+                page = reader.pages[new_pos - 1]  # Convertir a 0-indexed
+                writer.add_page(page)
+            
+            output_path = get_output_path(file_path, '_reordered')
+            with open(output_path, 'wb') as f:
+                writer.write(f)
+            
+            output_files.append(output_path)
+            logger.info(f"Páginas reordenadas: {file_path}")
+            
+        except Exception as e:
+            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
+    
+    success = len(output_files) > 0
+    return {
+        'success': success,
+        'message': f"Páginas reordenadas en {len(output_files)}/{len(files)} archivos",
+        'output_files': output_files,
+        'error': '; '.join(errors) if errors else None
+    }
+
+
 # =============================================================================
 # NÚMEROS DE PÁGINA
 # =============================================================================

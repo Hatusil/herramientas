@@ -303,6 +303,12 @@ def remove_watermark(files: List[str], **options) -> Dict[str, Any]:
             # Abrir documento
             doc = fitz.open(file_path)
             
+            # Verificar si está encriptado
+            if doc.is_encrypted:
+                doc.close()
+                errors.append(f"PDF encriptado: {file_path} - se requiere contraseña")
+                continue
+            
             if detection_mode == 'auto':
                 # Detección automática de watermarks
                 watermark_regions = detect_watermarks_auto(doc)
@@ -317,15 +323,16 @@ def remove_watermark(files: List[str], **options) -> Dict[str, Any]:
                     continue
                 
                 # Procesar páginas
-                for page_num in watermark_regions:
-                    region = next(r for r in watermark_regions if r.get('page') == page_num)
+                for page_num in range(len(doc)):
+                    region = next((r for r in watermark_regions if r.get('page') == page_num), None)
                     if region:
                         page = doc[page_num]
                         remove_watermark_from_page(page, [region])
-                
+            
             else:
                 # Detección manual: usar región especificada
                 if not manual_region:
+                    doc.close()
                     errors.append(f"Región manual no especificada para {file_path}")
                     continue
                 
@@ -342,6 +349,7 @@ def remove_watermark(files: List[str], **options) -> Dict[str, Any]:
             
         except Exception as e:
             errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
+            logger.error(f"Error removiendo watermark: {e}")
     
     success = len(output_files) > 0
     return {

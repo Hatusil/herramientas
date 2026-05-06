@@ -70,7 +70,7 @@ class TestGetPdfInfo:
 
     def test_get_pdf_info_success(self, sample_pdf):
         """Test successful PDF info extraction."""
-        from processor import get_pdf_info
+        from tools.pdf_tool.processor import get_pdf_info
         
         result = get_pdf_info(sample_pdf)
         
@@ -83,7 +83,7 @@ class TestGetPdfInfo:
 
     def test_get_pdf_info_nonexistent_file(self):
         """Test handling of non-existent file."""
-        from processor import get_pdf_info
+        from tools.pdf_tool.processor import get_pdf_info
         
         result = get_pdf_info("/nonexistent/file.pdf")
         
@@ -92,7 +92,7 @@ class TestGetPdfInfo:
 
     def test_get_pdf_info_pages_info(self, sample_pdf):
         """Test that page info is included."""
-        from processor import get_pdf_info
+        from tools.pdf_tool.processor import get_pdf_info
         
         result = get_pdf_info(sample_pdf)
         
@@ -106,7 +106,7 @@ class TestCheckPdfEncrypted:
 
     def test_unencrypted_pdf(self, sample_pdf):
         """Test that unencrypted PDF returns False."""
-        from processor import check_pdf_encrypted
+        from tools.pdf_tool.processor import check_pdf_encrypted
         
         result = check_pdf_encrypted(sample_pdf)
         
@@ -114,7 +114,7 @@ class TestCheckPdfEncrypted:
 
     def test_nonexistent_file(self):
         """Test handling of non-existent file."""
-        from processor import check_pdf_encrypted
+        from tools.pdf_tool.processor import check_pdf_encrypted
         
         result = check_pdf_encrypted("/nonexistent/file.pdf")
         
@@ -126,7 +126,7 @@ class TestAddTextWatermark:
 
     def test_add_text_watermark_success(self, sample_pdf):
         """Test successful text watermark addition."""
-        from processor import add_text_watermark
+        from tools.pdf_tool.processor import add_text_watermark
         
         result = add_text_watermark([sample_pdf], "CONFIDENTIAL")
         
@@ -136,7 +136,7 @@ class TestAddTextWatermark:
 
     def test_add_text_watermark_custom_options(self, sample_pdf):
         """Test watermark with custom options."""
-        from processor import add_text_watermark
+        from tools.pdf_tool.processor import add_text_watermark
         
         result = add_text_watermark(
             [sample_pdf], 
@@ -152,7 +152,7 @@ class TestAddTextWatermark:
 
     def test_add_text_watermark_nonexistent_file(self):
         """Test handling of non-existent file."""
-        from processor import add_text_watermark
+        from tools.pdf_tool.processor import add_text_watermark
         
         result = add_text_watermark(["/nonexistent/file.pdf"], "TEST")
         
@@ -165,7 +165,7 @@ class TestAddImageWatermark:
 
     def test_add_image_watermark_success(self, sample_pdf, test_image):
         """Test successful image watermark addition."""
-        from processor import add_image_watermark
+        from tools.pdf_tool.processor import add_image_watermark
         
         result = add_image_watermark([sample_pdf], test_image)
         
@@ -175,7 +175,7 @@ class TestAddImageWatermark:
 
     def test_add_image_watermark_custom_options(self, sample_pdf, test_image):
         """Test image watermark with custom options."""
-        from processor import add_image_watermark
+        from tools.pdf_tool.processor import add_image_watermark
         
         result = add_image_watermark(
             [sample_pdf], 
@@ -188,7 +188,7 @@ class TestAddImageWatermark:
 
     def test_add_image_watermark_nonexistent_image(self, sample_pdf):
         """Test handling of non-existent image."""
-        from processor import add_image_watermark
+        from tools.pdf_tool.processor import add_image_watermark
         
         result = add_image_watermark([sample_pdf], "/nonexistent/image.png")
         
@@ -201,7 +201,7 @@ class TestRotatePages:
 
     def test_rotate_all_pages_90(self, sample_pdf):
         """Test rotating all pages by 90 degrees."""
-        from processor import rotate_pages, get_pdf_info
+        from tools.pdf_tool.processor import rotate_pages, get_pdf_info
         
         result = rotate_pages([sample_pdf], degrees=90)
         
@@ -214,7 +214,7 @@ class TestRotatePages:
 
     def test_rotate_all_pages_180(self, sample_pdf):
         """Test rotating all pages by 180 degrees."""
-        from processor import rotate_pages, get_pdf_info
+        from tools.pdf_tool.processor import rotate_pages, get_pdf_info
         
         result = rotate_pages([sample_pdf], degrees=180)
         
@@ -225,7 +225,7 @@ class TestRotatePages:
 
     def test_rotate_all_pages_270(self, sample_pdf):
         """Test rotating all pages by 270 degrees."""
-        from processor import rotate_pages, get_pdf_info
+        from tools.pdf_tool.processor import rotate_pages, get_pdf_info
         
         result = rotate_pages([sample_pdf], degrees=270)
         
@@ -236,7 +236,7 @@ class TestRotatePages:
 
     def test_rotate_specific_pages(self, multi_page_pdf):
         """Test rotating specific pages."""
-        from processor import rotate_pages, get_pdf_info
+        from tools.pdf_tool.processor import rotate_pages, get_pdf_info
         
         result = rotate_pages([multi_page_pdf], degrees=90, pages=[1, 3])
         
@@ -250,7 +250,7 @@ class TestRotatePages:
 
     def test_rotate_invalid_degrees(self, sample_pdf):
         """Test invalid rotation degrees."""
-        from processor import rotate_pages
+        from tools.pdf_tool.processor import rotate_pages
         
         result = rotate_pages([sample_pdf], degrees=45)
         
@@ -263,7 +263,7 @@ class TestMergePdfs:
 
     def test_merge_two_pdfs(self, temp_dir):
         """Test merging two PDFs."""
-        from processor import merge_pdfs, get_pdf_info
+        from tools.pdf_tool.processor import merge_pdfs, get_pdf_info
         
         pdf1 = os.path.join(temp_dir, "pdf1.pdf")
         pdf2 = os.path.join(temp_dir, "pdf2.pdf")
@@ -279,7 +279,7 @@ class TestMergePdfs:
 
     def test_merge_single_pdf_fails(self, sample_pdf):
         """Test that merging single PDF fails."""
-        from processor import merge_pdfs
+        from tools.pdf_tool.processor import merge_pdfs
         
         result = merge_pdfs([sample_pdf])
         
@@ -288,7 +288,7 @@ class TestMergePdfs:
 
     def test_merge_with_output_path(self, temp_dir):
         """Test merge with custom output path."""
-        from processor import merge_pdfs
+        from tools.pdf_tool.processor import merge_pdfs
         
         pdf1 = os.path.join(temp_dir, "pdf1.pdf")
         pdf2 = os.path.join(temp_dir, "pdf2.pdf")
@@ -307,7 +307,7 @@ class TestExtractPages:
 
     def test_extract_single_page(self, multi_page_pdf):
         """Test extracting a single page."""
-        from processor import extract_pages, get_pdf_info
+        from tools.pdf_tool.processor import extract_pages, get_pdf_info
         
         result = extract_pages([multi_page_pdf], pages=[2])
         
@@ -318,7 +318,7 @@ class TestExtractPages:
 
     def test_extract_multiple_pages(self, multi_page_pdf):
         """Test extracting multiple pages."""
-        from processor import extract_pages, get_pdf_info
+        from tools.pdf_tool.processor import extract_pages, get_pdf_info
         
         result = extract_pages([multi_page_pdf], pages=[1, 3, 5])
         
@@ -329,7 +329,7 @@ class TestExtractPages:
 
     def test_extract_pages_nonexistent(self):
         """Test extracting from non-existent file."""
-        from processor import extract_pages
+        from tools.pdf_tool.processor import extract_pages
         
         result = extract_pages(["/nonexistent.pdf"], pages=[1])
         
@@ -341,7 +341,7 @@ class TestAddPageNumbers:
 
     def test_add_page_numbers_default(self, sample_pdf):
         """Test adding page numbers with default options."""
-        from processor import add_page_numbers
+        from tools.pdf_tool.processor import add_page_numbers
         
         result = add_page_numbers([sample_pdf])
         
@@ -351,7 +351,7 @@ class TestAddPageNumbers:
 
     def test_add_page_numbers_custom_format(self, sample_pdf):
         """Test with custom format."""
-        from processor import add_page_numbers
+        from tools.pdf_tool.processor import add_page_numbers
         
         result = add_page_numbers(
             [sample_pdf],
@@ -365,7 +365,7 @@ class TestAddPageNumbers:
 
     def test_add_page_numbers_header(self, sample_pdf):
         """Test adding page numbers in header."""
-        from processor import add_page_numbers
+        from tools.pdf_tool.processor import add_page_numbers
         
         result = add_page_numbers([sample_pdf], position="header")
         
@@ -377,7 +377,7 @@ class TestCompressPdf:
 
     def test_compress_pdf_default(self, sample_pdf):
         """Test PDF compression with default level."""
-        from processor import compress_pdf
+        from tools.pdf_tool.processor import compress_pdf
         
         result = compress_pdf([sample_pdf])
         
@@ -387,7 +387,7 @@ class TestCompressPdf:
 
     def test_compress_pdf_different_levels(self, sample_pdf):
         """Test compression with different levels."""
-        from processor import compress_pdf
+        from tools.pdf_tool.processor import compress_pdf
         
         for level in ['low', 'medium', 'high']:
             result = compress_pdf([sample_pdf], level=level)
@@ -399,7 +399,7 @@ class TestCleanMetadata:
 
     def test_clean_metadata_success(self, sample_pdf):
         """Test successful metadata cleaning."""
-        from processor import clean_metadata, get_pdf_info
+        from tools.pdf_tool.processor import clean_metadata, get_pdf_info
         
         result = clean_metadata([sample_pdf])
         
@@ -413,9 +413,143 @@ class TestCleanMetadata:
 
     def test_clean_metadata_nonexistent_file(self):
         """Test handling of non-existent file."""
-        from processor import clean_metadata
+        from tools.pdf_tool.processor import clean_metadata
         
         result = clean_metadata(["/nonexistent/file.pdf"])
+        
+        assert result['success'] is False
+
+
+# =============================================================================
+# Phase 7: Tests para Nuevas Funciones
+# =============================================================================
+
+class TestWatermarkAdvanced:
+    """Tests for advanced watermark functions (opacity, rotation, position)."""
+
+    def test_text_watermark_opacity_0(self, sample_pdf):
+        """Test watermark with 0% opacity."""
+        from tools.pdf_tool.processor import add_text_watermark
+        
+        result = add_text_watermark([sample_pdf], "DRAFT", opacity=0)
+        
+        assert result['success'] is True
+        assert len(result['output_files']) == 1
+
+    def test_text_watermark_opacity_100(self, sample_pdf):
+        """Test watermark with 100% opacity."""
+        from tools.pdf_tool.processor import add_text_watermark
+        
+        result = add_text_watermark([sample_pdf], "APPROVED", opacity=1.0)
+        
+        assert result['success'] is True
+
+    def test_text_watermark_rotation_0(self, sample_pdf):
+        """Test watermark with 0 degree rotation."""
+        from tools.pdf_tool.processor import add_text_watermark
+        
+        result = add_text_watermark([sample_pdf], "TEST", rotation=0)
+        
+        assert result['success'] is True
+
+    def test_text_watermark_rotation_90(self, sample_pdf):
+        """Test watermark with 90 degree rotation."""
+        from tools.pdf_tool.processor import add_text_watermark
+        
+        result = add_text_watermark([sample_pdf], "TEST", rotation=90)
+        
+        assert result['success'] is True
+
+    def test_text_watermark_rotation_360(self, sample_pdf):
+        """Test watermark with 360 degree rotation (same as 0)."""
+        from tools.pdf_tool.processor import add_text_watermark
+        
+        result = add_text_watermark([sample_pdf], "TEST", rotation=360)
+        
+        assert result['success'] is True
+
+    def test_text_watermark_position_center(self, sample_pdf):
+        """Test watermark at center position."""
+        from tools.pdf_tool.processor import add_text_watermark
+        
+        # Position handled in watermarks module
+        result = add_text_watermark([sample_pdf], "CENTER")
+        
+        assert result['success'] is True
+
+
+class TestExtractAndReorder:
+    """Tests for extract and reorder functions."""
+
+    def test_extract_page(self, multi_page_pdf):
+        """Test extracting single page."""
+        from tools.pdf_tool.processor import extract_page, get_pdf_info
+        
+        result = extract_page([multi_page_pdf], page_number=3)
+        
+        assert result['success'] is True
+        output_file = result['output_files'][0]
+        info = get_pdf_info(output_file)
+        assert info['num_pages'] == 1
+
+    def test_extract_range(self, multi_page_pdf):
+        """Test extracting page range."""
+        from tools.pdf_tool.processor import extract_range, get_pdf_info
+        
+        result = extract_range([multi_page_pdf], start=1, end=3)
+        
+        assert result['success'] is True
+        output_file = result['output_files'][0]
+        info = get_pdf_info(output_file)
+        assert info['num_pages'] == 3
+
+    def test_extract_range_invalid_start(self, multi_page_pdf):
+        """Test extract with invalid start page."""
+        from tools.pdf_tool.processor import extract_range
+        
+        result = extract_range([multi_page_pdf], start=0, end=3)
+        
+        assert result['success'] is False
+
+    def test_extract_range_start_greater_than_end(self, multi_page_pdf):
+        """Test extract with start > end."""
+        from tools.pdf_tool.processor import extract_range
+        
+        result = extract_range([multi_page_pdf], start=5, end=3)
+        
+        assert result['success'] is False
+
+    def test_extract_range_exceeds_pages(self, multi_page_pdf):
+        """Test extract that exceeds page count."""
+        from tools.pdf_tool.processor import extract_range
+        
+        result = extract_range([multi_page_pdf], start=1, end=10)
+        
+        assert result['success'] is False
+
+    def test_reorder_pages_reverse(self, multi_page_pdf):
+        """Test reordering pages to reverse order."""
+        from tools.pdf_tool.processor import reorder_pages
+        
+        # 5 pages: [1,2,3,4,5] -> [5,4,3,2,1]
+        result = reorder_pages([multi_page_pdf], new_order=[5, 4, 3, 2, 1])
+        
+        assert result['success'] is True
+
+    def test_reorder_pages_specific(self, multi_page_pdf):
+        """Test reordering with specific sequence."""
+        from tools.pdf_tool.processor import reorder_pages
+        
+        # [1,2,3,4,5] -> [1,3,5,2,4]
+        result = reorder_pages([multi_page_pdf], new_order=[1, 3, 5, 2, 4])
+        
+        assert result['success'] is True
+
+    def test_reorder_invalid_page_index(self, multi_page_pdf):
+        """Test reorder with invalid page index."""
+        from tools.pdf_tool.processor import reorder_pages
+        
+        result = reorder_pages([multi_page_pdf], new_order=[1, 6, 3])
         
         assert result['success'] is False
 
@@ -425,7 +559,7 @@ class TestFullWorkflow:
 
     def test_complete_pdf_workflow(self, temp_dir):
         """Test complete PDF processing workflow."""
-        from processor import (
+        from tools.pdf_tool.processor import (
             get_pdf_info,
             add_text_watermark,
             rotate_pages,

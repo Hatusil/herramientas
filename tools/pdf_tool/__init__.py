@@ -116,6 +116,18 @@ class PDFTool(BaseTool):
                     end=options.get('end', 1),
                 )
             
+            elif action == 'extract_page':
+                return processor.extract_page(
+                    files,
+                    page_number=options.get('page_number', 1),
+                )
+            
+            elif action == 'reorder_advanced':
+                return processor.reorder_pages_advanced(
+                    files,
+                    new_order=options.get('new_order', []),
+                )
+            
             elif action == 'page_numbers':
                 return processor.add_page_numbers(
                     files,
