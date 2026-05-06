@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ui.help_panel import add_help
 import customtkinter as ctk
 import tkinter as tk
+from core.base_tool_ui import BaseToolUI
 from tkinter import filedialog
 from pathlib import Path
 import threading
@@ -170,11 +171,14 @@ SUBTOOL_INFO = {
         ]
     }
 }
-class TextAnalyzerUI(ctk.CTkFrame):
+class TextAnalyzerUI(BaseToolUI):
     """UI para análisis de texto."""
     
-    def __init__(self, master, on_process: Callable):
-        super().__init__(master)
+    # Override para omitir file selector global (cada tab tiene su propio selector)
+    _add_folder_custom = True
+    
+    def __init__(self, master, on_process: Callable, **kwargs):
+        super().__init__(master, on_process, **kwargs)
         self.on_process = on_process
         self.text_content: str = ""
         self.sources: Dict[str, Any] = {"text": [], "files": [], "urls": []}

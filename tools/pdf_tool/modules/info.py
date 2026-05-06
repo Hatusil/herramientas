@@ -11,12 +11,10 @@ try:
 except ImportError:
     PdfReader = None
 
+# Importar función compartida de core (máxima C2: Consistency)
+from core.utils import check_pypdf
+
 logger = logging.getLogger(__name__)
-
-
-def check_pypdf() -> bool:
-    """Verifica si pypdf está instalado."""
-    return PdfReader is not None
 
 
 def get_pdf_info(file_path: str) -> Dict[str, Any]:

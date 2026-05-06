@@ -48,7 +48,7 @@ class ScrubberTool(BaseTool):
             
             elif action == 'clean_pdf':
                 # Usar el processor de PDF tool
-                from tools.pdf_tool.processor import clean_metadata
+                from core.utils import clean_metadata
                 return clean_metadata([file_path])
             
             else:

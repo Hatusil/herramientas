@@ -11,8 +11,14 @@ from typing import List, Dict, Any
 from core import constants
 from core.utils import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg, get_output_path, get_output_path_format, validate_input_file, validate_file_extension, validate_file_size
 
+# Métricas
+from core.metrics import Counter, Timer, increment
 
 logger = logging.getLogger(__name__)
+
+# Contadores de operaciones
+audio_operations_total = Counter('audio_operations_total')
+audio_errors = Counter('audio_errors')
 
 
 # =============================================================================
@@ -147,95 +153,102 @@ def normalize_audio(files: List[str], **options) -> Dict[str, Any]:
     Returns:
         dict: Resultado con success, message, output_files, error
     """
-    if not check_ffmpeg():
-        return {'success': False, 'error': 'FFmpeg no instalado', 'output_files': []}
-    
-    target_lufs = options.get('target_lufs', -16)
-    limit_clipping = options.get('limit_clipping', True)
-    sample_rate = options.get('sample_rate')  # None = mantener
-    quality = options.get('quality', 192)  # kbps
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        input_file = Path(file_path)
+    with Timer('audio_tool.normalize_audio'):
+        if not check_ffmpeg():
+            increment('audio_errors')
+            return {'success': False, 'error': 'FFmpeg no instalado', 'output_files': []}
         
-        if not input_file.exists():
-            errors.append(f"No encontrado: {input_file.name}")
-            continue
+        target_lufs = options.get('target_lufs', -16)
+        limit_clipping = options.get('limit_clipping', True)
+        sample_rate = options.get('sample_rate')  # None = mantener
+        quality = options.get('quality', 192)  # kbps
         
-        if input_file.suffix.lower() not in ['.mp3', '.wav', '.flac', '.ogg', '.m4a', '.aac']:
-            errors.append(f"Formato no soportado: {input_file.suffix}")
-            continue
+        output_files = []
+        errors = []
         
-        output_file = get_output_path(file_path, '_normalized')
-        
-        # Construir filtro de audio
-        af_filters = [f'loudnorm=I={target_lufs}:LRA={constants.LRA}:TP={constants.TP}']
-        
-        # Nota: alimiter puede causar problemas en algunos sistemas
-        # Por ahora lo comentamos hasta verificar compatibilidad
-        # if limit_clipping:
-        #     af_filters.append('alimiter=limit=0.95')
-        
-        if sample_rate:
-            af_filters.append(f'aresample=async={sample_rate}')
-        
-        af_string = ','.join(af_filters)
-        
-        # Determinar codec y calidad según formato
-        if input_file.suffix.lower() == '.mp3':
-            codec = 'libmp3lame'
-            bitrate = f'{quality}k'
-        elif input_file.suffix.lower() == '.wav':
-            codec = 'pcm_s16le'
-            bitrate = None
-        elif input_file.suffix.lower() == '.flac':
-            codec = 'flac'
-            bitrate = None
-        else:
-            codec = 'libmp3lame'
-            bitrate = f'{quality}k'
-        
-        cmd = [get_ffmpeg_path(), '-y', '-nostdin', '-i', str(input_file), '-af', af_string]
-        
-        if bitrate:
-            cmd.extend(['-b:a', bitrate])
-        if sample_rate:
-            cmd.extend(['-ar', str(sample_rate)])
-        
-        cmd.extend(['-codec:a', codec, str(output_file)])
-        
-        try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=300
-            )
+        for file_path in files:
+            input_file = Path(file_path)
             
-            if result.returncode == 0 and Path(output_file).exists():
-                output_files.append(str(output_file))
-                logger.info(f"Normalizado: {input_file.name}")
+            if not input_file.exists():
+                errors.append(f"No encontrado: {input_file.name}")
+                continue
+            
+            if input_file.suffix.lower() not in ['.mp3', '.wav', '.flac', '.ogg', '.m4a', '.aac']:
+                errors.append(f"Formato no soportado: {input_file.suffix}")
+                continue
+            
+            output_file = get_output_path(file_path, '_normalized')
+            
+            # Construir filtro de audio
+            af_filters = [f'loudnorm=I={target_lufs}:LRA={constants.LRA}:TP={constants.TP}']
+            
+            # Nota: alimiter puede causar problemas en algunos sistemas
+            # Por ahora lo comentamos hasta verificar compatibilidad
+            # if limit_clipping:
+            #     af_filters.append('alimiter=limit=0.95')
+            
+            if sample_rate:
+                af_filters.append(f'aresample=async={sample_rate}')
+            
+            af_string = ','.join(af_filters)
+            
+            # Determinar codec y calidad según formato
+            if input_file.suffix.lower() == '.mp3':
+                codec = 'libmp3lame'
+                bitrate = f'{quality}k'
+            elif input_file.suffix.lower() == '.wav':
+                codec = 'pcm_s16le'
+                bitrate = None
+            elif input_file.suffix.lower() == '.flac':
+                codec = 'flac'
+                bitrate = None
             else:
-                # Show error from FFmpeg
-                err = result.stderr[-300:] if result.stderr else 'Unknown'
-                errors.append(f"{input_file.name}: {err[:100]}")
+                codec = 'libmp3lame'
+                bitrate = f'{quality}k'
+            
+            cmd = [get_ffmpeg_path(), '-y', '-nostdin', '-i', str(input_file), '-af', af_string]
+            
+            if bitrate:
+                cmd.extend(['-b:a', bitrate])
+            if sample_rate:
+                cmd.extend(['-ar', str(sample_rate)])
+            
+            cmd.extend(['-codec:a', codec, str(output_file)])
+            
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=300
+                )
                 
-        except subprocess.TimeoutExpired:
-            errors.append(f"Timeout: {input_file.name}")
-        except Exception as e:
-            errors.append(f"Excepción: {str(e)}")
-    
-    success = len(output_files) > 0
-    
-    return {
-        'success': success,
-        'message': f"Normalizados {len(output_files)}/{len(files)} archivos",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+                if result.returncode == 0 and Path(output_file).exists():
+                    output_files.append(str(output_file))
+                    logger.info(f"Normalizado: {input_file.name}")
+                else:
+                    # Show error from FFmpeg
+                    err = result.stderr[-300:] if result.stderr else 'Unknown'
+                    errors.append(f"{input_file.name}: {err[:100]}")
+                    
+            except subprocess.TimeoutExpired:
+                errors.append(f"Timeout: {input_file.name}")
+                increment('audio_errors')
+            except Exception as e:
+                errors.append(f"Excepción: {str(e)}")
+                increment('audio_errors')
+        
+        if len(output_files) > 0:
+            increment('audio_operations_total')
+        
+        success = len(output_files) > 0
+        
+        return {
+            'success': success,
+            'message': f"Normalizados {len(output_files)}/{len(files)} archivos",
+            'output_files': output_files,
+            'error': '; '.join(errors) if errors else None
+        }
 
 
 # =============================================================================
@@ -476,114 +489,121 @@ def convert_audio(files: List[str], output_format: str, **options) -> Dict[str, 
     Returns:
         dict: Resultado
     """
-    if not check_ffmpeg():
-        return {'success': False, 'error': 'FFmpeg no instalado', 'output_files': []}
-    
-    # Validate output format
-    valid_formats = ['mp3', 'wav', 'flac', 'ogg', 'aac', 'm4a']
-    if output_format.lower() not in valid_formats:
-        return {'success': False, 'error': f'Formato no válido: {output_format}. Usar: {", ".join(valid_formats)}', 'output_files': []}
-    
-    quality = options.get('quality', 192)
-    requested_bitrate = quality * 1000  # Convert to bps
-    
-    output_files = []
-    errors = []
-    skipped = []
-    
-    for file_path in files:
-        input_file = Path(file_path)
+    with Timer('audio_tool.convert_audio'):
+        if not check_ffmpeg():
+            increment('audio_errors')
+            return {'success': False, 'error': 'FFmpeg no instalado', 'output_files': []}
         
-        # Validate with helper
-        validation = _validate_audio_input(file_path)
-        if not validation['valid']:
-            errors.append(f"{input_file.name}: {validation['error']}")
-            continue
+        # Validate output format
+        valid_formats = ['mp3', 'wav', 'flac', 'ogg', 'aac', 'm4a']
+        if output_format.lower() not in valid_formats:
+            increment('audio_errors')
+            return {'success': False, 'error': f'Formato no válido: {output_format}. Usar: {", ".join(valid_formats)}', 'output_files': []}
         
-        # Determinar formato de entrada por extensión
-        input_format = input_file.suffix.lstrip('.').lower()
-        output_format_lower = output_format.lower()
+        quality = options.get('quality', 192)
+        requested_bitrate = quality * 1000  # Convert to bps
         
-        # Obtener calidad elegida
-        requested_quality = options.get('quality', 192)
+        output_files = []
+        errors = []
+        skipped = []
         
-        # Skip solo si mismo formato Y misma calidad por defecto
-        if input_format == output_format_lower and requested_quality == 192:
-            skipped.append(f"{input_file.name} - Ya está en {input_format.upper()}")
-            logger.info(f"Omite (mismo formato): {input_file.name}")
-            continue
-        
-        # Skip si mismo formato pero diferente calidad
-        if input_format == output_format_lower:
-            logger.info(f"Convirtiendo {input_file.name} con calidad {requested_quality}k...")
-        
-        # Nuevo formato
-        ext = f'.{output_format}'
-        output_file = get_output_path_format(file_path, '_converted', ext)
-        
-        # Codec según formato
-        if output_format == 'mp3':
-            codec = 'libmp3lame'
-            bitrate = f'{quality}k'
-        elif output_format == 'wav':
-            codec = 'pcm_s16le'
-            bitrate = None
-        elif output_format == 'flac':
-            codec = 'flac'
-            bitrate = None
-        elif output_format == 'ogg':
-            codec = 'libvorbis'
-            bitrate = f'{quality}k'
-        else:
-            codec = 'libmp3lame'
-            bitrate = f'{quality}k'
-        
-        cmd = [get_ffmpeg_path(), '-y', '-nostdin', '-i', str(input_file)]
-        
-        if bitrate:
-            cmd.extend(['-b:a', bitrate])
-        
-        cmd.extend(['-codec:a', codec, str(output_file)])
-        
-        try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=300
-            )
+        for file_path in files:
+            input_file = Path(file_path)
             
-            if result.returncode == 0 and Path(output_file).exists():
-                output_files.append(str(output_file))
-                logger.info(f"Convertido: {input_file.name} -> {output_file.name}")
+            # Validate with helper
+            validation = _validate_audio_input(file_path)
+            if not validation['valid']:
+                errors.append(f"{input_file.name}: {validation['error']}")
+                continue
+            
+            # Determinar formato de entrada por extensión
+            input_format = input_file.suffix.lstrip('.').lower()
+            output_format_lower = output_format.lower()
+            
+            # Obtener calidad elegida
+            requested_quality = options.get('quality', 192)
+            
+            # Skip solo si mismo formato Y misma calidad por defecto
+            if input_format == output_format_lower and requested_quality == 192:
+                skipped.append(f"{input_file.name} - Ya está en {input_format.upper()}")
+                logger.info(f"Omite (mismo formato): {input_file.name}")
+                continue
+            
+            # Skip si mismo formato pero diferente calidad
+            if input_format == output_format_lower:
+                logger.info(f"Convirtiendo {input_file.name} con calidad {requested_quality}k...")
+            
+            # Nuevo formato
+            ext = f'.{output_format}'
+            output_file = get_output_path_format(file_path, '_converted', ext)
+            
+            # Codec según formato
+            if output_format == 'mp3':
+                codec = 'libmp3lame'
+                bitrate = f'{quality}k'
+            elif output_format == 'wav':
+                codec = 'pcm_s16le'
+                bitrate = None
+            elif output_format == 'flac':
+                codec = 'flac'
+                bitrate = None
+            elif output_format == 'ogg':
+                codec = 'libvorbis'
+                bitrate = f'{quality}k'
             else:
-                errors.append(f"Error: {input_file.name}")
+                codec = 'libmp3lame'
+                bitrate = f'{quality}k'
+            
+            cmd = [get_ffmpeg_path(), '-y', '-nostdin', '-i', str(input_file)]
+            
+            if bitrate:
+                cmd.extend(['-b:a', bitrate])
+            
+            cmd.extend(['-codec:a', codec, str(output_file)])
+            
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=300
+                )
                 
-        except Exception as e:
-            errors.append(f"Excepción: {str(e)}")
-    
-    # Verificar si todos fueron omitidos
-    if not output_files and skipped:
+                if result.returncode == 0 and Path(output_file).exists():
+                    output_files.append(str(output_file))
+                    logger.info(f"Convertido: {input_file.name} -> {output_file.name}")
+                else:
+                    errors.append(f"Error: {input_file.name}")
+                    
+            except Exception as e:
+                errors.append(f"Excepción: {str(e)}")
+                increment('audio_errors')
+        
+        if len(output_files) > 0:
+            increment('audio_operations_total')
+        
+        # Verificar si todos fueron omitidos
+        if not output_files and skipped:
+            return {
+                'success': True,
+                'message': f"Todos los archivos ya están en formato {output_format.upper()} ({len(skipped)} omitidos)",
+                'output_files': [],
+                'skipped': skipped,
+                'error': None
+            }
+        
+        success = len(output_files) > 0
+        msg = f"Convertidos {len(output_files)}/{len(files)} archivos a {output_format.upper()}"
+        if skipped:
+            msg += f" ({len(skipped)} omitidos)"
+        
         return {
-            'success': True,
-            'message': f"Todos los archivos ya están en formato {output_format.upper()} ({len(skipped)} omitidos)",
-            'output_files': [],
+            'success': success,
+            'message': msg,
+            'output_files': output_files,
             'skipped': skipped,
-            'error': None
+            'error': '; '.join(errors) if errors else None
         }
-    
-    success = len(output_files) > 0
-    msg = f"Convertidos {len(output_files)}/{len(files)} archivos a {output_format.upper()}"
-    if skipped:
-        msg += f" ({len(skipped)} omitidos)"
-    
-    return {
-        'success': success,
-        'message': msg,
-        'output_files': output_files,
-        'skipped': skipped,
-        'error': '; '.join(errors) if errors else None
-    }
 
 
 # =============================================================================

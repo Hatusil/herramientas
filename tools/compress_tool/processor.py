@@ -10,8 +10,15 @@ from typing import List, Dict, Any
 # Importar función compartida de core (máxima C2: Consistency)
 from core.utils import get_output_path_format, validate_input_file, validate_file_size
 
+# Métricas
+from core.metrics import Counter, Timer, increment
+
 # Constantes
 MAX_COMPRESS_SIZE_MB = 5000  # 5GB max for compression
+
+# Contadores de operaciones
+compress_operations_total = Counter('compress_operations_total')
+compress_errors = Counter('compress_errors')
 
 
 def compress_to_zip(files: List[str], output_path: str = None, level: int = 6) -> Dict[str, Any]:
@@ -26,59 +33,64 @@ def compress_to_zip(files: List[str], output_path: str = None, level: int = 6) -
     Returns:
         dict: Resultado
     """
-    if not files:
-        return {'success': False, 'error': 'No hay archivos', 'output_files': []}
-    
-    skipped = []
-    valid_files = []
-    
-    for f in files:
-        input_path = Path(f)
-        if input_path.suffix.lower() == '.zip':
-            skipped.append(f"{input_path.name} - Ya es ZIP")
-            continue
-        valid_files.append(f)
-    
-    if not valid_files:
-        return {
-            'success': True,
-            'message': f'Todos los archivos ya son ZIP ({len(skipped)} omitidos)',
-            'output_files': [],
-            'skipped': skipped,
-            'error': None
-        }
-    
-    try:
-        if output_path is None:
-            first_file = valid_files[0]
-            # Usar get_output_path_format para consistencia (máxima C2)
-            output_path = get_output_path_format(first_file, '_compressed', '.zip')
+    with Timer('compress_tool.compress_to_zip'):
+        if not files:
+            increment('compress_errors')
+            return {'success': False, 'error': 'No hay archivos', 'output_files': []}
         
-        with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=level) as zf:
-            for f in valid_files:
-                if os.path.isfile(f):
-                    zf.write(f, arcname=os.path.basename(f))
-                elif os.path.isdir(f):
-                    for root, dirs, filenames in os.walk(f):
-                        for filename in filenames:
-                            file_path = os.path.join(root, filename)
-                            arcname = os.path.relpath(file_path, os.path.dirname(f))
-                            zf.write(file_path, arcname=arcname)
+        skipped = []
+        valid_files = []
         
-        msg = f'Creado: {os.path.basename(output_path)}'
-        if skipped:
-            msg += f' ({len(skipped)} omitidos)'
+        for f in files:
+            input_path = Path(f)
+            if input_path.suffix.lower() == '.zip':
+                skipped.append(f"{input_path.name} - Ya es ZIP")
+                continue
+            valid_files.append(f)
         
-        return {
-            'success': True,
-            'message': msg,
-            'output_files': [output_path],
-            'skipped': skipped if skipped else None,
-            'error': None
-        }
+        if not valid_files:
+            return {
+                'success': True,
+                'message': f'Todos los archivos ya son ZIP ({len(skipped)} omitidos)',
+                'output_files': [],
+                'skipped': skipped,
+                'error': None
+            }
         
-    except Exception as e:
-        return {'success': False, 'error': str(e), 'output_files': [], 'skipped': skipped if skipped else None}
+        try:
+            if output_path is None:
+                first_file = valid_files[0]
+                # Usar get_output_path_format para consistencia (máxima C2)
+                output_path = get_output_path_format(first_file, '_compressed', '.zip')
+            
+            with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=level) as zf:
+                for f in valid_files:
+                    if os.path.isfile(f):
+                        zf.write(f, arcname=os.path.basename(f))
+                    elif os.path.isdir(f):
+                        for root, dirs, filenames in os.walk(f):
+                            for filename in filenames:
+                                file_path = os.path.join(root, filename)
+                                arcname = os.path.relpath(file_path, os.path.dirname(f))
+                                zf.write(file_path, arcname=arcname)
+            
+            increment('compress_operations_total')
+            
+            msg = f'Creado: {os.path.basename(output_path)}'
+            if skipped:
+                msg += f' ({len(skipped)} omitidos)'
+            
+            return {
+                'success': True,
+                'message': msg,
+                'output_files': [output_path],
+                'skipped': skipped if skipped else None,
+                'error': None
+            }
+            
+        except Exception as e:
+            increment('compress_errors')
+            return {'success': False, 'error': str(e), 'output_files': [], 'skipped': skipped if skipped else None}
 
 
 def compress_to_tar(files: List[str], output_path: str = None, compression: str = 'gz') -> Dict[str, Any]:
@@ -150,27 +162,32 @@ def decompress_zip(zip_path: str, output_dir: str = None) -> Dict[str, Any]:
     """
     Extrae un archivo ZIP.
     """
-    if not os.path.exists(zip_path):
-        return {'success': False, 'error': 'Archivo no encontrado', 'output_files': []}
-    
-    try:
-        if output_dir is None:
-            output_dir = os.path.splitext(zip_path)[0]
+    with Timer('compress_tool.decompress_zip'):
+        if not os.path.exists(zip_path):
+            increment('compress_errors')
+            return {'success': False, 'error': 'Archivo no encontrado', 'output_files': []}
         
-        os.makedirs(output_dir, exist_ok=True)
-        
-        with zipfile.ZipFile(zip_path, 'r') as zf:
-            zf.extractall(output_dir)
-        
-        return {
-            'success': True,
-            'message': f'Extraídos en: {output_dir}',
-            'output_files': [output_dir],
-            'error': None
-        }
-        
-    except Exception as e:
-        return {'success': False, 'error': str(e), 'output_files': []}
+        try:
+            if output_dir is None:
+                output_dir = os.path.splitext(zip_path)[0]
+            
+            os.makedirs(output_dir, exist_ok=True)
+            
+            with zipfile.ZipFile(zip_path, 'r') as zf:
+                zf.extractall(output_dir)
+            
+            increment('compress_operations_total')
+            
+            return {
+                'success': True,
+                'message': f'Extraídos en: {output_dir}',
+                'output_files': [output_dir],
+                'error': None
+            }
+            
+        except Exception as e:
+            increment('compress_errors')
+            return {'success': False, 'error': str(e), 'output_files': []}
 
 
 def decompress_tar(tar_path: str, output_dir: str = None) -> Dict[str, Any]:

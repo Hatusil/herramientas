@@ -30,7 +30,7 @@ except ImportError:
     BytesIO = None
 
 # Importar función compartida de core (máxima C2: Consistency)
-from core.utils import get_output_path
+from core.utils import get_output_path, check_pypdf
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +38,6 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # VALIDACIÓN
 # =============================================================================
-
-def check_pypdf() -> bool:
-    """Verifica si pypdf está instalado."""
-    return PdfReader is not None
-
 
 def _create_text_watermark_pdf(text: str, page_size: Tuple, position: str = 'center', **options) -> bytes:
     """

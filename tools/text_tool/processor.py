@@ -25,8 +25,12 @@ from collections import Counter
 
 # Importar funciones compartidas de core
 from core.utils import clean_text, STOP_WORDS
+from core.metrics import Timer, Counter, get_metric
 
 logger = logging.getLogger(__name__)
+
+# Contadores a nivel de módulo
+text_operations = Counter('text_operations')
 
 # ============================================================
 # CONFIGURACIÓN DE LÍMITES Y HELPERS
@@ -468,8 +472,14 @@ def analyze_wordcloud(
     Returns:
         Dict con 'success', 'image_data' (bytes), 'message'
     """
-    if not WORDCLOUD_AVAILABLE:
-        return {'success': False, 'error': 'wordcloud no instalado'}
+    # Obtener métricas - usar timer como context manager
+    wordcloud_timer = Timer('wordcloud_analysis')
+    
+    text_operations.increment()
+    
+    with wordcloud_timer:
+        if not WORDCLOUD_AVAILABLE:
+            return {'success': False, 'error': 'wordcloud no instalado'}
     
     try:
         # Validate colormap - convert to proper case or fallback
@@ -568,23 +578,28 @@ def analyze_frequency(
     Note:
         Tested and working with n values from 20 to 100+
     """
-    cleaned = text if already_cleaned else clean_text(text, remove_stopwords=remove_stopwords, exclude_words=exclude_words)
-    words = cleaned.split()
+    frequency_timer = Timer('frequency_analysis')
     
-    # Contar
-    freq = {}
-    for word in words:
-        freq[word] = freq.get(word, 0) + 1
+    text_operations.increment()
     
-    # Ordenar
-    sorted_freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)[:n]
-    
-    return {
-        'success': True,
-        'frequencies': dict(sorted_freq),
-        'total_words': len(words),
-        'unique_words': len(freq)
-    }
+    with frequency_timer:
+        cleaned = text if already_cleaned else clean_text(text, remove_stopwords=remove_stopwords, exclude_words=exclude_words)
+        words = cleaned.split()
+        
+        # Contar
+        freq = {}
+        for word in words:
+            freq[word] = freq.get(word, 0) + 1
+        
+        # Ordenar
+        sorted_freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)[:n]
+        
+        return {
+            'success': True,
+            'frequencies': dict(sorted_freq),
+            'total_words': len(words),
+            'unique_words': len(freq)
+        }
 
 
 def analyze_trends(text: str, n_terms: int = 5, n_sections: int = 10) -> Dict[str, Any]:

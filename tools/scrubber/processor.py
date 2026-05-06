@@ -9,9 +9,16 @@ from typing import Dict, Any
 # Importar funciones compartidas de core (máxima #4: Lo que me gusta en una herramienta debe estar en las demás)
 from core.utils import get_output_path, validate_input_file, validate_file_size
 
+# Métricas
+from core.metrics import Counter, Timer, increment
+
 logger = logging.getLogger(__name__)
 
 MAX_SCRUB_SIZE_MB = 2000  # 2GB max for scrubbing
+
+# Contadores de operaciones
+scrubber_operations_total = Counter('scrubber_operations_total')
+scrubber_errors = Counter('scrubber_errors')
 
 # =============================================================================
 # IMÁGENES - EXIF
@@ -99,77 +106,85 @@ def clean_image_metadata(file_path: str, options: Dict[str, Any] = None) -> Dict
     Returns:
         dict: Resultado de la operación
     """
-    if options is None:
-        options = {}
-    
-    if not os.path.exists(file_path):
-        return {'success': False, 'error': 'Archivo no encontrado', 'output_files': []}
-    
-    ext = Path(file_path).suffix.lower()
-    if ext not in ['.jpg', '.jpeg']:
-        return {'success': False, 'error': 'Solo se soporta JPG/JPEG para eliminar EXIF', 'output_files': []}
-    
-    try:
-        # Intentar usar piexif
+    with Timer('scrubber.clean_image_metadata'):
+        if options is None:
+            options = {}
+        
+        if not os.path.exists(file_path):
+            increment('scrubber_errors')
+            return {'success': False, 'error': 'Archivo no encontrado', 'output_files': []}
+        
+        ext = Path(file_path).suffix.lower()
+        if ext not in ['.jpg', '.jpeg']:
+            increment('scrubber_errors')
+            return {'success': False, 'error': 'Solo se soporta JPG/JPEG para eliminar EXIF', 'output_files': []}
+        
         try:
-            import piexif
-            
-            # Cargar EXIF actual
+            # Intentar usar piexif
             try:
-                exif_dict = piexif.load(file_path)
-            except Exception as e:
-                logger.warning(f"Could not load existing EXIF: {e}")
-                exif_dict = {"0th": {}, "Exif": {}, "GPS": {}, "1st": {}, "thumbnail": None}
-            
-            remove_all = options.get('remove_all', True)
-            
-            if remove_all:
-                # Eliminar todo
-                exif_dict = {"0th": {}, "Exif": {}, "GPS": {}, "1st": {}, "thumbnail": None}
-            else:
-                # Opciones específicas
-                if options.get('remove_gps', False):
-                    exif_dict['GPS'] = {}
-                if options.get('remove_date', False):
-                    if '0th' in exif_dict and piexif.ImageIFD.DateTime in exif_dict['0th']:
-                        del exif_dict['0th'][piexif.ImageIFD.DateTime]
-            
-            # Guardar
-            exif_bytes = piexif.dump(exif_dict)
-            
-            # Leer imagen y guardar sin EXIF o con EXIF limpiado
-            from PIL import Image
-            with Image.open(file_path) as img:
-                output_path = get_output_path(file_path, '_clean')
-                img.save(output_path, "jpeg", exif=exif_bytes, quality=95)
-            
-            return {
-                'success': True,
-                'message': 'Metadatos eliminados',
-                'output_files': [output_path],
-                'error': None
-            }
-            
-        except ImportError:
-            # Fallback: guardar sin EXIF
-            from PIL import Image
-            with Image.open(file_path) as img:
-                output_path = get_output_path(file_path, '_clean')
-                data = list(img.getdata())
-                img_no_exif = Image.new(img.mode, img.size)
-                img_no_exif.putdata(data)
-                img_no_exif.save(output_path, "JPEG", quality=95)
-            
-            return {
-                'success': True,
-                'message': 'EXIF eliminado (sin piexif)',
-                'output_files': [output_path],
-                'error': None
-            }
-            
-    except Exception as e:
-        logger.error(f"Error limpiando metadatos: {e}")
-        return {'success': False, 'error': str(e), 'output_files': []}
+                import piexif
+                
+                # Cargar EXIF actual
+                try:
+                    exif_dict = piexif.load(file_path)
+                except Exception as e:
+                    logger.warning(f"Could not load existing EXIF: {e}")
+                    exif_dict = {"0th": {}, "Exif": {}, "GPS": {}, "1st": {}, "thumbnail": None}
+                
+                remove_all = options.get('remove_all', True)
+                
+                if remove_all:
+                    # Eliminar todo
+                    exif_dict = {"0th": {}, "Exif": {}, "GPS": {}, "1st": {}, "thumbnail": None}
+                else:
+                    # Opciones específicas
+                    if options.get('remove_gps', False):
+                        exif_dict['GPS'] = {}
+                    if options.get('remove_date', False):
+                        if '0th' in exif_dict and piexif.ImageIFD.DateTime in exif_dict['0th']:
+                            del exif_dict['0th'][piexif.ImageIFD.DateTime]
+                
+                # Guardar
+                exif_bytes = piexif.dump(exif_dict)
+                
+                # Leer imagen y guardar sin EXIF o con EXIF limpiado
+                from PIL import Image
+                with Image.open(file_path) as img:
+                    output_path = get_output_path(file_path, '_clean')
+                    img.save(output_path, "jpeg", exif=exif_bytes, quality=95)
+                
+                increment('scrubber_operations_total')
+                
+                return {
+                    'success': True,
+                    'message': 'Metadatos eliminados',
+                    'output_files': [output_path],
+                    'error': None
+                }
+                
+            except ImportError:
+                # Fallback: guardar sin EXIF
+                from PIL import Image
+                with Image.open(file_path) as img:
+                    output_path = get_output_path(file_path, '_clean')
+                    data = list(img.getdata())
+                    img_no_exif = Image.new(img.mode, img.size)
+                    img_no_exif.putdata(data)
+                    img_no_exif.save(output_path, "JPEG", quality=95)
+                
+                increment('scrubber_operations_total')
+                
+                return {
+                    'success': True,
+                    'message': 'EXIF eliminado (sin piexif)',
+                    'output_files': [output_path],
+                    'error': None
+                }
+                
+        except Exception as e:
+            increment('scrubber_errors')
+            logger.error(f"Error limpiando metadatos: {e}")
+            return {'success': False, 'error': str(e), 'output_files': []}
 
 
 # =============================================================================
@@ -225,40 +240,46 @@ def clean_docx(file_path: str) -> Dict[str, Any]:
     """
     Limpia metadatos de un archivo DOCX.
     """
-    if not os.path.exists(file_path):
-        return {'success': False, 'error': 'Archivo no encontrado', 'output_files': []}
-    
-    if not file_path.lower().endswith('.docx'):
-        return {'success': False, 'error': 'No es un archivo DOCX', 'output_files': []}
-    
-    try:
-        from docx import Document
+    with Timer('scrubber.clean_docx'):
+        if not os.path.exists(file_path):
+            increment('scrubber_errors')
+            return {'success': False, 'error': 'Archivo no encontrado', 'output_files': []}
         
-        doc = Document(file_path)
+        if not file_path.lower().endswith('.docx'):
+            increment('scrubber_errors')
+            return {'success': False, 'error': 'No es un archivo DOCX', 'output_files': []}
         
-        # Limpiar propiedades core
-        core_props = doc.core_properties
-        core_props.title = ''
-        core_props.author = ''
-        core_props.subject = ''
-        core_props.keywords = ''
-        core_props.last_modified_by = ''
-        core_props.comments = ''
-        
-        # Guardar
-        output_path = get_output_path(file_path, '_clean')
-        doc.save(output_path)
-        
-        return {
-            'success': True,
-            'message': 'Metadatos DOCX eliminados',
-            'output_files': [output_path],
-            'error': None
-        }
-        
-    except Exception as e:
-        logger.error(f"Error limpiando DOCX: {e}")
-        return {'success': False, 'error': str(e), 'output_files': []}
+        try:
+            from docx import Document
+            
+            doc = Document(file_path)
+            
+            # Limpiar propiedades core
+            core_props = doc.core_properties
+            core_props.title = ''
+            core_props.author = ''
+            core_props.subject = ''
+            core_props.keywords = ''
+            core_props.last_modified_by = ''
+            core_props.comments = ''
+            
+            # Guardar
+            output_path = get_output_path(file_path, '_clean')
+            doc.save(output_path)
+            
+            increment('scrubber_operations_total')
+            
+            return {
+                'success': True,
+                'message': 'Metadatos DOCX eliminados',
+                'output_files': [output_path],
+                'error': None
+            }
+            
+        except Exception as e:
+            increment('scrubber_errors')
+            logger.error(f"Error limpiando DOCX: {e}")
+            return {'success': False, 'error': str(e), 'output_files': []}
 
 
 # =============================================================================
@@ -310,39 +331,45 @@ def clean_xlsx(file_path: str) -> Dict[str, Any]:
     """
     Limpia metadatos de un archivo XLSX.
     """
-    if not os.path.exists(file_path):
-        return {'success': False, 'error': 'Archivo no encontrado', 'output_files': []}
-    
-    if not file_path.lower().endswith('.xlsx'):
-        return {'success': False, 'error': 'No es un archivo XLSX', 'output_files': []}
-    
-    try:
-        import openpyxl
+    with Timer('scrubber.clean_xlsx'):
+        if not os.path.exists(file_path):
+            increment('scrubber_errors')
+            return {'success': False, 'error': 'Archivo no encontrado', 'output_files': []}
         
-        wb = openpyxl.load_workbook(file_path)
+        if not file_path.lower().endswith('.xlsx'):
+            increment('scrubber_errors')
+            return {'success': False, 'error': 'No es un archivo XLSX', 'output_files': []}
         
-        # Limpiar propiedades
-        props = wb.properties
-        props.title = ''
-        props.creator = ''
-        props.subject = ''
-        props.keywords = ''
-        props.lastModifiedBy = ''
-        
-        # Guardar
-        output_path = get_output_path(file_path, '_clean')
-        wb.save(output_path)
-        
-        return {
-            'success': True,
-            'message': 'Metadatos XLSX eliminados',
-            'output_files': [output_path],
-            'error': None
-        }
-        
-    except Exception as e:
-        logger.error(f"Error limpiando XLSX: {e}")
-        return {'success': False, 'error': str(e), 'output_files': []}
+        try:
+            import openpyxl
+            
+            wb = openpyxl.load_workbook(file_path)
+            
+            # Limpiar propiedades
+            props = wb.properties
+            props.title = ''
+            props.creator = ''
+            props.subject = ''
+            props.keywords = ''
+            props.lastModifiedBy = ''
+            
+            # Guardar
+            output_path = get_output_path(file_path, '_clean')
+            wb.save(output_path)
+            
+            increment('scrubber_operations_total')
+            
+            return {
+                'success': True,
+                'message': 'Metadatos XLSX eliminados',
+                'output_files': [output_path],
+                'error': None
+            }
+            
+        except Exception as e:
+            increment('scrubber_errors')
+            logger.error(f"Error limpiando XLSX: {e}")
+            return {'success': False, 'error': str(e), 'output_files': []}
 
 
 # get_output_path() importado desde core.utils (máxima #4)
