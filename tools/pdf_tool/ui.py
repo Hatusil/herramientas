@@ -83,6 +83,7 @@ class PDFToolUI(BaseToolUI):
         self.tab_combine = self.tabview.add("Combinar")
         self.tab_numbers = self.tabview.add("Números")
         self.tab_optimize = self.tabview.add("Optimizar")
+        self.tab_pipeline = self.tabview.add("Pipeline")
         
         # Configurar cada tab
         self._setup_info_tab()
@@ -93,6 +94,7 @@ class PDFToolUI(BaseToolUI):
         self._setup_combine_tab()
         self._setup_numbers_tab()
         self._setup_optimize_tab()
+        self._setup_pipeline_tab()
     
     def _get_file_label(self) -> str:
         """Override: Label for file section."""
@@ -898,6 +900,300 @@ class PDFToolUI(BaseToolUI):
             command=self._clean_metadata,
             height=40
         ).pack(pady=5)
+    
+    # =========================================================================
+    # TAB: PIPELINE
+    # =========================================================================
+    def _setup_pipeline_tab(self) -> None:
+        """Configura el tab de Pipeline."""
+        frame = self.tab_pipeline
+        self.pipeline_operations = []  # Lista de operaciones acumuladas
+        
+        # Frame principal
+        main_frame = ctk.CTkFrame(frame)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Título
+        ctk.CTkLabel(
+            main_frame,
+            text="Pipeline de Operaciones",
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(0, 10))
+        
+        # Frame para agregar operaciones
+        add_frame = ctk.CTkFrame(main_frame)
+        add_frame.pack(fill="x", pady=5)
+        
+        # Selector de tipo de operación
+        ctk.CTkLabel(add_frame, text="Operación:").pack(side="left", padx=5)
+        self.pipeline_op_type = ctk.CTkOptionMenu(
+            add_frame,
+            values=["reorder", "watermark", "rotate", "extract"],
+            width=100
+        )
+        self.pipeline_op_type.set("reorder")
+        self.pipeline_op_type.pack(side="left", padx=5)
+        
+        # Parámetros dinámica según tipo
+        params_frame = ctk.CTkFrame(main_frame)
+        params_frame.pack(fill="x", pady=5)
+        
+        # Reorder input
+        self.pipeline_reorder_frame = ctk.CTkFrame(params_frame)
+        self.pipeline_reorder_frame.pack(fill="x", padx=5)
+        
+        ctk.CTkLabel(self.pipeline_reorder_frame, text="Orden (ej: 3,1,2):").pack(side="left", padx=5)
+        self.pipeline_reorder_input = ctk.CTkEntry(self.pipeline_reorder_frame, width=150)
+        self.pipeline_reorder_input.pack(side="left", padx=5)
+        
+        # Watermark input
+        self.pipeline_wm_frame = ctk.CTkFrame(params_frame)
+        
+        ctk.CTkLabel(self.pipeline_wm_frame, text="Texto:").pack(side="left", padx=5)
+        self.pipeline_wm_text = ctk.CTkEntry(self.pipeline_wm_frame, width=150)
+        self.pipeline_wm_text.insert(0, "DRAFT")
+        self.pipeline_wm_text.pack(side="left", padx=5)
+        
+        # Rotate input
+        self.pipeline_rotate_frame = ctk.CTkFrame(params_frame)
+        
+        ctk.CTkLabel(self.pipeline_rotate_frame, text="Grados:").pack(side="left", padx=5)
+        self.pipeline_rotate_deg = ctk.CTkOptionMenu(
+            self.pipeline_rotate_frame,
+            values=["90", "180", "270"],
+            width=80
+        )
+        self.pipeline_rotate_deg.set("90")
+        self.pipeline_rotate_deg.pack(side="left", padx=5)
+        
+        # Extract input
+        self.pipeline_extract_frame = ctk.CTkFrame(params_frame)
+        
+        ctk.CTkLabel(self.pipeline_extract_frame, text="Páginas (ej: 1,3,5):").pack(side="left", padx=5)
+        self.pipeline_extract_input = ctk.CTkEntry(self.pipeline_extract_frame, width=150)
+        self.pipeline_extract_input.pack(side="left", padx=5)
+        
+        # Botón agregar
+        ctk.CTkButton(
+            main_frame,
+            text="Agregar a Pipeline",
+            command=self._add_to_pipeline,
+            height=35
+        ).pack(pady=10, fill="x")
+        
+        # Lista de operaciones
+        list_frame = ctk.CTkFrame(main_frame)
+        list_frame.pack(fill="both", expand=True, pady=10)
+        
+        ctk.CTkLabel(list_frame, text="Operaciones acumuladas:").pack(anchor="w", pady=5)
+        
+        self.pipeline_listbox = ctk.CTkTextbox(list_frame, height=150)
+        self.pipeline_listbox.pack(padx=10, pady=5, fill="both", expand=True)
+        
+        # Botones de acción
+        action_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        action_frame.pack(fill="x", pady=5)
+        
+        ctk.CTkButton(
+            action_frame,
+            text="Limpiar",
+            command=self._clear_pipeline,
+            width=100
+        ).pack(side="left", padx=5)
+        
+        ctk.CTkButton(
+            action_frame,
+            text="Ejecutar Pipeline",
+            command=self._execute_pipeline,
+            width=150,
+            fg_color="#2CC985"
+        ).pack(side="left", padx=5, fill="x", expand=True)
+        
+        # Actualizar inputs visibles
+        self._update_pipeline_inputs()
+    
+    def _update_pipeline_inputs(self) -> None:
+        """Actualiza los inputs según el tipo de operación seleccionada."""
+        # Ocultar todos
+        self.pipeline_reorder_frame.pack_forget()
+        self.pipeline_wm_frame.pack_forget()
+        self.pipeline_rotate_frame.pack_forget()
+        self.pipeline_extract_frame.pack_forget()
+        
+        op_type = self.pipeline_op_type.get()
+        
+        if op_type == "reorder":
+            self.pipeline_reorder_frame.pack(fill="x", padx=5)
+        elif op_type == "watermark":
+            self.pipeline_wm_frame.pack(fill="x", padx=5)
+        elif op_type == "rotate":
+            self.pipeline_rotate_frame.pack(fill="x", padx=5)
+        elif op_type == "extract":
+            self.pipeline_extract_frame.pack(fill="x", padx=5)
+    
+    def _add_to_pipeline(self) -> None:
+        """Agrega una operación al pipeline."""
+        if not self._check_files():
+            self.status_label.configure(
+                text="Seleccione un PDF primero",
+                text_color="#FFA500"
+            )
+            return
+        
+        op_type = self.pipeline_op_type.get()
+        params = {}
+        
+        if op_type == "reorder":
+            order_str = self.pipeline_reorder_input.get().strip()
+            if not order_str:
+                self.status_label.configure(
+                    text="Ingrese el orden de páginas",
+                    text_color="#FFA500"
+                )
+                return
+            try:
+                params['new_order'] = [int(p) for p in order_str.split(',')]
+            except ValueError:
+                self.status_label.configure(
+                    text="Orden inválido",
+                    text_color="red"
+                )
+                return
+        
+        elif op_type == "watermark":
+            text = self.pipeline_wm_text.get().strip()
+            if not text:
+                text = "DRAFT"
+            params['text'] = text
+        
+        elif op_type == "rotate":
+            params['degrees'] = int(self.pipeline_rotate_deg.get())
+        
+        elif op_type == "extract":
+            pages_str = self.pipeline_extract_input.get().strip()
+            if not pages_str:
+                self.status_label.configure(
+                    text="Ingrese las páginas",
+                    text_color="#FFA500"
+                )
+                return
+            try:
+                params['pages'] = [int(p.strip()) for p in pages_str.split(',')]
+            except ValueError:
+                self.status_label.configure(
+                    text="Páginas inválidas",
+                    text_color="red"
+                )
+                return
+        
+        # Agregar a la lista
+        self.pipeline_operations.append({
+            'type': op_type,
+            'params': params
+        })
+        
+        # Actualizar listbox
+        self._refresh_pipeline_list()
+        
+        self.status_label.configure(
+            text=f"Operación '{op_type}' añadida al pipeline",
+            text_color="green"
+        )
+        
+        # Limpiar inputs
+        if op_type == "reorder":
+            self.pipeline_reorder_input.delete(0, tk.END)
+        elif op_type == "watermark":
+            self.pipeline_wm_text.delete(0, tk.END)
+            self.pipeline_wm_text.insert(0, "DRAFT")
+        elif op_type == "extract":
+            self.pipeline_extract_input.delete(0, tk.END)
+    
+    def _refresh_pipeline_list(self) -> None:
+        """Actualiza la lista de operaciones en el listbox."""
+        self.pipeline_listbox.delete("1.0", tk.END)
+        
+        for i, op in enumerate(self.pipeline_operations):
+            op_type = op['type']
+            params = op['params']
+            
+            if op_type == "reorder":
+                desc = f"{i+1}. Reorder: {params.get('new_order', [])}"
+            elif op_type == "watermark":
+                desc = f"{i+1}. Watermark: {params.get('text', '')}"
+            elif op_type == "rotate":
+                desc = f"{i+1}. Rotate: {params.get('degrees', 0)}°"
+            elif op_type == "extract":
+                desc = f"{i+1}. Extract: {params.get('pages', [])}"
+            else:
+                desc = f"{i+1}. {op_type}"
+            
+            self.pipeline_listbox.insert(tk.END, desc + "\n")
+        
+        # Mostrar total
+        if self.pipeline_operations:
+            self.pipeline_listbox.insert(tk.END, f"\nTotal: {len(self.pipeline_operations)} operaciones")
+    
+    def _clear_pipeline(self) -> None:
+        """Limpia las operaciones acumuladas."""
+        self.pipeline_operations.clear()
+        self._refresh_pipeline_list()
+        
+        self.status_label.configure(
+            text="Pipeline limpiado",
+            text_color="gray"
+        )
+    
+    def _execute_pipeline(self) -> None:
+        """Ejecuta todas las operaciones del pipeline."""
+        if not self._check_files():
+            self.status_label.configure(
+                text="Seleccione un PDF primero",
+                text_color="#FFA500"
+            )
+            return
+        
+        if not self.pipeline_operations:
+            self.status_label.configure(
+                text="No hay operaciones en el pipeline",
+                text_color="#FFA500"
+            )
+            return
+        
+        self.status_label.configure(
+            text="Ejecutando pipeline...",
+            text_color="blue"
+        )
+        
+        # Ejecutar pipeline
+        from tools.pdf_tool.modules.pipeline import execute_pipeline_operations
+        
+        result = execute_pipeline_operations(
+            self.files[0],
+            self.pipeline_operations
+        )
+        
+        if result.get('success'):
+            output_file = result.get('output_file')
+            self.status_label.configure(
+                text=f"Pipeline completado: {result.get('message', '')}",
+                text_color="green"
+            )
+            
+            # Limpiar y actualizar archivos
+            self.pipeline_operations.clear()
+            self._refresh_pipeline_list()
+            
+            # Agregar output al selector si existe
+            if output_file and os.path.exists(output_file):
+                # Actualizar file list con el resultado
+                self.files = [output_file]
+                self._update_file_list()
+        else:
+            self.status_label.configure(
+                text=f"Error: {result.get('error', 'Error desconocido')}",
+                text_color="red"
+            )
     
     def _compress_pdf(self) -> None:
         if not self._check_files():

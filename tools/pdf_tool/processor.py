@@ -1366,3 +1366,35 @@ def clean_metadata(files: List[str]) -> Dict[str, Any]:
         'output_files': output_files,
         'error': '; '.join(errors) if errors else None
     }
+
+
+# =============================================================================
+# PIPELINE INTEGRATION
+# =============================================================================
+
+def execute_pipeline(files: List[str], operations: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Ejecuta múltiples operaciones en pipeline.
+    
+    Args:
+        files: Lista de archivos PDF (solo se usa el primero)
+        operations: Lista de operaciones con 'type' y 'params'
+        
+    Returns:
+        dict: Resultado de la ejecución
+    """
+    if not files:
+        return {'success': False, 'error': 'No se proporcionó archivo de entrada'}
+    
+    if not operations:
+        return {'success': False, 'error': 'No hay operaciones para ejecutar'}
+    
+    # Importar pipeline module
+    try:
+        from tools.pdf_tool.modules.pipeline import execute_pipeline_operations
+    except ImportError:
+        return {'success': False, 'error': 'Módulo pipeline no disponible'}
+    
+    input_file = files[0]
+    
+    return execute_pipeline_operations(input_file, operations)

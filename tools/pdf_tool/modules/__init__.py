@@ -7,6 +7,7 @@ Este paquete contiene módulos separados para diferentes funcionalidades de PDF:
 - security: Encriptación y desencriptación
 - transform: Rotar, reordenar, combinar y extraer páginas
 - conversion: Conversión entre PDFs e imágenes, redacción
+- pipeline: Pipeline para encadenar operaciones PDF
 """
 
 # Importar módulos usando import relativo
@@ -16,6 +17,7 @@ from . import security
 from . import transform
 from . import conversion
 from . import watermark_removal
+from . import pipeline
 
 # Exportar funciones principales para acceso directo
 # Info
@@ -53,6 +55,11 @@ redact_area = conversion.redact_area
 remove_watermark = watermark_removal.remove_watermark
 check_fitz = watermark_removal.check_fitz
 
+# Pipeline
+PDFPipeline = pipeline.PDFPipeline
+create_pipeline = pipeline.create_pipeline
+execute_pipeline_operations = pipeline.execute_pipeline_operations
+
 __all__ = [
     # Info
     'get_pdf_info',
@@ -83,4 +90,8 @@ __all__ = [
     # Watermark Removal
     'remove_watermark',
     'check_fitz',
+    # Pipeline
+    'PDFPipeline',
+    'create_pipeline',
+    'execute_pipeline_operations',
 ]
