@@ -182,13 +182,14 @@ class AudioToolUI(BaseToolUI):
             ).pack(side="left", padx=5)
         
         # Botón
-        ctk.CTkButton(
+        self.btn_normalize = ctk.CTkButton(
             frame,
             text="🎚️ Normalizar Volumen",
             command=self._normalize,
             height=40,
             font=ctk.CTkFont(size=14)
-        ).pack(pady=20)
+        )
+        self.btn_normalize.pack(pady=20)
     
     def _normalize(self) -> None:
         # Evitar doble click

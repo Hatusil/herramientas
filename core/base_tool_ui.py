@@ -287,6 +287,17 @@ class BaseToolUI(ctk.CTkFrame):
             self.progress_bar.stop()
             self.progress_bar.pack_forget()
     
+    def set_buttons_enabled(self, enabled: bool) -> None:
+        """
+        Habilita/desabilita botones de procesar.
+        Por ahora solo cambia el estado is_processing.
+        
+        Args:
+            enabled: True para habilitar, False para desabilitar
+        """
+        if hasattr(self, 'is_processing'):
+            self.is_processing = not enabled
+    
     def process_async(self, action: str, files: List[str], options: Dict[str, Any]) -> None:
         """
         Procesa en background con callback automático.
@@ -337,7 +348,9 @@ class BaseToolUI(ctk.CTkFrame):
                     text_color="green"
                 )
             else:
+                # Mostrar error visible en rojo
+                error_msg = result.get('error') or result.get('message') or 'Error'
                 self.status_label.configure(
-                    text=result.get('message', 'Error'),
+                    text=f"❌ {error_msg}",
                     text_color="red"
                 )
