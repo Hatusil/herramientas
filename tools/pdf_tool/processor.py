@@ -1,5 +1,10 @@
 """
 Processor: Funciones de procesamiento de PDFs usando pypdf, Pillow y reportlab.
+
+Este módulo DELega a los módulos especializados en tools/pdf_tool/modules/
+siguiendo la máxima C2: NO duplicar código, usar módulos existentes.
+
+API expuesta para compatibilidad hacia atrás - las funciones llaman a los módulos.
 """
 import logging
 import os
@@ -8,6 +13,41 @@ from typing import List, Dict, Any, Tuple
 
 # Importar funciones compartidas de core (máxima #3: Consistency)
 from core.utils import get_output_path, validate_input_file, validate_file_extension, validate_file_size
+
+# Importar módulos especializados (delegación - máxima C2: no duplicar)
+from tools.pdf_tool.modules import (
+    # Info
+    get_pdf_info as _get_pdf_info_module,
+    check_pdf_encrypted as _check_pdf_encrypted_module,
+    # Watermarks
+    add_text_watermark as _add_text_watermark_module,
+    add_image_watermark as _add_image_watermark_module,
+    remove_watermarks as _remove_watermarks_module,
+    remove_annotations as _remove_annotations_module,
+    # Transform
+    rotate_pages as _rotate_pages_module,
+    reorder_pages as _reorder_pages_module,
+    merge_pdfs as _merge_pdfs_module,
+    extract_pages as _extract_pages_module,
+    extract_page as _extract_page_module,
+    extract_range as _extract_range_module,
+    reorder_pages_advanced as _reorder_pages_advanced_module,
+    validate_page_number as _validate_page_number_module,
+    validate_page_range as _validate_page_range_module,
+    validate_new_order as _validate_new_order_module,
+    # Security
+    encrypt_pdf as _encrypt_pdf_module,
+    decrypt_pdf as _decrypt_pdf_module,
+    # Conversion
+    images_to_pdf as _images_to_pdf_module,
+    pdf_to_images as _pdf_to_images_module,
+    redact_area as _redact_area_module,
+    # Watermark removal (Fitz)
+    remove_watermark as _remove_watermark_fitz_module,
+    check_fitz as _check_fitz_module,
+    # Pipeline
+    execute_pipeline_operations as _execute_pipeline_operations_module,
+)
 
 # Constantes de validación
 PDF_EXTENSIONS = ['.pdf']
@@ -82,6 +122,10 @@ def check_pypdf() -> bool:
 # get_output_path() importado desde core.utils (máxima #3: Consistency)
 
 
+# =============================================================================
+# INFO - Delegado a modules/info.py (máxima C2: no duplicar código)
+# =============================================================================
+
 def get_pdf_info(file_path: str) -> Dict[str, Any]:
     """
     Obtiene información y metadatos de un PDF.
@@ -92,100 +136,17 @@ def get_pdf_info(file_path: str) -> Dict[str, Any]:
     Returns:
         dict: Información del PDF
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado'}
-    
-    if not os.path.exists(file_path):
-        return {'success': False, 'error': 'Archivo no encontrado'}
-    
-    try:
-        reader = PdfReader(file_path)
-        
-        # Verificar si está encriptado
-        is_encrypted = reader.is_encrypted
-        
-        # Metadatos
-        metadata = reader.metadata or {}
-        info = {
-            'success': True,
-            'file_name': os.path.basename(file_path),
-            'file_size': os.path.getsize(file_path),
-            'num_pages': len(reader.pages),
-            'is_encrypted': is_encrypted,
-            'title': metadata.get('/Title', ''),
-            'author': metadata.get('/Author', ''),
-            'subject': metadata.get('/Subject', ''),
-            'creator': metadata.get('/Creator', ''),
-            'producer': metadata.get('/Producer', ''),
-            'creation_date': metadata.get('/CreationDate', ''),
-            'modification_date': metadata.get('/ModDate', ''),
-        }
-        
-        # Info de cada página
-        pages_info = []
-        for i, page in enumerate(reader.pages):
-            pages_info.append({
-                'page_num': i + 1,
-                'rotation': page.get('/Rotate', 0),
-                'mediabox': str(page.mediabox) if page.mediabox else None,
-            })
-        
-        info['pages'] = pages_info
-        
-        return info
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo info de PDF: {e}")
-        return {'success': False, 'error': str(e)}
+    return _get_pdf_info_module(file_path)
 
 
 def check_pdf_encrypted(file_path: str) -> bool:
     """Verifica si un PDF está encriptado."""
-    try:
-        reader = PdfReader(file_path)
-        return reader.is_encrypted
-    except Exception:
-        return False
+    return _check_pdf_encrypted_module(file_path)
 
 
 # =============================================================================
-# WATERMARKS
+# WATERMARKS - Delegado a modules/watermarks.py (máxima C2: no duplicar código)
 # =============================================================================
-
-def _create_text_watermark_pdf(text: str, page_size: Tuple, **options) -> bytes:
-    """Crea un PDF temporal con el texto del watermark."""
-    if canvas is None:
-        raise ImportError("reportlab no está instalado")
-    
-    width, height = page_size
-    packet = BytesIO()
-    
-    # Configuración
-    font_size = options.get('font_size', 48)
-    color = options.get('color', '#888888')
-    opacity = options.get('opacity', 0.3)
-    rotation = options.get('rotation', 45)
-    
-    # Convertir color hex a RGB
-    r = int(color[1:3], 16) / 255
-    g = int(color[3:5], 16) / 255
-    b = int(color[5:7], 16) / 255
-    
-    c = canvas.Canvas(packet, pagesize=(width, height))
-    c.setFont("Helvetica-Bold", font_size)
-    c.setFillColorRGB(r, g, b, alpha=opacity)
-    
-    # Rotar
-    c.saveState()
-    c.translate(width / 2, height / 2)
-    c.rotate(rotation)
-    c.drawCentredString(0, 0, text)
-    c.restoreState()
-    
-    c.save()
-    packet.seek(0)
-    return packet.read()
-
 
 def add_text_watermark(files: List[str], text: str, **options) -> Dict[str, Any]:
     """
@@ -194,57 +155,12 @@ def add_text_watermark(files: List[str], text: str, **options) -> Dict[str, Any]
     Args:
         files: Lista de rutas de PDFs
         text: Texto del watermark
-        **options: font_size, color, opacity, rotation
+        **options: font_size, color, opacity, rotation, position
         
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            # Crear watermark para cada página
-            for page in reader.pages:
-                page_width = float(page.mediabox.width)
-                page_height = float(page.mediabox.height)
-                
-                watermark_data = _create_text_watermark_pdf(
-                    text, (page_width, page_height), **options
-                )
-                watermark_reader = PdfReader(BytesIO(watermark_data))
-                watermark_page = watermark_reader.pages[0]
-                
-                page.merge_page(watermark_page)
-                writer.add_page(page)
-            
-            output_path = get_output_path(file_path, '_watermarked')
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"Watermark agregado: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Watermark aplicado a {len(output_files)}/{len(files)} archivos",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _add_text_watermark_module(files, text, **options)
 
 
 def add_image_watermark(files: List[str], image_path: str, **options) -> Dict[str, Any]:
@@ -259,78 +175,7 @@ def add_image_watermark(files: List[str], image_path: str, **options) -> Dict[st
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf() or Image is None:
-        return {'success': False, 'error': 'pypdf o Pillow no instalado', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    # Opciones con defaults
-    scale = options.get('scale', 0.5)  # 50% del tamaño de página
-    opacity = options.get('opacity', 0.3)
-    
-    # Crear página de watermark como PDF
-    if not os.path.exists(image_path):
-        return {'success': False, 'error': f'Imagen no encontrada: {image_path}', 'output_files': []}
-    
-    try:
-        img = Image.open(image_path)
-        img_width, img_height = img.size
-    except Exception as e:
-        return {'success': False, 'error': f'Error abriendo imagen: {e}', 'output_files': []}
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            for page in reader.pages:
-                page_width = float(page.mediabox.width)
-                page_height = float(page.mediabox.height)
-                
-                # Escalar imagen al tamaño de página
-                scaled_width = page_width * scale
-                scaled_height = scaled_width * (img_height / img_width)
-                
-                # Crear watermark PDF temporal
-                packet = BytesIO()
-                c = canvas.Canvas(packet, pagesize=(page_width, page_height))
-                c.setFillAlpha(opacity)
-                c.drawImage(image_path, 
-                           (page_width - scaled_width) / 2,
-                           (page_height - scaled_height) / 2,
-                           width=scaled_width,
-                           height=scaled_height)
-                c.save()
-                packet.seek(0)
-                
-                watermark_reader = PdfReader(packet)
-                watermark_page = watermark_reader.pages[0]
-                
-                page.merge_page(watermark_page)
-                writer.add_page(page)
-            
-            output_path = get_output_path(file_path, '_watermarked')
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"Watermark de imagen aplicado: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Watermark de imagen aplicado a {len(output_files)}/{len(files)} archivos",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _add_image_watermark_module(files, image_path, **options)
 
 
 def remove_watermarks(files: List[str], **options) -> Dict[str, Any]:
@@ -351,13 +196,6 @@ def remove_watermarks(files: List[str], **options) -> Dict[str, Any]:
     Returns:
         dict: Resultado de la operación
     """
-    # Importar módulo de watermark_removal
-    try:
-        from tools.pdf_tool.modules import watermark_removal
-    except ImportError:
-        logger.warning("Módulo watermark_removal no disponible, usando fallback pypdf")
-        watermark_removal = None
-    
     mode = options.get('mode', 'auto')
     
     # Mode 'auto': intentar visual primero, luego fallback a annotations
@@ -366,11 +204,11 @@ def remove_watermarks(files: List[str], **options) -> Dict[str, Any]:
     
     if mode == 'auto' or mode == 'visual':
         # Intentar eliminación visual con Fitz
-        if watermark_removal and watermark_removal.check_fitz():
+        if _check_fitz_module():
             detection_mode = options.get('detection_mode', 'auto')
             manual_region = options.get('manual_region', None)
             
-            result = watermark_removal.remove_watermark(
+            result = _remove_watermark_fitz_module(
                 files,
                 detection_mode=detection_mode,
                 preserve_layout=True,
@@ -386,44 +224,7 @@ def remove_watermarks(files: List[str], **options) -> Dict[str, Any]:
                 return result
     
     # Fallback a eliminación de anotaciones con pypdf
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            for page in reader.pages:
-                # Eliminar anotaciones
-                if '/Annots' in page:
-                    del page['/Annots']
-                writer.add_page(page)
-            
-            output_path = get_output_path(file_path, '_clean')
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"Anotaciones eliminadas: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Anotaciones eliminadas de {len(output_files)}/{len(files)} archivos",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _remove_annotations_module(files)
 
 
 # =============================================================================
@@ -564,7 +365,7 @@ def redact_area(files: List[str], page: int = 0, x: float = 100, y: float = 100,
 
 
 # =============================================================================
-# TRANSFORMACIONES - ROTAR Y REORDENAR
+# TRANSFORMACIONES - Delegado a modules/transform.py (máxima C2: no duplicar código)
 # =============================================================================
 
 def rotate_pages(files: List[str], degrees: int = 90, pages: List[int] = None) -> Dict[str, Any]:
@@ -579,61 +380,7 @@ def rotate_pages(files: List[str], degrees: int = 90, pages: List[int] = None) -
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    if degrees not in [90, 180, 270]:
-        return {'success': False, 'error': 'Degrees debe ser 90, 180 o 270', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            for i, page in enumerate(reader.pages):
-                if pages is None or (i + 1) in pages:
-                    try:
-                        # Obtener rotación actual (manejar diferentes tipos)
-                        current_rotation = 0
-                        if '/Rotate' in page:
-                            rot_obj = page['/Rotate']
-                            # Puede ser int o indirect object
-                            try:
-                                current_rotation = int(rot_obj)
-                            except (TypeError, ValueError):
-                                current_rotation = 0
-                        
-                        new_rotation = (current_rotation + degrees) % 360
-                        page['/Rotate'] = new_rotation
-                    except Exception as e:
-                        logger.warning(f"Error rotando página {i}: {e}")
-                
-                writer.add_page(page)
-            
-            output_path = get_output_path(file_path, f'_rotated_{degrees}')
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"Páginas rotadas: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Rotación aplicada a {len(output_files)}/{len(files)} archivos",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _rotate_pages_module(files, degrees=degrees, pages=pages)
 
 
 def reorder_pages(files: List[str], new_order: List[int]) -> Dict[str, Any]:
@@ -647,55 +394,8 @@ def reorder_pages(files: List[str], new_order: List[int]) -> Dict[str, Any]:
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            num_pages = len(reader.pages)
-            
-            # Validar que los números de página sean válidos
-            for p in new_order:
-                if p < 1 or p > num_pages:
-                    return {'success': False, 'error': f'Número de página inválido: {p}', 'output_files': []}
-            
-            # Reordenar según el nuevo orden
-            for new_pos in new_order:
-                page = reader.pages[new_pos - 1]  # Convertir a 0-indexed
-                writer.add_page(page)
-            
-            output_path = get_output_path(file_path, '_reordered')
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"Páginas reordenadas: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Páginas reordenadas en {len(output_files)}/{len(files)} archivos",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _reorder_pages_module(files, new_order)
 
-
-# =============================================================================
-# COMBINAR Y DIVIDIR
-# =============================================================================
 
 def merge_pdfs(files: List[str], output_path: str = None) -> Dict[str, Any]:
     """
@@ -708,49 +408,7 @@ def merge_pdfs(files: List[str], output_path: str = None) -> Dict[str, Any]:
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    if len(files) < 2:
-        return {'success': False, 'error': 'Se necesitan al menos 2 PDFs para combinar', 'output_files': []}
-    
-    errors = []
-    writer = PdfWriter()
-    total_pages = 0
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            for page in reader.pages:
-                writer.add_page(page)
-            total_pages += len(reader.pages)
-        except Exception as e:
-            errors.append(f"Error leyendo {file_path}: {str(e)}")
-    
-    if total_pages == 0:
-        return {'success': False, 'error': 'No se pudieron leer páginas de los PDFs', 'output_files': []}
-    
-    # Determinar ruta de salida
-    if output_path is None:
-        first_file = files[0]
-        output_path = get_output_path(first_file, '_merged')
-    
-    try:
-        with open(output_path, 'wb') as f:
-            writer.write(f)
-        
-        return {
-            'success': True,
-            'message': f"PDFs combinados: {total_pages} páginas",
-            'output_files': [output_path],
-            'error': None
-        }
-    except Exception as e:
-        return {'success': False, 'error': f'Error escribiendo archivo: {str(e)}', 'output_files': []}
+    return _merge_pdfs_module(files, output_path=output_path)
 
 
 def extract_pages(files: List[str], pages: List[int]) -> Dict[str, Any]:
@@ -764,45 +422,7 @@ def extract_pages(files: List[str], pages: List[int]) -> Dict[str, Any]:
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            num_pages = len(reader.pages)
-            
-            for p in pages:
-                if p < 1 or p > num_pages:
-                    continue
-                writer.add_page(reader.pages[p - 1])
-            
-            output_path = get_output_path(file_path, '_extracted')
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"Páginas extraídas: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Extraídas {len(pages)} páginas de {len(output_files)}/{len(files)} archivos",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _extract_pages_module(files, pages)
 
 
 def extract_range(files: List[str], start: int, end: int) -> Dict[str, Any]:
@@ -817,55 +437,7 @@ def extract_range(files: List[str], start: int, end: int) -> Dict[str, Any]:
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            num_pages = len(reader.pages)
-            
-            # Validar rango
-            if start < 1:
-                errors.append(f"Página inicial inválida: {start}")
-                continue
-            if end > num_pages:
-                errors.append(f"Página final {end} excede el total ({num_pages})")
-                continue
-            if start > end:
-                errors.append(f"Inicio ({start}) mayor que final ({end})")
-                continue
-            
-            # Extraer páginas
-            for i in range(start - 1, end):
-                writer.add_page(reader.pages[i])
-            
-            output_path = get_output_path(file_path, f'_page_{start}-{end}')
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"Páginas {start}-{end} extraídas: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Extraídas páginas {start}-{end} de {len(output_files)}/{len(files)} archivos",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _extract_range_module(files, start, end)
 
 
 def extract_page(files: List[str], page_number: int) -> Dict[str, Any]:
@@ -879,7 +451,7 @@ def extract_page(files: List[str], page_number: int) -> Dict[str, Any]:
     Returns:
         dict: Resultado de la operación
     """
-    return extract_range(files, start=page_number, end=page_number)
+    return _extract_page_module(files, page_number)
 
 
 def reorder_pages_advanced(files: List[str], new_order: List[int]) -> Dict[str, Any]:
@@ -893,51 +465,7 @@ def reorder_pages_advanced(files: List[str], new_order: List[int]) -> Dict[str, 
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            num_pages = len(reader.pages)
-            
-            # Validar nuevo orden
-            for p in new_order:
-                if p < 1 or p > num_pages:
-                    errors.append(f"Número de página inválido: {p}")
-                    continue
-            
-            # Reordenar según el nuevo orden
-            for new_pos in new_order:
-                page = reader.pages[new_pos - 1]  # Convertir a 0-indexed
-                writer.add_page(page)
-            
-            output_path = get_output_path(file_path, '_reordered')
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"Páginas reordenadas: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Páginas reordenadas en {len(output_files)}/{len(files)} archivos",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _reorder_pages_advanced_module(files, new_order)
 
 
 # =============================================================================
@@ -1033,7 +561,7 @@ def add_page_numbers(files: List[str], **options) -> Dict[str, Any]:
 
 
 # =============================================================================
-# CONVERSIÓN
+# CONVERSIÓN - Delegado a modules/conversion.py (máxima C2: no duplicar código)
 # =============================================================================
 
 def images_to_pdf(image_paths: List[str], output_path: str = None) -> Dict[str, Any]:
@@ -1047,44 +575,7 @@ def images_to_pdf(image_paths: List[str], output_path: str = None) -> Dict[str, 
     Returns:
         dict: Resultado de la operación
     """
-    if Image is None:
-        return {'success': False, 'error': 'Pillow no instalado', 'output_files': []}
-    
-    if not image_paths:
-        return {'success': False, 'error': 'No hay imágenes para convertir', 'output_files': []}
-    
-    errors = []
-    
-    for img_path in image_paths:
-        if not os.path.exists(img_path):
-            errors.append(f"Imagen no encontrada: {img_path}")
-    
-    if errors:
-        return {'success': False, 'error': '; '.join(errors), 'output_files': []}
-    
-    try:
-        images = []
-        for img_path in image_paths:
-            img = Image.open(img_path)
-            if img.mode != 'RGB':
-                img = img.convert('RGB')
-            images.append(img)
-        
-        # Determinar output
-        if output_path is None:
-            first_img = image_paths[0]
-            output_path = get_output_path(first_img, '_converted')
-        
-        images[0].save(output_path, save_all=True, append_images=images[1:])
-        
-        return {
-            'success': True,
-            'message': f"Convertido {len(images)} imágenes a PDF",
-            'output_files': [output_path],
-            'error': None
-        }
-    except Exception as e:
-        return {'success': False, 'error': f'Error convirtiendo: {str(e)}', 'output_files': []}
+    return _images_to_pdf_module(image_paths, output_path=output_path)
 
 
 def pdf_to_images(files: List[str], output_dir: str = None) -> Dict[str, Any]:
@@ -1098,49 +589,28 @@ def pdf_to_images(files: List[str], output_dir: str = None) -> Dict[str, Any]:
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf() or Image is None:
-        return {'success': False, 'error': 'pypdf o Pillow no instalado', 'output_files': []}
+    return _pdf_to_images_module(files, output_dir=output_dir)
+
+
+def redact_area(files: List[str], page: int = 0, x: float = 100, y: float = 100,
+                width: float = 100, height: float = 50) -> Dict[str, Any]:
+    """
+    Censa un área del PDF.
     
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
+    Args:
+        files: Lista de rutas de PDFs
+        page: Número de página (0-indexed)
+        x, y: Posición
+        width, height: Dimensiones
         
-        try:
-            reader = PdfReader(file_path)
-            
-            # Directorio de salida
-            if output_dir is None:
-                output_dir = os.path.dirname(file_path)
-            
-            base_name = os.path.splitext(os.path.basename(file_path))[0]
-            
-            for i, page in enumerate(reader.pages):
-                # Convertir página a imagen
-                # pypdf no convierte directamente, necesitamos otra aproximación
-                # Por ahora usamos una aproximación básica
-                
-                # Esto requeriría renderizado real, lo marcamos como no implementado
-                pass
-            
-            logger.info(f"PDF a imágenes: {file_path} - requiere implementación adicional")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    return {
-        'success': False,
-        'message': 'PDF a imágenes requiere implementación adicional (renderizado)',
-        'output_files': [],
-        'error': 'Funcionalidad en desarrollo'
-    }
+    Returns:
+        dict: Resultado de la operación
+    """
+    return _redact_area_module(files, page=page, x=x, y=y, width=width, height=height)
 
 
 # =============================================================================
-# SEGURIDAD - BLOQUEAR/DESBLOQUEAR
+# SEGURIDAD - Delegado a modules/security.py (máxima C2: no duplicar código)
 # =============================================================================
 
 def encrypt_pdf(files: List[str], password: str) -> Dict[str, Any]:
@@ -1154,51 +624,7 @@ def encrypt_pdf(files: List[str], password: str) -> Dict[str, Any]:
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    # Validate password (Issue #3: password validation)
-    if not _validate_encryption_password(password):
-        return {'success': False, 'error': 'Contraseña inválida: debe tener entre 4 y 64 caracteres', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            
-            if reader.is_encrypted:
-                errors.append(f"{file_path} ya está encriptado")
-                continue
-            
-            writer = PdfWriter()
-            for page in reader.pages:
-                writer.add_page(page)
-            
-            writer.encrypt(password)
-            
-            output_path = get_output_path(file_path, '_locked')
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"PDF bloqueado: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Bloqueados {len(output_files)}/{len(files)} PDFs",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _encrypt_pdf_module(files, password)
 
 
 def decrypt_pdf(files: List[str], password: str) -> Dict[str, Any]:
@@ -1212,52 +638,7 @@ def decrypt_pdf(files: List[str], password: str) -> Dict[str, Any]:
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            
-            if not reader.is_encrypted:
-                errors.append(f"{file_path} no está encriptado")
-                continue
-            
-            # Intentar descifrar
-            result = reader.decrypt(password)
-            
-            if result == 0:
-                errors.append(f"Contraseña incorrecta para {file_path}")
-                continue
-            
-            writer = PdfWriter()
-            for page in reader.pages:
-                writer.add_page(page)
-            
-            output_path = get_output_path(file_path, '_unlocked')
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"PDF desbloqueado: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Desbloqueados {len(output_files)}/{len(files)} PDFs",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _decrypt_pdf_module(files, password)
 
 
 # =============================================================================
@@ -1369,7 +750,7 @@ def clean_metadata(files: List[str]) -> Dict[str, Any]:
 
 
 # =============================================================================
-# PIPELINE INTEGRATION
+# PIPELINE INTEGRATION - Delegado a modules/pipeline.py (máxima C2: no duplicar código)
 # =============================================================================
 
 def execute_pipeline(files: List[str], operations: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -1389,12 +770,6 @@ def execute_pipeline(files: List[str], operations: List[Dict[str, Any]]) -> Dict
     if not operations:
         return {'success': False, 'error': 'No hay operaciones para ejecutar'}
     
-    # Importar pipeline module
-    try:
-        from tools.pdf_tool.modules.pipeline import execute_pipeline_operations
-    except ImportError:
-        return {'success': False, 'error': 'Módulo pipeline no disponible'}
-    
     input_file = files[0]
     
-    return execute_pipeline_operations(input_file, operations)
+    return _execute_pipeline_operations_module(input_file, operations)
