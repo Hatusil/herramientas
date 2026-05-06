@@ -6,6 +6,7 @@ en el contenido visual de las páginas (no solo anotaciones).
 import logging
 import os
 from typing import List, Dict, Any, Tuple, Optional
+from io import BytesIO
 
 # Importar función compartida de core
 from core.utils import get_output_path
@@ -361,7 +362,319 @@ def remove_watermark(files: List[str], **options) -> Dict[str, Any]:
 
 
 # =============================================================================
-# FALLBACK A PYPDF (ANNOTATIONS)
+# CONVERSIÓN PDF A IMÁGENES (T2.2)
+# =============================================================================
+
+def pdf_to_images(pdf_path: str, dpi: int = 150) -> List[Any]:
+    """
+    Convierte un PDF a una lista de imágenes usando Fitz.
+    
+    Args:
+        pdf_path: Ruta al archivo PDF
+        dpi: Resolución de renderizado (default: 150)
+        
+    Returns:
+        Lista de imágenes (PIL Image o Pixmap de Fitz)
+    """
+    if not check_fitz():
+        return []
+    
+    images = []
+    try:
+        doc = fitz.open(pdf_path)
+        
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            # Renderizar página a pixmap
+            pix = page.get_pixmap(dpi=dpi)
+            
+            # Convertir a PIL Image para facilitar procesamiento
+            img_data = pix.tobytes("png")
+            try:
+                from PIL import Image
+                img = Image.open(BytesIO(img_data))
+                images.append(img)
+            except ImportError:
+                # Si no hay PIL, guardar el pixmap directamente
+                images.append(pix)
+        
+        doc.close()
+        logger.info(f"Convertido {pdf_path} a {len(images)} imágenes")
+        
+    except Exception as e:
+        logger.error(f"Error convirtiendo PDF a imágenes: {e}")
+    
+    return images
+
+
+def pdf_to_images_list(pdf_path: str, output_dir: str = None, dpi: int = 150) -> List[str]:
+    """
+    Convierte un PDF a imágenes y las guarda en disco.
+    
+    Args:
+        pdf_path: Ruta al archivo PDF
+        output_dir: Directorio de salida (default: mismo que PDF)
+        dpi: Resolución de renderizado
+        
+    Returns:
+        Lista de rutas de imágenes guardadas
+    """
+    if not check_fitz():
+        return []
+    
+    image_paths = []
+    
+    try:
+        if output_dir is None:
+            output_dir = os.path.dirname(pdf_path)
+        
+        base_name = os.path.splitext(os.path.basename(pdf_path))[0]
+        
+        doc = fitz.open(pdf_path)
+        
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            pix = page.get_pixmap(dpi=dpi)
+            
+            # Guardar imagen
+            img_name = f"{base_name}_page_{page_num + 1:03d}.png"
+            img_path = os.path.join(output_dir, img_name)
+            pix.save(img_path)
+            image_paths.append(img_path)
+        
+        doc.close()
+        logger.info(f"Guardadas {len(image_paths)} imágenes en {output_dir}")
+        
+    except Exception as e:
+        logger.error(f"Error guardando imágenes: {e}")
+    
+    return image_paths
+
+
+# =============================================================================
+# RECONSTRUCCIÓN PDF DESDE IMÁGENES (T2.4)
+# =============================================================================
+
+def images_to_pdf(images: List[Any], output_path: str) -> Dict[str, Any]:
+    """
+    Reconstruye un PDF desde una lista de imágenes procesadas.
+    
+    Args:
+        images: Lista de imágenes (PIL Image, Pixmap, o rutas)
+        output_path: Ruta de salida para el PDF
+        
+    Returns:
+        dict: Resultado de la operación
+    """
+    if not check_fitz():
+        # Fallback a Pillow si Fitz no está disponible
+        return _images_to_pdf_pillow(images, output_path)
+    
+    try:
+        doc = fitz.open()
+        
+        for idx, img in enumerate(images):
+            # Crear página basada en dimensiones de imagen
+            if hasattr(img, 'size'):  # PIL Image
+                width, height = img.size
+                # Convertir PIL a bytes si es necesario
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                img_bytes = BytesIO()
+                img.save(img_bytes, format='PNG')
+                img_bytes.seek(0)
+                img_data = img_bytes.getvalue()
+            elif hasattr(img, 'tobytes'):  # Fitz Pixmap
+                width = img.width
+                height = img.height
+                img_data = img.tobytes("png")
+            elif isinstance(img, str) and os.path.exists(img):  # Ruta de archivo
+                img_data = None
+                # Crear pixmap desde archivo
+                pix = fitz.Pixmap(img)
+                width = pix.width
+                height = pix.height
+                img_data = pix.tobytes("png")
+                pix = None
+            else:
+                logger.warning(f"Imagen {idx} no reconocida, saltando")
+                continue
+            
+            # Crear página en el documento
+            page = doc.new_page(width=width, height=height)
+            
+            # Insertar imagen como contenido de la página
+            if img_data:
+                img_xref = doc.insert_image(page.rect, stream=img_data)
+        
+        # Guardar PDF
+        doc.save(output_path)
+        doc.close()
+        
+        logger.info(f"Reconstruido PDF con {len(images)} imágenes: {output_path}")
+        
+        return {
+            'success': True,
+            'message': f"PDF reconstruido con {len(images)} páginas",
+            'output_files': [output_path],
+            'error': None
+        }
+        
+    except Exception as e:
+        logger.error(f"Error reconstruyendo PDF: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'output_files': []
+        }
+
+
+def _images_to_pdf_pillow(images: List[Any], output_path: str) -> Dict[str, Any]:
+    """Fallback a Pillow para reconstruir PDF."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return {
+            'success': False,
+            'error': 'Pillow no instalado',
+            'output_files': []
+        }
+    
+    try:
+        pil_images = []
+        
+        for img in images:
+            if isinstance(img, str) and os.path.exists(img):
+                pil_img = Image.open(img)
+            elif hasattr(img, 'convert'):
+                pil_img = img
+            else:
+                continue
+            
+            if pil_img.mode != 'RGB':
+                pil_img = pil_img.convert('RGB')
+            pil_images.append(pil_img)
+        
+        if not pil_images:
+            return {
+                'success': False,
+                'error': 'No se pudieron procesar las imágenes',
+                'output_files': []
+            }
+        
+        pil_images[0].save(
+            output_path,
+            save_all=True,
+            append_images=pil_images[1:]
+        )
+        
+        return {
+            'success': True,
+            'message': f"PDF reconstruido con {len(pil_images)} páginas (fallback)",
+            'output_files': [output_path],
+            'error': None
+        }
+        
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'output_files': []
+        }
+
+
+# =============================================================================
+# WORKFLOW COMPLETO: PDF -> IMÁGENES -> PROCESAR -> PDF
+# =============================================================================
+
+def remove_watermark_visual_workflow(pdf_path: str, output_path: str = None,
+                                      detection_mode: str = 'auto',
+                                      manual_region: Dict = None) -> Dict[str, Any]:
+    """
+    Workflow completo: PDF -> imágenes -> procesar -> PDF.
+    
+    Este enfoque convierte el PDF a imágenes, procesa los watermarks
+    visualmente, y reconstruye el PDF.
+    
+    Args:
+        pdf_path: Ruta al PDF de entrada
+        output_path: Ruta de salida (opcional)
+        detection_mode: 'auto' o 'manual'
+        manual_region: Región manual para modo manual
+        
+    Returns:
+        dict: Resultado de la operación
+    """
+    if not check_fitz():
+        return {
+            'success': False,
+            'error': 'Fitz no instalado',
+            'output_files': []
+        }
+    
+    if not os.path.exists(pdf_path):
+        return {
+            'success': False,
+            'error': f'Archivo no encontrado: {pdf_path}',
+            'output_files': []
+        }
+    
+    try:
+        # Abrir documento
+        doc = fitz.open(pdf_path)
+        
+        if output_path is None:
+            output_path = get_output_path(pdf_path, '_no_wm')
+        
+        # Detectar watermarks
+        if detection_mode == 'auto':
+            watermark_regions = detect_watermarks_auto(doc)
+        else:
+            if not manual_region:
+                doc.close()
+                return {
+                    'success': False,
+                    'error': 'Región manual no especificada',
+                    'output_files': []
+                }
+            watermark_regions = [manual_region]
+        
+        # Procesar cada página
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            
+            # Encontrar región para esta página
+            region = None
+            if detection_mode == 'auto':
+                region = next((r for r in watermark_regions if r.get('page') == page_num), None)
+            else:
+                region = manual_region
+            
+            if region:
+                remove_watermark_from_page(page, [region])
+        
+        # Guardar resultado
+        doc.save(output_path)
+        doc.close()
+        
+        return {
+            'success': True,
+            'message': f"Watermark visual removido: {output_path}",
+            'output_files': [output_path],
+            'error': None
+        }
+        
+    except Exception as e:
+        logger.error(f"Error en workflow visual: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'output_files': []
+        }
+
+
+# =============================================================================
+# FALLBACK A PYPDF (ANNOTATIONS) - T2.5
 # =============================================================================
 
 def remove_watermark_fallback(files: List[str]) -> Dict[str, Any]:

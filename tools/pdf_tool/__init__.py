@@ -66,7 +66,12 @@ class PDFTool(BaseTool):
                 )
             
             elif action == 'remove_watermark':
-                return processor.remove_watermarks(files)
+                return processor.remove_watermarks(
+                    files,
+                    mode=options.get('mode', 'auto'),
+                    detection_mode=options.get('detection_mode', 'auto'),
+                    manual_region=options.get('manual_region')
+                )
             
             elif action == 'add_annotation':
                 return processor.add_text_annotation(

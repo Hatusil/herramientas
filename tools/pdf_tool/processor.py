@@ -333,16 +333,59 @@ def add_image_watermark(files: List[str], image_path: str, **options) -> Dict[st
     }
 
 
-def remove_watermarks(files: List[str]) -> Dict[str, Any]:
+def remove_watermarks(files: List[str], **options) -> Dict[str, Any]:
     """
-    Elimina anotaciones (marcas de agua) de PDFs.
+    Elimina marcas de agua de PDFs.
+    
+    Usa el módulo watermark_removal.py con Fitz para eliminación visual
+    (watermarks mergeados en el contenido). Si Fitz no está disponible,
+    usa pypdf para eliminar solo anotaciones.
     
     Args:
         files: Lista de rutas de PDFs
-        
+        **options:
+            - mode: 'visual' | 'annotations' | 'auto' (default: 'auto')
+            - detection_mode: 'auto' | 'manual' (para modo visual)
+            - manual_region: dict con x, y, width, height (para modo manual)
+            
     Returns:
         dict: Resultado de la operación
     """
+    # Importar módulo de watermark_removal
+    try:
+        from tools.pdf_tool.modules import watermark_removal
+    except ImportError:
+        logger.warning("Módulo watermark_removal no disponible, usando fallback pypdf")
+        watermark_removal = None
+    
+    mode = options.get('mode', 'auto')
+    
+    # Mode 'auto': intentar visual primero, luego fallback a annotations
+    # Mode 'visual': solo eliminación visual con Fitz
+    # Mode 'annotations': solo eliminación de anotaciones con pypdf
+    
+    if mode == 'auto' or mode == 'visual':
+        # Intentar eliminación visual con Fitz
+        if watermark_removal and watermark_removal.check_fitz():
+            detection_mode = options.get('detection_mode', 'auto')
+            manual_region = options.get('manual_region', None)
+            
+            result = watermark_removal.remove_watermark(
+                files,
+                detection_mode=detection_mode,
+                preserve_layout=True,
+                manual_region=manual_region
+            )
+            
+            if result.get('success'):
+                logger.info("Eliminación visual de watermark completada")
+                return result
+            
+            # Si falló pero es modo 'auto', continuar al fallback
+            if mode == 'visual':
+                return result
+    
+    # Fallback a eliminación de anotaciones con pypdf
     if not check_pypdf():
         return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
     
