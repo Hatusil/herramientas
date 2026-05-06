@@ -1,8 +1,6 @@
-import sys
 import os
 import logging
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ui.help_panel import add_help
+from core.help_panel import add_help
 import customtkinter as ctk
 import tkinter as tk
 from core.base_tool_ui import BaseToolUI
@@ -199,7 +197,7 @@ class TextAnalyzerUI(BaseToolUI):
         self._progress_start_time: float = 0
         self._progress_threshold = 2.0  # 2-second threshold
         
-        self._setup_ui()
+        # NO llamar _setup_ui() aquí - ya se llama en super().__init__()
     
     # ============ STATE MANAGEMENT (Phase 1) ============
     def _update_state(self, **kwargs) -> None:

@@ -1,9 +1,7 @@
 """UI: Interfaz para herramienta de video."""
-import sys
 import os
 import threading
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ui.help_panel import add_help
+from core.help_panel import add_help
 from ui.radiobutton import RadioButton
 import customtkinter as ctk
 import tkinter as tk

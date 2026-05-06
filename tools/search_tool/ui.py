@@ -1,13 +1,11 @@
 """UI: Interfaz para Search Tool."""
-import sys
 import os
 import logging
 import threading
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from ui.help_panel import add_help
+from core.help_panel import add_help
 from typing import Callable, Dict, Any, List
 
 # Import BaseToolUI from core
@@ -23,6 +21,14 @@ class SearchToolUI(BaseToolUI):
         # Call BaseToolUI __init__ but we skip file selector
         super().__init__(master, on_process, **kwargs)
         
+        # Inicializar variables necesarias para search_tool
+        self.folder = None
+        self.results = []
+        
+        # Status label para search_tool
+        self.status_label = ctk.CTkLabel(self, text="", text_color="gray")
+        self.status_label.pack(pady=5)
+        
         # Build rest of tool UI
         self._build_search_ui()
     
@@ -35,6 +41,9 @@ class SearchToolUI(BaseToolUI):
         return True  # We use label + button instead
     
     def _setup_ui(self) -> None:
+        # NOTE: No usamos super()._setup_ui() porque search_tool tiene UI completamente custom
+        # Solo inicializamos las variables que necesitamos
+        
         # Title
         title = ctk.CTkLabel(
             self,
@@ -223,6 +232,11 @@ class SearchToolUI(BaseToolUI):
     
     def _do_search(self) -> None:
         """Execute the search."""
+        # Asegurar que status_label existe
+        if not hasattr(self, 'status_label') or self.status_label is None:
+            self.status_label = ctk.CTkLabel(self, text="", text_color="gray")
+            self.status_label.pack(pady=5)
+        
         if not hasattr(self, 'folder') or not self.folder:
             self.status_label.configure(text="Seleccione una carpeta", text_color="#FFA500")
             return

@@ -1,9 +1,7 @@
 """UI: Interfaz de usuario para la herramienta de audio."""
-import sys
 import os
 import logging
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ui.help_panel import add_help
+from core.help_panel import add_help
 from ui.radiobutton import RadioButton
 import customtkinter as ctk
 import tkinter as tk

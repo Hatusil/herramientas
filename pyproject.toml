@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "herramientas"
+version = "1.0.0"
+description = "Conjunto de herramientas de productividad"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Usuario", email = "usuario@example.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+# Dependencias principales
+dependencies = [
+    "customtkinter>=5.0",
+    "Pillow>=10.0",
+]
+
+[project.optional-dependencies]
+# Para desarrollo
+dev = [
+    "pytest>=7.0",
+    "black>=23.0",
+    "ruff>=0.1.0",
+]
+
+# Herramientas específicas
+video = ["ffmpeg-python", "moviepy"]
+audio = ["pydub", "gtts"]
+pdf = ["pypdf>=4.0", "reportlab"]
+all = [
+    "ffmpeg-python",
+    "moviepy", 
+    "pydub",
+    "gtts",
+    "pypdf>=4.0",
+    "reportlab",
+]
+
+[tool.setuptools.packages.find]
+# Incluir solo estos directorios como paquetes
+where = ["."]
+include = ["core*", "ui*", "tools*"]
+
+[tool.setuptools.package-dir]
+# Mapeo de paquetes a directorios
+"core" = "core"
+"ui" = "ui"
+"tools" = "tools"
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

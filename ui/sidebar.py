@@ -232,12 +232,24 @@ class Sidebar(ctk.CTkFrame):
     
     def _setup_scroll_binding(self, scroll_frame) -> None:
         """Configura bindings de scroll con mouse wheel."""
-        # Intentar obtener el canvas interno
+        # Intentar obtener el canvas interno de forma robusta
         canvas = None
+        
+        # Método 1: attribute directo (CTkinter 4.x)
         try:
-            canvas = scroll_frame._parent_canvas
+            canvas = getattr(scroll_frame, '_parent_canvas', None)
         except Exception:
             pass
+        
+        # Método 2: buscar en children (CTkinter 5.x compatibility)
+        if not canvas:
+            try:
+                for child in scroll_frame.winfo_children():
+                    if hasattr(child, 'yview'):
+                        canvas = child
+                        break
+            except Exception:
+                pass
         
         if not canvas:
             # Fallback: crear un binding directo
@@ -267,10 +279,20 @@ class Sidebar(ctk.CTkFrame):
     def _on_mousewheel(self, event) -> str:
         """Maneja scroll con la rueda del mouse - fallback."""
         try:
-            # Obtener canvas si existe
+            # Obtener canvas de forma robusta
             canvas = None
+            
+            # Método 1: attribute directo
             if hasattr(self.scroll_frame, '_parent_canvas'):
                 canvas = self.scroll_frame._parent_canvas
+            
+            # Método 2: buscar en children
+            if not canvas:
+                for child in self.scroll_frame.winfo_children():
+                    if hasattr(child, 'yview'):
+                        canvas = child
+                        break
+            
             if canvas:
                 if hasattr(event, 'delta'):
                     direction = -1 if event.delta < 0 else 1
@@ -354,7 +376,6 @@ class Sidebar(ctk.CTkFrame):
                 btn.configure(fg_color=selected_color, text_color="white")
             else:
                 btn.configure(fg_color=normal_color, text_color=constants.COLORS["text_secondary"])
-                btn.configure(fg_color=normal_color, text_color="#cccccc")
     
     def _on_salir(self) -> None:
         """Cierra la aplicación."""

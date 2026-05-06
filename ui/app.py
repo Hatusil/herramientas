@@ -2,15 +2,10 @@
 Aplicación principal con CustomTkinter.
 Dashboard unificado para navegar entre herramientas.
 """
-import sys
 import logging
 from typing import Any
 import customtkinter as ctk
 from pathlib import Path
-
-# Agregar project root al path
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
 
 from core import constants
 from core import config
@@ -167,7 +162,20 @@ class App(ctk.CTk):
     def _on_wheel(self, event) -> str:
         """Maneja scroll con la rueda del mouse."""
         try:
+            # Intentar obtener canvas de forma robusta para CTkinter 4.x y 5.x
+            canvas = None
+            
+            # Método 1: try attribute directo (CTkinter 4.x)
             canvas = getattr(self.content_frame, '_parent_canvas', None)
+            
+            # Método 2: buscar en children (CTkinter 5.x compatibility)
+            if not canvas:
+                for child in self.content_frame.winfo_children():
+                    # Buscar canvas con scrollbar
+                    if hasattr(child, 'yview'):
+                        canvas = child
+                        break
+            
             if canvas:
                 if hasattr(event, 'delta'):
                     direction = -1 if event.delta < 0 else 1
@@ -343,26 +351,69 @@ class App(ctk.CTk):
         # Actualizar highlight en sidebar
         self.sidebar._highlight_tool(tool_name)
         
-        # Limpiar content frame - usar pack_forget primero para evitar bug de CTkButton
-        for widget in self.content_frame.winfo_children():
-            try:
-                widget.pack_forget()
-            except Exception as e:
-                logger.warning(f"Error in pack_forget: {e}")
-            try:
-                widget.grid_forget()
-            except Exception as e:
-                logger.warning(f"Error in grid_forget: {e}")
-            try:
-                widget.destroy()
-            except Exception as e:
-                logger.warning(f"Error en destroy (CTkButton bug): {e}")
+        # Destruir y recrear content frame completamente
+        self._rebuild_content_frame()
         
         # Construir UI de la tool
         try:
             tool.build_ui(self.content_frame)
         except Exception as e:
             logger.error(f"Error construyendo UI de {tool_name}: {e}")
+    
+    def _clear_content_frame(self) -> None:
+        """Limpia los hijos del content frame para CTkScrollableFrame."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        def clean_all_children(widget):
+            """Limpia todos los descendientes de un widget."""
+            try:
+                children = widget.winfo_children()
+                for child in children:
+                    clean_all_children(child)
+                    try:
+                        child.destroy()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        
+        try:
+            # Buscar cualquier atributo que parezca un frame interno
+            for attr_name in dir(self.content_frame):
+                if 'interior' in attr_name.lower() or attr_name == 'frame':
+                    try:
+                        inner = getattr(self.content_frame, attr_name, None)
+                        if inner and hasattr(inner, 'winfo_children'):
+                            clean_all_children(inner)
+                            logger.info(f"Limpio {attr_name}")
+                    except Exception:
+                        pass
+            
+            # También limpiar hijos directos
+            clean_all_children(self.content_frame)
+                
+        except Exception as e:
+            logger.warning(f"Error limpiar content frame: {e}")
+    
+    def _rebuild_content_frame(self) -> None:
+        """Destruye y recreate el content frame para evitar problemas de limpieza."""
+        try:
+            # Destruir el content_frame existente
+            self.content_frame.destroy()
+        except Exception:
+            pass
+        
+        # Recrear el content frame
+        self.content_frame = ctk.CTkScrollableFrame(
+            self,
+            label_text="",
+            fg_color=constants.COLORS["bg_medium"]
+        )
+        self.content_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+        
+        # Setup scroll binding
+        self._setup_scroll()
     
     def _on_content_wheel(self, event, canvas) -> None:
         """Maneja scroll en content - ahora sin usar canvas."""

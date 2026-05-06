@@ -3,19 +3,11 @@ PluginManager: Sistema de carga dinámica de herramientas.
 Escanea el directorio tools/ y carga automáticamente las tools disponibles.
 """
 import logging
-import sys
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from core.base_tool import BaseTool
 from core import constants
-
-# Agregar project root al path para que se puedan importar las tools
-import core.constants
-PROJECT_ROOT_STR = str(core.constants.PROJECT_ROOT)
-if PROJECT_ROOT_STR not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT_STR)
-
 
 logger = logging.getLogger(__name__)
 

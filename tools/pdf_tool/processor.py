@@ -11,8 +11,9 @@ import os
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
-# Importar funciones compartidas de core (máxima #3: Consistency)
+# Importar funciones compartidas de core (máxima C2: Consistency)
 from core.utils import get_output_path, validate_input_file, validate_file_extension, validate_file_size
+from core.metrics import Timer, Counter, increment  # Máxima A12: Observabilidad
 
 # Importar módulos especializados (delegación - máxima C2: no duplicar)
 from tools.pdf_tool.modules import (
@@ -136,7 +137,9 @@ def get_pdf_info(file_path: str) -> Dict[str, Any]:
     Returns:
         dict: Información del PDF
     """
-    return _get_pdf_info_module(file_path)
+    with Timer('pdf_tool.get_pdf_info'):
+        increment('pdf_tool.get_pdf_info_calls')
+        return _get_pdf_info_module(file_path)
 
 
 def check_pdf_encrypted(file_path: str) -> bool:
@@ -380,7 +383,9 @@ def rotate_pages(files: List[str], degrees: int = 90, pages: List[int] = None) -
     Returns:
         dict: Resultado de la operación
     """
-    return _rotate_pages_module(files, degrees=degrees, pages=pages)
+    with Timer('pdf_tool.rotate_pages'):
+        increment('pdf_tool.rotate_pages_calls')
+        return _rotate_pages_module(files, degrees=degrees, pages=pages)
 
 
 def reorder_pages(files: List[str], new_order: List[int]) -> Dict[str, Any]:
@@ -402,13 +407,15 @@ def merge_pdfs(files: List[str], output_path: str = None) -> Dict[str, Any]:
     Combina múltiples PDFs en uno.
     
     Args:
-        files: Lista de rutas de PDFs a combinar
+        files: Lista de rutas de PDFs
         output_path: Ruta de salida (opcional)
         
     Returns:
-        dict: Resultado de la operación
+        dict: Resultado con la ruta del PDF combinado
     """
-    return _merge_pdfs_module(files, output_path=output_path)
+    with Timer('pdf_tool.merge_pdfs'):
+        increment('pdf_tool.merge_pdfs_calls')
+        return _merge_pdfs_module(files, output_path=output_path)
 
 
 def extract_pages(files: List[str], pages: List[int]) -> Dict[str, Any]:
@@ -606,7 +613,9 @@ def redact_area(files: List[str], page: int = 0, x: float = 100, y: float = 100,
     Returns:
         dict: Resultado de la operación
     """
-    return _redact_area_module(files, page=page, x=x, y=y, width=width, height=height)
+    with Timer('pdf_tool.redact_area'):
+        increment('pdf_tool.redact_area_calls')
+        return _redact_area_module(files, page=page, x=x, y=y, width=width, height=height)
 
 
 # =============================================================================

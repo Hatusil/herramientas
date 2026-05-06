@@ -5,9 +5,7 @@ Provee métodos comunes de UI para todas las herramientas que necesitan
 seleccionar archivos. Las herramientas heredan de esta clase y sobrescriben
 los hooks según sea necesario.
 """
-import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import customtkinter as ctk
 import tkinter as tk

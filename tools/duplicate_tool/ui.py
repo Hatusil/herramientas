@@ -2,7 +2,7 @@
 import logging
 import os
 import customtkinter as ctk
-from ui.help_panel import add_help
+from core.help_panel import add_help
 from ui.radiobutton import RadioButton
 import tkinter as tk
 from tkinter import filedialog, messagebox
