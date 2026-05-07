@@ -58,16 +58,20 @@ def ensure_directory(path: str) -> Path:
     return dir_path
 
 
-def validate_input_file(path: str) -> dict:
+def validate_input_file(path) -> dict:
     """
     Valida que un archivo de entrada exista y sea legible.
     
     Args:
-        path: Ruta al archivo
+        path: Ruta al archivo (str o list)
         
     Returns:
         dict: {'valid': bool, 'error': str or None}
     """
+    # Manejar lista
+    if isinstance(path, (list, tuple)):
+        path = path[0] if path else ""
+    
     if not path:
         return {'valid': False, 'error': 'No path provided'}
     if not os.path.exists(path):

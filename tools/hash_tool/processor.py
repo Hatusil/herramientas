@@ -21,18 +21,22 @@ hash_operations_total = Counter('hash_operations_total')
 hash_errors = Counter('hash_errors')
 
 
-def calculate_hash(file_path: str, algorithm: str = 'sha256', timeout: int = DEFAULT_HASH_TIMEOUT) -> Dict[str, Any]:
+def calculate_hash(file_path, algorithm: str = 'sha256', timeout: int = DEFAULT_HASH_TIMEOUT) -> Dict[str, Any]:
     """
     Calcula el hash de un archivo con timeout opcional.
     
     Args:
-        file_path: Ruta al archivo
+        file_path: Ruta al archivo (str o list)
         algorithm: md5, sha1, sha256, sha512
         timeout: Timeout en segundos (default: 300 = 5 minutos)
         
     Returns:
         dict: hash calculado
     """
+    # Manejar lista
+    if isinstance(file_path, (list, tuple)):
+        file_path = file_path[0] if file_path else ""
+    
     # Función interna que hace el trabajo real
     def _calculate():
         return _calculate_hash_internal(file_path, algorithm)
