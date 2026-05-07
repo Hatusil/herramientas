@@ -26,12 +26,12 @@ from collections import Counter
 # Importar funciones compartidas de core
 from core.utils import clean_text, STOP_WORDS
 from core.file_utils import validate_input_file, get_output_path
-from core.metrics import Timer, Counter, get_metric
+from core.metrics import Timer, Counter as MetricsCounter, get_metric
 
 logger = logging.getLogger(__name__)
 
 # Contadores a nivel de módulo
-text_operations = Counter('text_operations')
+text_operations = MetricsCounter('text_operations')
 
 # ============================================================
 # CONFIGURACIÓN DE LÍMITES Y HELPERS
