@@ -15,17 +15,41 @@ from typing import List, Dict, Any, Optional
 from core.utils import validate_input_file, get_output_path
 from core.metrics import Timer, Counter, get_metric
 
-# Flag para cancelar búsqueda
+# A7: Stateful controller en vez de global flag
+class SearchController:
+    """Controlador para manejar estado de búsqueda (A7: Stateless violations)."""
+    
+    def __init__(self):
+        self._cancelled = False
+    
+    def cancel(self):
+        """Cancela la búsqueda en curso."""
+        self._cancelled = True
+    
+    def reset(self):
+        """Resetea el flag de cancelación."""
+        self._cancelled = False
+    
+    def is_cancelled(self) -> bool:
+        """Retorna True si la búsqueda fue cancelada."""
+        return self._cancelled
+
+# Instancia global para backward compatibility (deprecated)
+_search_controller = SearchController()
+
+# Flag legacy para backward compatibility
 SEARCH_CANCELLED = False
 
 def cancel_search():
     """Cancela la búsqueda en curso."""
     global SEARCH_CANCELLED
+    _search_controller.cancel()
     SEARCH_CANCELLED = True
 
 def reset_search():
     """Resetea el flag de cancelación."""
     global SEARCH_CANCELLED
+    _search_controller.reset()
     SEARCH_CANCELLED = False
 
 # Libraries para extraer contenido
@@ -281,9 +305,89 @@ def search_content(files: List[str], pattern: str, case_sensitive: bool = False)
     return results
 
 
+# A1: Funciones helper para SRP - search_all refactorizada
+
+def _collect_files_recursive(folder: str) -> List[str]:
+    """1. Recolectar archivos del directorio recursivamente."""
+    all_files = []
+    for root, dirs, files in os.walk(folder):
+        for name in files:
+            all_files.append(os.path.join(root, name))
+    return all_files
+
+
+def _apply_name_filter(results: List[str], name_pattern: str, name_mode: str, case_sensitive: bool) -> List[str]:
+    """2. Filtrar por nombre."""
+    return search_by_name(results, name_pattern, name_mode, case_sensitive)
+
+
+def _apply_date_filter(results: List[str], date_from: Optional[str], date_to: Optional[str]) -> List[str]:
+    """3. Filtrar por fecha."""
+    if date_from or date_to:
+        return search_by_date(results, date_from, date_to)
+    return results
+
+
+def _apply_size_filter(results: List[str], min_size: Optional[int], max_size: Optional[int]) -> List[str]:
+    """4. Filtrar por tamaño."""
+    if min_size or max_size:
+        return filter_by_size(results, min_size, max_size)
+    return results
+
+
+def _apply_extension_filter(results: List[str], extensions: List[str]) -> List[str]:
+    """5. Filtrar por extensión."""
+    if extensions:
+        return filter_by_extension(results, extensions)
+    return results
+
+
+def _search_content_in_files(results: List[str], pattern: str, case_sensitive: bool) -> Dict[str, Dict]:
+    """6. Buscar contenido en archivos."""
+    content_results = {}
+    for f in results:
+        try:
+            content = get_file_content(f)
+            if not content:
+                continue
+            
+            if case_sensitive:
+                if pattern in content:
+                    count = content.count(pattern)
+                    content_results[f] = {'matches': count, 'content': content[:500]}
+            else:
+                lower_content = content.lower()
+                lower_pattern = pattern.lower()
+                if lower_pattern in lower_content:
+                    count = lower_content.count(lower_pattern)
+                    content_results[f] = {'matches': count, 'content': content[:500]}
+        except Exception as e:
+            logger.debug(f"Error processing content for {f}: {e}")
+            continue
+    return content_results
+
+
+def _format_search_results(files: List[str], content_matches: Dict[str, Dict]) -> List[Dict]:
+    """7. Formatear resultados finales."""
+    final_results = []
+    for f in files:
+        is_file = os.path.isfile(f)
+        stat = os.stat(f) if is_file else None
+        
+        result = {
+            'path': f,
+            'name': os.path.basename(f),
+            'size': stat.st_size if stat else 0,
+            'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%d/%m/%Y %H:%M') if stat else '',
+            'matches': content_matches.get(f, {}).get('matches', 0) if f in content_matches else 0
+        }
+        final_results.append(result)
+    return final_results
+
+
 def search_all(folder: str, options: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Función principal de búsqueda.
+    Función principal de búsqueda (orquesta las funciones helper - A1: SRP).
     
     options: {
         'name_pattern': str,
@@ -301,116 +405,57 @@ def search_all(folder: str, options: Dict[str, Any]) -> Dict[str, Any]:
     global SEARCH_CANCELLED
     
     # Métricas
-    search_timer = get_metric('search_duration')
     files_counter = get_metric('search_files_processed')
     errors_counter = get_metric('search_errors')
     
-    with Timer('search_all') as timer:
+    # A1: Separar responsabilidades en funciones pequeñas
+    with Timer('search_all'):
         if not os.path.exists(folder):
             errors_counter.increment()
             return {'success': False, 'error': 'Carpeta no encontrada'}
         
-        # Recolectar archivos recursivamente - con verificación frecuente
-        all_files = []
-        file_count = 0
-        for root, dirs, files in os.walk(folder):
-            # Verificar cancelación frecuentemente (cada 50 archivos)
-            file_count += len(files)
-            if file_count >= 50:
-                if SEARCH_CANCELLED:
-                    return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
-                file_count = 0
-            
-            for name in files:
-                all_files.append(os.path.join(root, name))
-        
+        # 1. Recolectar archivos
+        all_files = _collect_files_recursive(folder)
         files_counter.increment(len(all_files))
         
-        # Verificar cancelación después de recolectar
         if SEARCH_CANCELLED:
             return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
         
-        # Aplicar filtros
+        # 2. Aplicar filtros en cadena
         results = all_files
         
-        # Por nombre
         if options.get('name_pattern'):
-            results = search_by_name(
+            results = _apply_name_filter(
                 results,
                 options['name_pattern'],
                 options.get('name_mode', 'contains'),
                 options.get('case_sensitive', False)
             )
-            
-            # Verificar cancelación después de cada filtro
             if SEARCH_CANCELLED:
                 return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
         
-        # Por fecha
-        if options.get('date_from') or options.get('date_to'):
-            results = search_by_date(results, options.get('date_from'), options.get('date_to'))
+        results = _apply_date_filter(results, options.get('date_from'), options.get('date_to'))
+        results = _apply_size_filter(results, options.get('min_size'), options.get('max_size'))
+        results = _apply_extension_filter(results, options.get('extensions', []))
         
-        # Por tamaño
-        if options.get('min_size') or options.get('max_size'):
-            results = filter_by_size(results, options.get('min_size'), options.get('max_size'))
-        
-        # Por extensión
-        if options.get('extensions'):
-            results = filter_by_extension(results, options['extensions'])
-        
-        # Buscar contenido (puede tardar mucho - verificar frecuentemente)
+        # 3. Buscar contenido
         content_results = {}
         if options.get('search_content') and options.get('content_pattern'):
-            pattern = options['content_pattern']
-            case_sensitive = options.get('case_sensitive', False)
+            content_results = _search_content_in_files(
+                results,
+                options['content_pattern'],
+                options.get('case_sensitive', False)
+            )
             
-            for i, f in enumerate(results):
-                if i % 10 == 0:  # Cada 10 archivos verificar
-                    if SEARCH_CANCELLED:
-                        return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
-                
-                try:
-                    content = get_file_content(f)
-                    if not content:
-                        continue
-                    
-                    if case_sensitive:
-                        if pattern in content:
-                            count = content.count(pattern)
-                            content_results[f] = {'matches': count, 'content': content[:500]}
-                    else:
-                        lower_content = content.lower()
-                        lower_pattern = pattern.lower()
-                        if lower_pattern in lower_content:
-                            count = lower_content.count(lower_pattern)
-                            content_results[f] = {'matches': count, 'content': content[:500]}
-                except Exception as e:
-                    logger.debug(f"Error processing content for {f}: {e}")
-                    errors_counter.increment()
-                    continue
-        
-        # Verificar cancelación final
-        if SEARCH_CANCELLED:
-            return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
-        
-        # Si busca contenido Y hay matches, filtrar solo archivos con contenido
-        if options.get('search_content') and options.get('content_pattern') and content_results:
-            results = list(content_results.keys())
-        
-        # Preparar resultados finales
-        final_results = []
-        for f in results:
-            is_file = os.path.isfile(f)
-            stat = os.stat(f) if is_file else None
+            if SEARCH_CANCELLED:
+                return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
             
-            result = {
-                'path': f,
-                'name': os.path.basename(f),
-                'size': stat.st_size if stat else 0,
-                'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%d/%m/%Y %H:%M') if stat else '',
-                'matches': content_results.get(f, {}).get('matches', 0) if f in content_results else 0
-            }
-            final_results.append(result)
+            # Filtrar solo archivos con matches
+            if content_results:
+                results = list(content_results.keys())
+        
+        # 4. Formatear resultados
+        final_results = _format_search_results(results, content_results)
         
         return {
             'success': True,

@@ -116,7 +116,8 @@ def compress_to_tar(files: List[str], output_path: str = None, compression: str 
     
     for f in files:
         input_path = Path(f)
-        ext_lower = input_path.suffix.lower()
+        # Fix Bug #3: obtener extensión compuesta (.tar.gz, no solo .gz)
+        ext_lower = ''.join(input_path.suffixes[-2:]) if len(input_path.suffixes) > 1 else input_path.suffix.lower()
         if ext_lower in tar_extensions:
             skipped.append(f"{input_path.name} - Ya es TAR")
             continue
@@ -134,8 +135,16 @@ def compress_to_tar(files: List[str], output_path: str = None, compression: str 
     try:
         if output_path is None:
             first_file = valid_files[0]
-            # Usar get_output_path_format para consistencia (máxima C2)
-            output_path = get_output_path_format(first_file, '', '.tar')
+            # Fix Bug #1: extensión correcta según tipo de compresión
+            if compression == 'gz':
+                ext = '.tar.gz'
+            elif compression == 'bz2':
+                ext = '.tar.bz2'
+            elif compression == 'xz':
+                ext = '.tar.xz'
+            else:
+                ext = '.tar'
+            output_path = get_output_path_format(first_file, '', ext)
         
         mode = f'w:{compression}' if compression else 'w'
         

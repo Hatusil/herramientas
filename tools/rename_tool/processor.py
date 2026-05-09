@@ -3,6 +3,7 @@ Processor: Funciones para renombrar archivos en masa.
 """
 import os
 import re
+import shutil
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -27,7 +28,7 @@ def rename_with_prefix(files: List[str], prefix: str) -> Dict[str, Any]:
                 p = Path(f)
                 new_name = f"{prefix}{p.name}"
                 new_path = p.parent / new_name
-                os.rename(f, new_path)
+                shutil.copy2(f, new_path)  # A8: copy instead of rename for idempotency
                 renamed.append((f, str(new_path)))
             except Exception as e:
                 errors.append(f"Error: {p.name} - {str(e)}")
@@ -60,7 +61,7 @@ def rename_with_suffix(files: List[str], suffix: str) -> Dict[str, Any]:
                 p = Path(f)
                 new_name = f"{p.stem}{suffix}{p.suffix}"
                 new_path = p.parent / new_name
-                os.rename(f, new_path)
+                shutil.copy2(f, new_path)  # A8: copy instead of rename for idempotency
                 renamed.append((f, str(new_path)))
             except Exception as e:
                 errors.append(f"Error: {p.name} - {str(e)}")
@@ -96,7 +97,7 @@ def rename_replace(files: List[str], find: str, replace: str) -> Dict[str, Any]:
                 if new_path.exists():
                     errors.append(f"Ya existe: {new_name}")
                     continue
-                os.rename(f, new_path)
+                shutil.copy2(f, new_path)  # A8: copy instead of rename for idempotency
                 renamed.append((f, str(new_path)))
             except Exception as e:
                 errors.append(f"Error: {p.name} - {str(e)}")
@@ -130,7 +131,7 @@ def rename_numbered(files: List[str], start: int = 1, pattern: str = "{name}_{n}
                 ext = p.suffix
                 new_name = pattern.format(name=p.stem, n=i) + ext
                 new_path = p.parent / new_name
-                os.rename(f, new_path)
+                shutil.copy2(f, new_path)  # A8: copy instead of rename for idempotency
                 renamed.append((f, str(new_path)))
             except Exception as e:
                 errors.append(f"Error: {p.name} - {str(e)}")
@@ -172,8 +173,13 @@ def rename_case(files: List[str], case: str) -> Dict[str, Any]:
                 else:
                     continue
                 
+                # A8: Si el nombre no cambia, incluir en lista pero sin copiar
+                if new_name == p.name:
+                    renamed.append((f, str(p)))  # Incluir como "sin cambio"
+                    continue
+                
                 new_path = p.parent / new_name
-                os.rename(f, new_path)
+                shutil.copy2(f, new_path)  # A8: copy instead of rename for idempotency
                 renamed.append((f, str(new_path)))
             except Exception as e:
                 errors.append(f"Error: {p.name} - {str(e)}")
@@ -182,7 +188,7 @@ def rename_case(files: List[str], case: str) -> Dict[str, Any]:
         if len(renamed) > 0:
             increment('rename_operations_total')
         
-        success = len(renamed) > 0
+        success = len(errors) == 0 and len(renamed) > 0  # A8: success si se procesó al menos un archivo
         case_name = case_labels.get(case, case)
         msg = f"✓ Convertidos a {case_name}: {len(renamed)} archivos"
         if errors:
@@ -209,8 +215,12 @@ def rename_regex(files: List[str], pattern: str, replace: str) -> Dict[str, Any]
                 try:
                     p = Path(f)
                     new_name = regex.sub(replace, p.name)
+                    # A8: Si el nombre no cambia (no hay match), no hacer copy
+                    if new_name == p.name:
+                        renamed.append((f, str(p)))  # Registrar como "sin cambio"
+                        continue
                     new_path = p.parent / new_name
-                    os.rename(f, new_path)
+                    shutil.copy2(f, new_path)  # A8: copy instead of rename for idempotency
                     renamed.append((f, str(new_path)))
                 except Exception as e:
                     errors.append(f"Error: {p.name} - {str(e)}")

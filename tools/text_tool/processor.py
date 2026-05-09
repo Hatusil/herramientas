@@ -603,33 +603,20 @@ def analyze_frequency(
         }
 
 
-def analyze_trends(text: str, n_terms: int = 5, n_sections: int = 10) -> Dict[str, Any]:
-    """
-    Análisis de tendencias: frecuencia de palabras en diferentes secciones del texto.
-    Similar a 'Trends' de Voyant.
-    """
-    try:
-        import matplotlib
-        matplotlib.use('Agg')  # Sin GUI
-        import matplotlib.pyplot as plt
-        from collections import Counter
-    except ImportError:
-        return {'success': False, 'error': 'matplotlib no instalado'}
-    
+# A1: Funciones helper para SRP - analyze_trends refactorizada
+
+def _get_top_words(text: str, n_terms: int) -> List[str]:
+    """1. Extraer las n palabras más frecuentes del texto."""
+    from collections import Counter
     cleaned = clean_text(text, remove_stopwords=True)
     words = cleaned.split()
-    
-    if len(words) < n_sections:
-        return {'success': False, 'error': 'Texto muy corto para tendencias'}
-    
-    # Encontrar palabras más frecuentes
     freq = Counter(words)
-    top_words = [w for w, _ in freq.most_common(n_terms)]
-    
-    if not top_words:
-        return {'success': False, 'error': 'No hay palabras suficientes'}
-    
-    # Dividir texto en secciones y contar frecuencia de cada palabra
+    return [w for w, _ in freq.most_common(n_terms)]
+
+
+def _calculate_trends_data(words: List[str], top_words: List[str], n_sections: int) -> Dict[str, List[int]]:
+    """2. Calcular frecuencia de palabras por sección."""
+    from collections import Counter
     section_size = len(words) // n_sections
     trends_data = {word: [] for word in top_words}
     
@@ -642,31 +629,67 @@ def analyze_trends(text: str, n_terms: int = 5, n_sections: int = 10) -> Dict[st
         for word in top_words:
             trends_data[word].append(section_freq.get(word, 0))
     
-    # Crear gráfico con protección
+    return trends_data
+
+
+def _generate_trends_chart(top_words: List[str], trends_data: Dict[str, List[int]], n_sections: int) -> bytes:
+    """3. Generar gráfico de tendencias."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from io import BytesIO
+    
+    fig, ax = plt.subplots(figsize=(10, 5))
+    
+    x = range(n_sections)
+    for word in top_words:
+        ax.plot(x, trends_data[word], marker='o', label=word, linewidth=2)
+    
+    ax.set_xlabel('Sección del texto')
+    ax.set_ylabel('Frecuencia')
+    ax.set_title('Tendencias de palabras en el texto')
+    ax.legend(loc='upper right', fontsize=8)
+    ax.grid(True, alpha=0.3)
+    
+    img_buffer = BytesIO()
+    plt.tight_layout()
+    plt.savefig(img_buffer, format='PNG', dpi=100)
+    img_buffer.seek(0)
+    
+    plt.close(fig)
+    return img_buffer.getvalue()
+
+
+def analyze_trends(text: str, n_terms: int = 5, n_sections: int = 10) -> Dict[str, Any]:
+    """
+    Análisis de tendencias: frecuencia de palabras en diferentes secciones del texto.
+    Similar a 'Trends' de Voyant.
+    """
     try:
-        fig, ax = plt.subplots(figsize=(10, 5))
-        
-        x = range(n_sections)
-        for word in top_words:
-            ax.plot(x, trends_data[word], marker='o', label=word, linewidth=2)
-        
-        ax.set_xlabel('Sección del texto')
-        ax.set_ylabel('Frecuencia')
-        ax.set_title('Tendencias de palabras en el texto')
-        ax.legend(loc='upper right', fontsize=8)
-        ax.grid(True, alpha=0.3)
-        
-        # Convertir a imagen
-        img_buffer = BytesIO()
-        plt.tight_layout()
-        plt.savefig(img_buffer, format='PNG', dpi=100)
-        img_buffer.seek(0)
-        
-        plt.close(fig)
+        import matplotlib
+    except ImportError:
+        return {'success': False, 'error': 'matplotlib no instalado'}
+    
+    cleaned = clean_text(text, remove_stopwords=True)
+    words = cleaned.split()
+    
+    if len(words) < n_sections:
+        return {'success': False, 'error': 'Texto muy corto para tendencias'}
+    
+    # A1: Usar funciones helper separadas (SRP)
+    top_words = _get_top_words(text, n_terms)
+    
+    if not top_words:
+        return {'success': False, 'error': 'No hay palabras suficientes'}
+    
+    trends_data = _calculate_trends_data(words, top_words, n_sections)
+    
+    try:
+        image_data = _generate_trends_chart(top_words, trends_data, n_sections)
         
         return {
             'success': True,
-            'image_data': img_buffer.getvalue(),
+            'image_data': image_data,
             'top_words': top_words,
             'trends': trends_data
         }
@@ -1327,6 +1350,81 @@ def analyze_bubblelines(text: str, terms_list: list = None, show_bubbles: bool =
         return {'success': False, 'error': f'Error al generar gráfico: {str(e)}', 'image_data': None}
 
 
+# A1: Funciones helper para SRP - analyze_mandala refactorizada
+
+def _get_mandala_top_terms(text: str, n_terms: int) -> List[str]:
+    """1. Extraer los n términos más frecuentes."""
+    from collections import Counter
+    cleaned = clean_text(text, remove_stopwords=True)
+    words = cleaned.split()
+    freq = Counter(words)
+    return [w for w, _ in freq.most_common(n_terms)]
+
+
+def _calculate_mandala_data(words: List[str], top_words: List[str], n_rings: int) -> Dict[str, List[int]]:
+    """2. Calcular frecuencia de términos por anillo."""
+    from collections import Counter
+    section_size = len(words) // n_rings
+    mandala_data = {word: [] for word in top_words}
+    
+    for i in range(n_rings):
+        start = i * section_size
+        end = start + section_size if i < n_rings - 1 else len(words)
+        section_words = words[start:end]
+        section_freq = Counter(section_words)
+        
+        for word in top_words:
+            mandala_data[word].append(section_freq.get(word, 0))
+    
+    return mandala_data
+
+
+def _generate_mandala_chart(top_words: List[str], mandala_data: Dict[str, List[int]], n_rings: int) -> bytes:
+    """3. Generar gráfico polar tipo mandala."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from io import BytesIO
+    
+    fig, ax = plt.subplots(figsize=(10, 10), subplot_kw={'projection': 'polar'})
+    
+    angles = np.linspace(0, 2 * np.pi, len(top_words), endpoint=False)
+    radii = list(range(1, n_rings + 1))
+    
+    max_val = max(max(values) for values in mandala_data.values()) if mandala_data else 1
+    colors = plt.cm.viridis(np.linspace(0, 1, len(top_words)))
+    
+    for ring_idx, radius in enumerate(radii):
+        for term_idx, (word, values) in enumerate(mandala_data.items()):
+            if ring_idx < len(values):
+                val = values[ring_idx] / max_val if max_val > 0 else 0
+                angle = angles[term_idx]
+                size = 50 + (val * 200)
+                ax.scatter(angle, radius, s=size, c=[colors[term_idx]], alpha=0.7)
+                
+                if ring_idx == n_rings - 1:
+                    ax.annotate(word, (angle, radius + 0.15), fontsize=8, 
+                               ha='center', va='center', fontweight='bold')
+    
+    ax.set_ylim(0, n_rings + 0.5)
+    ax.set_yticklabels([])
+    ax.set_title('Mandala - Diagrama circular concéntrico', pad=20, fontsize=14, fontweight='bold')
+    
+    legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
+                                  markerfacecolor=colors[i], markersize=10, 
+                                  label=f'Término {i+1}') for i in range(min(5, len(top_words)))]
+    ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.3, 1.0), fontsize=8)
+    
+    img_buffer = BytesIO()
+    plt.tight_layout()
+    plt.savefig(img_buffer, format='PNG', dpi=100)
+    img_buffer.seek(0)
+    plt.close(fig)
+    
+    return img_buffer.getvalue()
+
+
 def analyze_mandala(text: str, n_terms: int = 12, n_rings: int = 3) -> Dict[str, Any]:
     """
     Análisis Mandala - diagrama circular concéntrico.
@@ -1342,10 +1440,6 @@ def analyze_mandala(text: str, n_terms: int = 12, n_rings: int = 3) -> Dict[str,
     """
     try:
         import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        import numpy as np
-        from collections import Counter
     except ImportError:
         return {'success': False, 'error': 'matplotlib no instalado', 'image_data': None, 'terms': [], 'rings': []}
     
@@ -1359,91 +1453,25 @@ def analyze_mandala(text: str, n_terms: int = 12, n_rings: int = 3) -> Dict[str,
     cleaned = clean_text(text, remove_stopwords=True)
     words = cleaned.split()
     
-    # Validación de texto mínimo
     if len(words) < 100:
         return {'success': False, 'error': 'Texto muy corto para Mandala (mínimo 100 palabras)', 'image_data': None}
     
-    # Encontrar términos más frecuentes
-    freq = Counter(words)
-    top_words = [w for w, _ in freq.most_common(n_terms)]
+    # A1: Usar funciones helper separadas (SRP)
+    top_words = _get_mandala_top_terms(text, n_terms)
     
     if not top_words:
         return {'success': False, 'error': 'No hay palabras suficientes', 'image_data': None}
     
-    # Dividir texto en secciones para los anillos
-    section_size = len(words) // n_rings
-    mandala_data = {word: [] for word in top_words}
-    
-    for i in range(n_rings):
-        start = i * section_size
-        end = start + section_size if i < n_rings - 1 else len(words)
-        section_words = words[start:end]
-        section_freq = Counter(section_words)
-        
-        for word in top_words:
-            mandala_data[word].append(section_freq.get(word, 0))
+    mandala_data = _calculate_mandala_data(words, top_words, n_rings)
     
     try:
-        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw={'projection': 'polar'})
-        
-        # Ángulos para cada término
-        angles = np.linspace(0, 2 * np.pi, n_terms, endpoint=False)
-        
-        # Radio de cada anillo
-        radii = list(range(1, n_rings + 1))
-        
-        # Normalizar datos para mejor visualización
-        max_val = max(max(values) for values in mandala_data.values()) if mandala_data else 1
-        
-        # Colores
-        colors = plt.cm.viridis(np.linspace(0, 1, n_terms))
-        
-        # Dibujar cada término en todos los anillos
-        for ring_idx, radius in enumerate(radii):
-            for term_idx, (word, values) in enumerate(mandala_data.items()):
-                if ring_idx < len(values):
-                    # Valor normalizado
-                    val = values[ring_idx] / max_val if max_val > 0 else 0
-                    
-                    # Posición angular
-                    angle = angles[term_idx]
-                    
-                    # Tamaño del punto según valor
-                    size = 50 + (val * 200)
-                    
-                    # Posición radial (invertida para que an outer = mayor)
-                    r = radius
-                    
-                    ax.scatter(angle, r, s=size, c=[colors[term_idx]], alpha=0.7)
-                    
-                    # Añadir etiqueta en el anillo exterior
-                    if ring_idx == n_rings - 1:
-                        ax.annotate(word, (angle, r + 0.15), fontsize=8, 
-                                   ha='center', va='center', fontweight='bold')
-        
-        # Configurar el gráfico polar
-        ax.set_ylim(0, n_rings + 0.5)
-        ax.set_yticklabels([])
-        ax.set_title('Mandala - Diagrama circular concéntrico', pad=20, fontsize=14, fontweight='bold')
-        
-        # Leyenda
-        legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
-                                      markerfacecolor=colors[i], markersize=10, 
-                                      label=f'Término {i+1}') for i in range(min(5, n_terms))]
-        ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.3, 1.0), fontsize=8)
-        
-        # Convertir a imagen
-        img_buffer = BytesIO()
-        plt.tight_layout()
-        plt.savefig(img_buffer, format='PNG', dpi=100)
-        img_buffer.seek(0)
-        plt.close(fig)
+        image_data = _generate_mandala_chart(top_words, mandala_data, n_rings)
         
         return {
             'success': True,
-            'image_data': img_buffer.getvalue(),
+            'image_data': image_data,
             'terms': top_words,
-            'rings': list(radii),
+            'rings': list(range(1, n_rings + 1)),
             'error': ''
         }
     except Exception as e:
