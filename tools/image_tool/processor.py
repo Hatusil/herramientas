@@ -442,6 +442,477 @@ def _image_to_dict(image: np.ndarray) -> Dict[str, Any]:
     }
 
 
+# === PHASE 5: MORFOLOGÍA ==========================================
+
+
+def _erode(image: np.ndarray, kernel_size: int = 3) -> Dict[str, Any]:
+    """Erosión con elemento estructurante cuadrangular."""
+    try:
+        if kernel_size % 2 == 0:
+            return _fail("kernel_size must be odd")
+        if kernel_size < 3:
+            return _fail("kernel_size must be >= 3")
+
+        if CV2_AVAILABLE:
+            import cv2
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+            eroded = cv2.erode(image, kernel, iterations=1)
+        else:
+            from scipy.ndimage import binary_erosion
+            # For grayscale, use minimum filter
+            from scipy.ndimage import minimum_filter
+            eroded = minimum_filter(image, size=kernel_size).astype(np.uint8)
+
+        return _ok(eroded, f"Erosion with kernel={kernel_size}")
+    except Exception as e:
+        return _fail(f"Erosion failed: {e}")
+
+
+def _dilate(image: np.ndarray, kernel_size: int = 3) -> Dict[str, Any]:
+    """Dilatación con elemento estructurante cuadrangular."""
+    try:
+        if kernel_size % 2 == 0:
+            return _fail("kernel_size must be odd")
+        if kernel_size < 3:
+            return _fail("kernel_size must be >= 3")
+
+        if CV2_AVAILABLE:
+            import cv2
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+            dilated = cv2.dilate(image, kernel, iterations=1)
+        else:
+            from scipy.ndimage import maximum_filter
+            dilated = maximum_filter(image, size=kernel_size).astype(np.uint8)
+
+        return _ok(dilated, f"Dilation with kernel={kernel_size}")
+    except Exception as e:
+        return _fail(f"Dilation failed: {e}")
+
+
+def _open(image: np.ndarray, kernel_size: int = 3) -> Dict[str, Any]:
+    """Apertura: erosión seguida de dilatación."""
+    try:
+        if kernel_size % 2 == 0:
+            return _fail("kernel_size must be odd")
+
+        if CV2_AVAILABLE:
+            import cv2
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+            opened = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
+        else:
+            # Manual: erode then dilate
+            from scipy.ndimage import minimum_filter, maximum_filter
+            eroded = minimum_filter(image, size=kernel_size)
+            opened = maximum_filter(eroded, size=kernel_size).astype(np.uint8)
+
+        return _ok(opened, f"Opening (erode+dilate) with kernel={kernel_size}")
+    except Exception as e:
+        return _fail(f"Opening failed: {e}")
+
+
+def _close(image: np.ndarray, kernel_size: int = 3) -> Dict[str, Any]:
+    """Cierre: dilatación seguida de erosión."""
+    try:
+        if kernel_size % 2 == 0:
+            return _fail("kernel_size must be odd")
+
+        if CV2_AVAILABLE:
+            import cv2
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+            closed = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
+        else:
+            # Manual: dilate then erode
+            from scipy.ndimage import maximum_filter, minimum_filter
+            dilated = maximum_filter(image, size=kernel_size)
+            closed = minimum_filter(dilated, size=kernel_size).astype(np.uint8)
+
+        return _ok(closed, f"Closing (dilate+erode) with kernel={kernel_size}")
+    except Exception as e:
+        return _fail(f"Closing failed: {e}")
+
+
+# === PHASE 6: DETECCIÓN DE BORDES ==================================
+
+
+def _edge_sobel(image: np.ndarray) -> Dict[str, Any]:
+    """Detector Sobel."""
+    try:
+        if CV2_AVAILABLE:
+            import cv2
+            # Convert to grayscale if needed
+            if len(image.shape) == 3:
+                gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            else:
+                gray = image
+
+            # Sobel in x and y
+            sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+            sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+            magnitude = np.sqrt(sobelx**2 + sobely**2)
+            magnitude = np.uint8(np.clip(magnitude, 0, 255))
+        else:
+            # Manual Sobel approximation
+            if len(image.shape) == 3:
+                gray = np.dot(image[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
+            else:
+                gray = image
+
+            # Simple gradient
+            gx = np.abs(np.gradient(gray, axis=1))
+            gy = np.abs(np.gradient(gray, axis=0))
+            magnitude = np.clip(gx + gy, 0, 255).astype(np.uint8)
+
+        return _ok(magnitude, "Sobel edge detection")
+    except Exception as e:
+        return _fail(f"Sobel failed: {e}")
+
+
+def _edge_prewitt(image: np.ndarray) -> Dict[str, Any]:
+    """Detector Prewitt."""
+    try:
+        if CV2_AVAILABLE:
+            import cv2
+            if len(image.shape) == 3:
+                gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            else:
+                gray = image
+
+            # Prewitt kernels
+            kernelx = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
+            kernely = np.array([[-1, -1, -1], [0, 0, 0], [1, 1, 1]])
+
+            prewittx = cv2.filter2D(gray, cv2.CV_64F, kernelx)
+            prewitty = cv2.filter2D(gray, cv2.CV_64F, kernely)
+            magnitude = np.sqrt(prewittx**2 + prewitty**2)
+            magnitude = np.uint8(np.clip(magnitude, 0, 255))
+        else:
+            if len(image.shape) == 3:
+                gray = np.dot(image[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
+            else:
+                gray = image
+
+            gx = np.abs(np.gradient(gray.astype(float), axis=1))
+            gy = np.abs(np.gradient(gray.astype(float), axis=0))
+            magnitude = np.clip(gx + gy, 0, 255).astype(np.uint8)
+
+        return _ok(magnitude, "Prewitt edge detection")
+    except Exception as e:
+        return _fail(f"Prewitt failed: {e}")
+
+
+def _edge_laplacian(image: np.ndarray) -> Dict[str, Any]:
+    """Detector Laplaciano."""
+    try:
+        if CV2_AVAILABLE:
+            import cv2
+            if len(image.shape) == 3:
+                gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            else:
+                gray = image
+
+            laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+            laplacian = np.uint8(np.clip(np.abs(laplacian), 0, 255))
+        else:
+            if len(image.shape) == 3:
+                gray = np.dot(image[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
+            else:
+                gray = image
+
+            # Manual Laplacian (4-neighbor)
+            laplacian = np.zeros_like(gray, dtype=np.float64)
+            laplacian[1:-1, 1:-1] = (
+                -4 * gray[1:-1, 1:-1]
+                + gray[:-2, 1:-1]
+                + gray[2:, 1:-1]
+                + gray[1:-1, :-2]
+                + gray[1:-1, 2:]
+            )
+            laplacian = np.uint8(np.clip(np.abs(laplacian), 0, 255))
+
+        return _ok(laplacian, "Laplacian edge detection")
+    except Exception as e:
+        return _fail(f"Laplacian failed: {e}")
+
+
+def _edge_canny(image: np.ndarray, threshold1: int = 50, threshold2: int = 150) -> Dict[str, Any]:
+    """Detector Canny (async)."""
+    try:
+        if CV2_AVAILABLE:
+            import cv2
+            if len(image.shape) == 3:
+                gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            else:
+                gray = image
+
+            edges = cv2.Canny(gray, threshold1, threshold2)
+        else:
+            # Manual Canny approximation using gradient magnitude
+            if len(image.shape) == 3:
+                gray = np.dot(image[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
+            else:
+                gray = image
+
+            # Simple gradient magnitude as edge approximation
+            gx = np.abs(np.gradient(gray.astype(float), axis=1))
+            gy = np.abs(np.gradient(gray.astype(float), axis=0))
+            magnitude = np.clip(gx + gy, 0, 255).astype(np.uint8)
+
+            # Apply hysteresis thresholding
+            edges = np.zeros_like(magnitude)
+            edges[magnitude > threshold2] = 255
+            edges[(magnitude > threshold1) & (magnitude <= threshold2)] = 128
+
+        return _ok(edges, f"Canny edges (t1={threshold1}, t2={threshold2})")
+    except Exception as e:
+        return _fail(f"Canny failed: {e}")
+
+
+def _find_contours(image: np.ndarray) -> Dict[str, Any]:
+    """Encuentra contornos en imagen binarizada."""
+    try:
+        if CV2_AVAILABLE:
+            import cv2
+            if len(image.shape) == 3:
+                gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            else:
+                gray = image
+
+            contours, _ = cv2.findContours(gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            # Draw contours on copy
+            result = image.copy()
+            if len(result.shape) == 2:
+                result = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
+            cv2.drawContours(result, contours, -1, (0, 255, 0), 2)
+
+            output_path = Path('output/contours.png')
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(str(output_path), cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
+
+            return {
+                'success': True,
+                'message': f"Found {len(contours)} contours",
+                'output_files': [str(output_path)],
+                'image_data': _image_to_dict(result),
+                'error': None
+            }
+        else:
+            return _fail("OpenCV required for findContours")
+    except Exception as e:
+        return _fail(f"Find contours failed: {e}")
+
+
+def _bounding_boxes(image: np.ndarray, min_area: int = 100) -> Dict[str, Any]:
+    """Calcula bounding boxes de contornos."""
+    try:
+        if CV2_AVAILABLE:
+            import cv2
+            if len(image.shape) == 3:
+                gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            else:
+                gray = image
+
+            contours, _ = cv2.findContours(gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            # Filter by area and draw boxes
+            result = image.copy()
+            if len(result.shape) == 2:
+                result = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
+
+            boxes = []
+            for cnt in contours:
+                area = cv2.contourArea(cnt)
+                if area >= min_area:
+                    x, y, w, h = cv2.boundingRect(cnt)
+                    boxes.append({'x': x, 'y': y, 'w': w, 'h': h, 'area': int(area)})
+                    cv2.rectangle(result, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+            output_path = Path('output/bounding_boxes.png')
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(str(output_path), cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
+
+            return {
+                'success': True,
+                'message': f"Found {len(boxes)} bounding boxes (min_area={min_area})",
+                'output_files': [str(output_path)],
+                'image_data': _image_to_dict(result),
+                'error': None
+            }
+        else:
+            return _fail("OpenCV required for bounding boxes")
+    except Exception as e:
+        return _fail(f"Bounding boxes failed: {e}")
+
+
+# === PHASE 7: ANÁLISIS AVANZADO ======================================
+
+
+def _template_match(image: np.ndarray, template_path: str) -> Dict[str, Any]:
+    """Template matching (async)."""
+    try:
+        if not Path(template_path).exists():
+            return _fail(f"Template not found: {template_path}")
+
+        if CV2_AVAILABLE:
+            import cv2
+
+            # Load template
+            template = _load_image(template_path)
+            if not template['success']:
+                return _fail(f"Cannot load template: {template.get('error')}")
+
+            template_img = template['image_data']['array']
+            if len(template_img.shape) == 3:
+                template_gray = cv2.cvtColor(template_img, cv2.COLOR_RGB2GRAY)
+            else:
+                template_gray = template_img
+
+            # Convert main image to grayscale if needed
+            if len(image.shape) == 3:
+                gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            else:
+                gray = image
+
+            # Template matching
+            result = cv2.matchTemplate(gray, template_gray, cv2.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+
+            # Draw rectangle at best match
+            h, w = template_gray.shape
+            output = image.copy()
+            if len(output.shape) == 2:
+                output = cv2.cvtColor(output, cv2.COLOR_GRAY2RGB)
+            cv2.rectangle(output, max_loc, (max_loc[0] + w, max_loc[1] + h), (0, 255, 0), 3)
+
+            output_path = Path('output/template_match.png')
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(str(output_path), cv2.cvtColor(output, cv2.COLOR_RGB2BGR))
+
+            return {
+                'success': True,
+                'message': f"Best match at ({max_loc[0]}, {max_loc[1]}) with confidence {max_val:.3f}",
+                'output_files': [str(output_path)],
+                'image_data': _image_to_dict(output),
+                'error': None
+            }
+        else:
+            return _fail("OpenCV required for template matching")
+    except Exception as e:
+        return _fail(f"Template matching failed: {e}")
+
+
+def _pseudocolor(image: np.ndarray, colormap: str = 'jet') -> Dict[str, Any]:
+    """Asigna pseudocolores a imagen en escala de grises."""
+    try:
+        if CV2_AVAILABLE:
+            import cv2
+            if len(image.shape) == 3:
+                gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            else:
+                gray = image
+
+            # Map colormap name to CV2 constant
+            colormap_dict = {
+                'jet': cv2.COLORMAP_JET,
+                'ocean': cv2.COLORMAP_OCEAN,
+                'summer': cv2.COLORMAP_SUMMER,
+                'winter': cv2.COLORMAP_WINTER,
+                'autumn': cv2.COLORMAP_AUTUMN,
+                'bone': cv2.COLORMAP_BONE,
+                'cool': cv2.COLORMAP_COOL,
+                'copper': cv2.COLORMAP_COPPER,
+                'flag': cv2.COLORMAP_FLAG,
+                'hsv': cv2.COLORMAP_HSV,
+                'inferno': cv2.COLORMAP_INFERNO,
+                'magma': cv2.COLORMAP_MAGMA,
+                'plasma': cv2.COLORMAP_PLASMA,
+                'turbo': cv2.COLORMAP_TURBO,
+                'viridis': cv2.COLORMAP_VIRIDIS,
+            }
+
+            if colormap.lower() not in colormap_dict:
+                return _fail(f"Unknown colormap: {colormap}")
+
+            colored = cv2.applyColorMap(gray, colormap_dict[colormap.lower()])
+        else:
+            # Manual colormap fallback (simple gradient)
+            if len(image.shape) == 3:
+                gray = np.dot(image[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
+            else:
+                gray = image
+
+            # Simple rainbow-like mapping
+            normalized = gray.astype(float) / 255.0
+            colored = np.zeros((gray.shape[0], gray.shape[1], 3), dtype=np.uint8)
+            colored[..., 0] = (normalized * 255).astype(np.uint8)  # Red channel
+            colored[..., 1] = ((1 - normalized) * 127).astype(np.uint8)  # Green
+            colored[..., 2] = ((1 - normalized) * 255).astype(np.uint8)  # Blue
+
+        return _ok(colored, f"Pseudocolor applied ({colormap})")
+    except Exception as e:
+        return _fail(f"Pseudocolor failed: {e}")
+
+
+def _haar_detect(image: np.ndarray, cascade_path: str) -> Dict[str, Any]:
+    """Detección con Haar cascades (async)."""
+    try:
+        if not CV2_AVAILABLE:
+            return _fail("OpenCV required for Haar detection")
+
+        import cv2
+
+        # Check if cascade file exists
+        cascade_file = Path(cascade_path)
+        if not cascade_file.exists():
+            # Try OpenCV built-in cascades
+            opencv_cascades = {
+                'face': cv2.data.haarcascades + 'haarcascade_frontalface_default.xml',
+                'eye': cv2.data.haarcascades + 'haarcascade_eye.xml',
+                'smile': cv2.data.haarcascades + 'haarcascade_smile.xml',
+            }
+
+            if cascade_path.lower() in opencv_cascades:
+                cascade_file = Path(opencv_cascades[cascade_path.lower()])
+            else:
+                return _fail(f"Cascade not found: {cascade_path}")
+
+        # Load cascade
+        cascade = cv2.CascadeClassifier(str(cascade_file))
+        if cascade.empty():
+            return _fail(f"Cannot load cascade: {cascade_path}")
+
+        # Convert to grayscale
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = image
+
+        # Detect
+        detections = cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+        # Draw rectangles
+        result = image.copy()
+        if len(result.shape) == 2:
+            result = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
+
+        for (x, y, w, h) in detections:
+            cv2.rectangle(result, (x, y), (x + w, y + h), (0, 255, 0), 3)
+
+        output_path = Path('output/haar_detect.png')
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(output_path), cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
+
+        return {
+            'success': True,
+            'message': f"Detected {len(detections)} objects",
+            'output_files': [str(output_path)],
+            'image_data': _image_to_dict(result),
+            'error': None
+        }
+    except Exception as e:
+        return _fail(f"Haar detection failed: {e}")
+
+
 # === CV2 availability check ===
 CV2_AVAILABLE = True
 try:
