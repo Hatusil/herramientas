@@ -6,7 +6,7 @@ import logging
 import os
 import json
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from core import constants
 from core.utils import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg, get_output_path, get_output_path_format, validate_input_file, validate_file_extension, validate_file_size

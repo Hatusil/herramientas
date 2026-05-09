@@ -83,8 +83,10 @@ class DuplicateToolUI(BaseToolUI):
             command=self._select_folder
         ).pack(side="left")
         
-        # Status label (from BaseToolUI)
-    
+        # Status label
+        self.status_label = ctk.CTkLabel(self, text="", text_color="gray")
+        self.status_label.pack(pady=5)
+
     def _select_folder(self) -> None:
         """Select folder using file dialog."""
         folder = filedialog.askdirectory(title="Seleccionar carpeta")
