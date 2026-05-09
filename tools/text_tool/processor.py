@@ -288,55 +288,112 @@ def extract_text_from_file(file_path: str) -> Dict[str, Any]:
         return {'success': False, 'error': str(e)}
 
 
+def _validate_url_format(url: str) -> str:
+    """
+    Validate and return URL format with proper scheme.
+    
+    Args:
+        url: Raw URL string from user input
+        
+    Returns:
+        URL with http:// or https:// prefix
+    """
+    url = url.strip()
+    if not url.startswith(('http://', 'https://')):
+        logger.warning(f"URL sin protocolo válido: {url}")
+        return 'https://' + url
+    return url
+
+
+def _build_request_headers(url: str) -> Dict[str, str]:
+    """
+    Build HTTP request headers for web scraping.
+    
+    Args:
+        url: The target URL (unused, for signature consistency)
+        
+    Returns:
+        Dictionary of HTTP headers
+    """
+    return {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Cache-Control': 'max-age=0',
+        'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"Windows"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+    }
+
+
+def _parse_html_to_text(response_text: str, url: str) -> str:
+    """
+    Parse HTML response and extract clean text.
+    
+    Args:
+        response_text: Raw HTML content from HTTP response
+        url: Source URL for logging purposes
+        
+    Returns:
+        Cleaned text with normalized whitespace
+    """
+    soup = BeautifulSoup(response_text, 'html.parser')
+    
+    # Remove script and style elements
+    for script in soup(['script', 'style']):
+        script.decompose()
+    
+    # Extract visible text
+    text = soup.get_text(separator=' ')
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    logger.info(f"Texto extraído: {len(text)} caracteres")
+    return text
+
+
 def extract_text_from_url(url: str) -> Dict[str, Any]:
-    """Extrae texto de una URL."""
+    """
+    Extrae texto de una URL.
+    
+    Orchestrates URL validation, HTTP request, HTML parsing, and text extraction.
+    
+    Args:
+        url: URL to scrape
+        
+    Returns:
+        Dict with 'success', 'text', 'source' or 'error'
+    """
     logger.info(f"Intentando scrapear URL: {url}")
     
     if not REQUESTS_AVAILABLE:
         logger.error("requests no está instalado")
         return {'success': False, 'error': 'requests no instalado'}
     
-    # Validar que la URL tenga protocolo
-    url = url.strip()
-    if not url.startswith(('http://', 'https://')):
-        logger.warning(f"URL sin protocolo válido: {url}")
-        url = 'https://' + url
-    
     try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Cache-Control': 'max-age=0',
-            'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-            'Sec-Ch-Ua-Mobile': '?0',
-            'Sec-Ch-Ua-Platform': '"Windows"',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-        }
+        # Step 1: Validate URL format
+        url = _validate_url_format(url)
         
+        # Step 2: Build request headers
+        headers = _build_request_headers(url)
+        
+        # Step 3: Make HTTP request
         logger.info(f"Haciendo request a: {url}")
         response = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
         response.raise_for_status()
         
         logger.info(f"Response received, status: {response.status_code}")
-        # Force UTF-8 encoding to avoid garbled characters
         response.encoding = 'utf-8'
-        soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Extraer texto visible
-        for script in soup(['script', 'style']):
-            script.decompose()
+        # Step 4: Parse HTML to text
+        text = _parse_html_to_text(response.text, url)
         
-        text = soup.get_text(separator=' ')
-        text = re.sub(r'\s+', ' ', text).strip()
-        
-        logger.info(f"Texto extraído: {len(text)} caracteres")
         return {'success': True, 'text': text, 'source': url}
     
     except requests.exceptions.HTTPError as e:
@@ -1565,9 +1622,171 @@ def analyze_wordtree_simple(text: str, phrase: str, max_results: int = 20) -> Di
     }
 
 
+def _create_tree_node() -> Dict:
+    """
+    Factory for creating tree nodes.
+    
+    Returns:
+        Dictionary with count and children structure
+    """
+    return {'count': 0, 'children': {}}
+
+
+def _build_wordtree(text: str, phrase: str, max_depth: int) -> Dict:
+    """
+    Core tree-building logic from text and phrase.
+    
+    Args:
+        text: Cleaned text to analyze
+        phrase: Root phrase to search for
+        max_depth: Maximum depth for tree branches
+        
+    Returns:
+        Tree dictionary with count and children
+    """
+    from collections import Counter
+    
+    words = text.lower().split()
+    phrase_words = phrase.split()
+    phrase_len = len(phrase_words)
+    
+    tree = _create_tree_node()
+    phrase_as_tuple = tuple(phrase_words)
+    
+    for i in range(len(words) - phrase_len):
+        if tuple(words[i:i+phrase_len]) == phrase_as_tuple:
+            current_level = tree
+            current_level['count'] += 1
+            
+            for depth in range(max_depth):
+                next_idx = i + phrase_len + depth
+                if next_idx >= len(words):
+                    break
+                
+                next_word = words[next_idx]
+                
+                if next_word and len(next_word) > 0:
+                    if next_word not in current_level['children']:
+                        current_level['children'][next_word] = _create_tree_node()
+                    current_level['children'][next_word]['count'] += 1
+                    current_level = current_level['children'][next_word]
+    
+    return tree
+
+
+def _convert_tree_to_dict(root: Dict, phrase: str) -> Dict:
+    """
+    Convert tree structure for UI rendering.
+    
+    Args:
+        root: Tree root node with count and children
+        phrase: Root phrase for the tree
+        
+    Returns:
+        Dictionary with root, count, and children for UI
+    """
+    # Prepare data for interactive UI - simple usable structure
+    tree_data = {
+        'root': phrase,
+        'count': root['count'],
+        'children': []
+    }
+    
+    # Convert children to sorted list (top 10)
+    sorted_children = sorted(root['children'].items(), key=lambda x: x[1]['count'], reverse=True)[:10]
+    for word, data in sorted_children:
+        child = {
+            'word': word,
+            'count': data['count'],
+            'children': []
+        }
+        # Include second level for interaction (top 5)
+        for subword, subdata in sorted(data['children'].items(), key=lambda x: x[1]['count'], reverse=True)[:5]:
+            child['children'].append({
+                'word': subword,
+                'count': subdata['count']
+            })
+        tree_data['children'].append(child)
+    
+    return tree_data
+
+
+def _render_wordtree_chart(tree: Dict, phrase: str) -> Optional[bytes]:
+    """
+    Generate matplotlib visualization for wordtree.
+    
+    Args:
+        tree: Tree dictionary with children
+        phrase: Root phrase for title
+        
+    Returns:
+        PNG image data as bytes, or None on failure
+    """
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    
+    fig, ax = plt.subplots(figsize=(10, 12))
+    ax.set_xlim(-0.5, 10.5)
+    ax.set_ylim(-0.5, max(8, len(tree['children']) * 1.0 + 1))
+    
+    # Draw root node (the phrase)
+    root_x, root_y = 0.5, 5
+    ax.text(root_x, root_y, phrase, fontsize=14, fontweight='bold',
+           ha='center', va='center',
+           bbox=dict(boxstyle='round,pad=0.3', facecolor='#ADD8E6', edgecolor='black'))
+    
+    # Draw first level children (next words)
+    first_level_items = sorted(tree['children'].items(), key=lambda x: x[1]['count'], reverse=True)
+    
+    if not first_level_items:
+        ax.text(5, 2.5, "No se encontraron relaciones repetidas", 
+               fontsize=12, ha='center', style='italic', color='gray')
+    else:
+        # Limit first level to 8 items for readability
+        first_level_items = first_level_items[:8]
+        
+        # Calculate spacing
+        level_height = 4
+        item_spacing = 10 / (len(first_level_items) + 1)
+        
+        for idx, (word, data) in enumerate(first_level_items):
+            x_pos = item_spacing * (idx + 1)
+            y_pos = level_height
+            
+            # Draw line from root
+            ax.plot([root_x, x_pos], [root_y - 0.2, y_pos + 0.2], 
+                   'k-', linewidth=1, alpha=0.5)
+            
+            # Draw node
+            count_text = f"({data['count']})"
+            ax.text(x_pos, y_pos, f"{word}\n{count_text}", 
+                   fontsize=10, ha='center', va='center',
+                   bbox=dict(boxstyle='round,pad=0.2', facecolor='#E8E8E8', edgecolor='gray'))
+        
+        # Add continuation indicator if truncated
+        if len(tree['children']) > 8:
+            ax.text(5, 0.5, "... (continúa)", fontsize=10, 
+                   ha='center', style='italic', color='gray')
+    
+    ax.set_title(f'Árbol de Palabras: "{phrase}"', fontsize=14, fontweight='bold')
+    ax.axis('off')
+    
+    # Convert to image
+    img_buffer = BytesIO()
+    plt.tight_layout()
+    plt.savefig(img_buffer, format='PNG', dpi=100)
+    img_buffer.seek(0)
+    plt.close(fig)
+    
+    return img_buffer.getvalue()
+
+
 def analyze_wordtree(text: str, phrase: str, max_depth: int = 5) -> Dict[str, Any]:
     """
     Análisis WordTree - visualiza relaciones de palabras en estructura de árbol.
+    
+    Orchestrates validation, tree building, conversion, and visualization.
     
     Args:
         text: Texto de entrada
@@ -1578,176 +1797,52 @@ def analyze_wordtree(text: str, phrase: str, max_depth: int = 5) -> Dict[str, An
         Dict con 'success', 'image_data' (bytes), 'tree' (dict), 'error': str
         
     Note:
-        Implementa visualización estilo Voyant - muestra árbol de palabras
-        derivadas de la frase raíz.
+        Implements Voyant-style visualization - shows word tree derived from root phrase.
     """
+    # Check matplotlib availability
     try:
         import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        import numpy as np
     except ImportError:
         return {'success': False, 'error': 'matplotlib no instalado', 'image_data': None, 'tree': None}
     
+    # Validation: text
     if not text or not text.strip():
         return {'success': False, 'error': 'Ingrese texto para analizar', 'image_data': None, 'tree': None}
     
+    # Validation: phrase
     phrase = phrase.strip().lower()
     if not phrase:
         return {'success': False, 'error': 'Ingrese una frase para analizar', 'image_data': None, 'tree': None}
     
-    # Aplicar clean_text() internamente para filtrar stopwords
+    # Clean text and prepare words
     cleaned = clean_text(text, remove_stopwords=True, exclude_words=[])
-    
-    # Procesar texto limpio
     words = cleaned.lower().split()
     phrase_words = phrase.split()
     phrase_len = len(phrase_words)
     
+    # Validation: sufficient words
     if len(words) < phrase_len + 1:
         return {'success': False, 'error': 'Texto muy corto para analizar', 'image_data': None, 'tree': None}
     
-    # Buscar todas las ocurrencias de la frase y collectar siguientes palabras
-    # Usar n-grams para encontrar siguiente palabra después de la frase
-    from collections import Counter
+    # Build tree structure
+    tree = _build_wordtree(cleaned, phrase, max_depth)
     
-    # Construir árbol usando una función helper en lugar de defaultdict anidado
-    def make_node():
-        return {'count': 0, 'children': {}}
-    
-    tree = make_node()
-    
-    # Encontrar ocurrencias de la frase y colectar palabras siguientes
-    phrase_as_tuple = tuple(phrase_words)
-    
-    for i in range(len(words) - phrase_len):
-        # Verificar si las palabras coinciden con la frase
-        if tuple(words[i:i+phrase_len]) == phrase_as_tuple:
-            # Found - colectar siguientes palabras (hasta max_depth)
-            current_level = tree
-            current_level['count'] += 1
-            
-            # Colectar siguientes palabras
-            for depth in range(max_depth):
-                next_idx = i + phrase_len + depth
-                if next_idx >= len(words):
-                    break
-                
-                next_word = words[next_idx]
-                
-                # Solo añadir si no es empty y no es solo punctiation
-                if next_word and len(next_word) > 0:
-                    # Add to children
-                    if next_word not in current_level['children']:
-                        current_level['children'][next_word] = make_node()
-                    current_level['children'][next_word]['count'] += 1
-                    
-                    # Move to next level for next iteration
-                    current_level = current_level['children'][next_word]
-    
-    # Verificar si hay datos en el árbol
+    # Check if tree has data
     if tree['count'] == 0 and len(tree['children']) == 0:
         return {'success': True, 'data': [], 'error': 'No se encontraron relaciones repetidas', 'tree': {}}
     
-    # Convertir árbol a estructura simple para visualización
-    def tree_to_dict(node):
-        """Convierte árbol a formato simple."""
-        result = {
-            'count': node.get('count', 0),
-            'children': {}
-        }
-        for child_name, child_data in node.get('children', {}).items():
-            result['children'][child_name] = tree_to_dict(child_data)
-        return result
+    # Convert tree for UI
+    tree_data = _convert_tree_to_dict(tree, phrase)
     
-    tree_data = tree_to_dict(tree)
-    
-    # Preparar datos para UI interactiva
-    # Estructura más simple y usable para el UI
-    tree_data = {
-        'root': phrase,
-        'count': tree['count'],
-        'children': []
-    }
-    
-    # Convertir hijos a lista ordenada
-    sorted_children = sorted(tree['children'].items(), key=lambda x: x[1]['count'], reverse=True)[:10]
-    for word, data in sorted_children:
-        child = {
-            'word': word,
-            'count': data['count'],
-            'children': []
-        }
-        # Incluir segundo nivel para interacción
-        for subword, subdata in sorted(data['children'].items(), key=lambda x: x[1]['count'], reverse=True)[:5]:
-            child['children'].append({
-                'word': subword,
-                'count': subdata['count']
-            })
-        tree_data['children'].append(child)
-    
-    # Crear visualización de árbol (para compatibilidad hacia atrás)
+    # Render visualization
     try:
-        fig, ax = plt.subplots(figsize=(10, 12))
-        ax.set_xlim(-0.5, 10.5)
-        ax.set_ylim(-0.5, max(8, len(tree['children']) * 1.0 + 1))
-        
-        # Draw root node (the phrase)
-        root_x, root_y = 0.5, 5
-        ax.text(root_x, root_y, phrase, fontsize=14, fontweight='bold',
-               ha='center', va='center',
-               bbox=dict(boxstyle='round,pad=0.3', facecolor='#ADD8E6', edgecolor='black'))
-        
-        # Draw first level children (next words)
-        first_level_items = sorted(tree['children'].items(), key=lambda x: x[1]['count'], reverse=True)
-        
-        if not first_level_items:
-            ax.text(5, 2.5, "No se encontraron relaciones repetidas", 
-                   fontsize=12, ha='center', style='italic', color='gray')
-        else:
-            # Limit first level to 8 items for readability
-            first_level_items = first_level_items[:8]
-            
-            # Calculate spacing
-            level_height = 4
-            item_spacing = 10 / (len(first_level_items) + 1)
-            
-            for idx, (word, data) in enumerate(first_level_items):
-                x_pos = item_spacing * (idx + 1)
-                y_pos = level_height
-                
-                # Draw line from root
-                ax.plot([root_x, x_pos], [root_y - 0.2, y_pos + 0.2], 
-                       'k-', linewidth=1, alpha=0.5)
-                
-                # Draw node
-                count_text = f"({data['count']})"
-                ax.text(x_pos, y_pos, f"{word}\n{count_text}", 
-                       fontsize=10, ha='center', va='center',
-                       bbox=dict(boxstyle='round,pad=0.2', facecolor='#E8E8E8', edgecolor='gray'))
-            
-            # Add continuation indicator if truncated
-            if len(tree['children']) > 8:
-                ax.text(5, 0.5, "... (continúa)", fontsize=10, 
-                       ha='center', style='italic', color='gray')
-        
-        ax.set_title(f'Árbol de Palabras: "{phrase}"', fontsize=14, fontweight='bold')
-        ax.axis('off')
-        
-        # Convertir a imagen
-        img_buffer = BytesIO()
-        plt.tight_layout()
-        plt.savefig(img_buffer, format='PNG', dpi=100)
-        img_buffer.seek(0)
-        plt.close(fig)
-        
+        image_data = _render_wordtree_chart(tree, phrase)
         return {
             'success': True,
-            'image_data': img_buffer.getvalue(),
+            'image_data': image_data,
             'tree': tree_data,
             'error': ''
         }
-        
     except Exception as e:
         logger.error(f"WordTree visualization error: {e}")
         return {'success': False, 'error': str(e), 'image_data': None, 'tree': None}
