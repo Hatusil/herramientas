@@ -34,23 +34,23 @@ class SearchController:
         """Retorna True si la búsqueda fue cancelada."""
         return self._cancelled
 
-# Instancia global para backward compatibility (deprecated)
+# Instancia global del controlador
 _search_controller = SearchController()
 
-# Flag legacy para backward compatibility
-SEARCH_CANCELLED = False
 
 def cancel_search():
     """Cancela la búsqueda en curso."""
-    global SEARCH_CANCELLED
     _search_controller.cancel()
-    SEARCH_CANCELLED = True
+
 
 def reset_search():
     """Resetea el flag de cancelación."""
-    global SEARCH_CANCELLED
     _search_controller.reset()
-    SEARCH_CANCELLED = False
+
+
+def is_search_cancelled() -> bool:
+    """Retorna True si la búsqueda fue cancelada."""
+    return _search_controller.is_cancelled()
 
 # Libraries para extraer contenido
 try:
@@ -402,7 +402,6 @@ def search_all(folder: str, options: Dict[str, Any]) -> Dict[str, Any]:
         'content_pattern': str,
     }
     """
-    global SEARCH_CANCELLED
     
     # Métricas
     files_counter = get_metric('search_files_processed')
@@ -418,7 +417,7 @@ def search_all(folder: str, options: Dict[str, Any]) -> Dict[str, Any]:
         all_files = _collect_files_recursive(folder)
         files_counter.increment(len(all_files))
         
-        if SEARCH_CANCELLED:
+        if _search_controller.is_cancelled():
             return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
         
         # 2. Aplicar filtros en cadena
@@ -431,7 +430,7 @@ def search_all(folder: str, options: Dict[str, Any]) -> Dict[str, Any]:
                 options.get('name_mode', 'contains'),
                 options.get('case_sensitive', False)
             )
-            if SEARCH_CANCELLED:
+            if _search_controller.is_cancelled():
                 return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
         
         results = _apply_date_filter(results, options.get('date_from'), options.get('date_to'))
@@ -447,7 +446,7 @@ def search_all(folder: str, options: Dict[str, Any]) -> Dict[str, Any]:
                 options.get('case_sensitive', False)
             )
             
-            if SEARCH_CANCELLED:
+            if _search_controller.is_cancelled():
                 return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
             
             # Filtrar solo archivos con matches
