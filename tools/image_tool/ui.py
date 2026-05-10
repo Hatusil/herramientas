@@ -59,7 +59,22 @@ class ImageToolUI(BaseToolUI):
             font=ctk.CTkFont(size=18, weight="bold")
         ).pack(pady=5)
 
-        add_help(self, "Carga una imagen y explorá las 7 fases de PDI.")
+        add_help(
+            self,
+            description="🖼️ PDI: 7 fases de procesamiento digital de imágenes",
+            usage=[
+                "1. 📥 Carga una imagen (archivo o URL)",
+                "2. 📑 Explorá las 7 fases de PDI:",
+                "   - Adquisición: cargar imagen",
+                "   - Geometría: grayscale, HSV, crop, resize, rotate",
+                "   - Mejora: histograma, brillo/contraste, gamma",
+                "   - Filtros: gauss, median, mean",
+                "   - Morfología: erode, dilate, open, close",
+                "   - Bordes: sobel, prewitt, laplacian, canny",
+                "   - Análisis: contours, Haar detect",
+                "3. 👁️ El preview se actualiza después de cada operación"
+            ]
+        ).pack(fill="x", padx=10, pady=5)
 
         # Tab view with 7 tabs
         self.tab_view = ctk.CTkTabview(self, fg_color="transparent")

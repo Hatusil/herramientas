@@ -20,6 +20,7 @@ Aplicación de escritorio con múltiples herramientas para procesamiento de arch
 | 📊 | **Text Analyzer** | WordCloud, frecuencia, estadísticas, n-grams, trends, correlaciones |
 | 🎵 | **Audio** | Normaliza LUFS, limpia metadatos, convierte |
 | 🎬 | **Video** | Extrae audio, convierte, info |
+| 🖼️ | **Imagen** | PDI: 7 fases — filtros, geometría, bordes, morfología |
 | 🎞️ | **GIF** | Crea GIFs animados de imágenes |
 | 🧹 | **Limpiador** | Elimina metadatos EXIF, DOCX, XLSX |
 
@@ -27,6 +28,7 @@ Aplicación de escritorio con múltiples herramientas para procesamiento de arch
 
 - Python 3.11+
 - FFmpeg (para audio/video) - incluido en el proyecto
+- opencv-python (para herramienta Imagen)
 
 ## Instalación
 
@@ -85,7 +87,7 @@ El ejecutable se crea en `dist/Herramientas.exe` o `build/dist/`.
 herramientas/
 ├── core/              # Sistema base (BaseTool, PluginManager, config, utils)
 ├── ui/                # Interfaz gráfica (app, sidebar, componentes)
-├── tools/             # Herramientas (plugins - 11 directorios)
+├── tools/             # Herramientas (plugins - 12 directorios)
 ├── tests/             # Tests unitarios con pytest
 ├── informes/          # Documentación interna (roadmap, backlog)
 ├── assets/            # Recursos (iconos, imágenes)
