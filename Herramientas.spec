@@ -6,7 +6,7 @@ import os
 hiddenimports = []
 
 # Collect todos los submódulos de las librerías principales
-for lib in ['customtkinter', 'PIL', 'PIL._imaging', 'matplotlib', 'matplotlib.backends', 'numpy', 'tkinter']:
+for lib in ['customtkinter', 'PIL', 'PIL._imaging', 'matplotlib', 'matplotlib.backends', 'numpy', 'tkinter', 'cv2']:
     try:
         hiddenimports.extend(collect_submodules(lib))
     except:
@@ -16,8 +16,8 @@ for lib in ['customtkinter', 'PIL', 'PIL._imaging', 'matplotlib', 'matplotlib.ba
 libs = [
     'mutagen', 'pypdf', 'pypdf2', 'reportlab', 'piexif',
     'docx', 'openpyxl', 'chardet', 'wordcloud',
-    'pdfplumber', 'requests', 'bs4', 'beautifulsoup4', 
-    'pptx', 'lxml'
+    'pdfplumber', 'requests', 'bs4', 'beautifulsoup4',
+    'pptx', 'lxml', 'cv2', 'numpy'
 ]
 
 for lib in libs:
@@ -25,7 +25,7 @@ for lib in libs:
 
 # Agregar datos de las libs (sin nltk)
 datas = []
-for lib in ['customtkinter', 'PIL', 'matplotlib', 'numpy']:
+for lib in ['customtkinter', 'PIL', 'matplotlib', 'numpy', 'cv2']:
     try:
         datas += collect_data_files(lib)
     except:

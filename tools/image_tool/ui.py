@@ -9,6 +9,7 @@ import numpy as np
 
 import customtkinter as ctk
 from tkinter import filedialog
+from PIL import Image, ImageTk
 
 from core.base_tool_ui import BaseToolUI
 from core.help_panel import add_help
@@ -28,7 +29,23 @@ class ImageToolUI(BaseToolUI):
         self.current_image_path: str = None
         self.current_image_data: Dict[str, Any] = None
         super().__init__(master, on_process, **kwargs)
-        self._setup_progress_bar()
+
+        # Feedback frame FIJO entre título y tabs (visible en todos los tabs)
+        self.feedback_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.feedback_frame.pack(fill="x", padx=10, pady=(5, 0))
+
+        self.status_label = ctk.CTkLabel(self.feedback_frame, text="Sin imagen cargada", text_color="gray")
+        self.status_label.pack()
+
+        self.progress_bar = ctk.CTkProgressBar(self.feedback_frame, mode='indeterminate')
+        self.progress_bar.set(0)
+
+        # Image preview
+        self.preview_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.preview_frame.pack(fill="both", expand=True, padx=10, pady=5)
+
+        self.preview_label = ctk.CTkLabel(self.preview_frame, text="", image=None)
+        self.preview_label.pack(fill="both", expand=True)
 
     def _setup_ui(self) -> None:
         """Setup main UI with title and help."""
@@ -82,10 +99,6 @@ class ImageToolUI(BaseToolUI):
             command=self._on_select_image,
             height=40
         ).pack(pady=10)
-
-        # Status label
-        self.status_label = ctk.CTkLabel(tab, text="Sin imagen cargada", text_color="gray")
-        self.status_label.pack(pady=5)
 
         # File path display
         self.path_label = ctk.CTkLabel(tab, text="", text_color="gray", font=ctk.CTkFont(size=10))
@@ -651,7 +664,7 @@ class ImageToolUI(BaseToolUI):
 
     # === Common processing ===
     def _process_phase(self, phase: str, options: Dict[str, Any]) -> None:
-        """Wrapper that calls processor with current image. Uses async feedback."""
+        """Wrapper that calls processor with current image."""
         if not self.current_image_data:
             self._update_status("Cargá una imagen primero", "orange")
             return
@@ -661,19 +674,31 @@ class ImageToolUI(BaseToolUI):
             self._update_status("Sin datos de imagen", "red")
             return
 
-        # Start progress feedback
-        self.start_progress()
-        self.set_processing_state(True, "Procesando...")
+        # Mostrar feedback de procesamiento
+        self.status_label.configure(text="Procesando...", text_color="blue")
+        self.progress_bar.pack(fill="x", padx=10, pady=2)
+        self.progress_bar.start()
+        self.update()
 
-        # Run processing
+        # Ejecutar procesamiento
         result = self._execute_phase(phase, image_array, options)
 
-        # Stop progress
-        self.stop_progress()
-        self.set_processing_state(False, "Listo")
+        # Ocultar progress bar
+        self.progress_bar.stop()
+        self.progress_bar.pack_forget()
 
-        # Update status with result
-        self._update_status_from_result(result)
+        # Actualizar estado según resultado
+        if result.get('success'):
+            self.current_image_data = result.get('image_data')
+            self._update_preview()
+            output_files = result.get('output_files', [])
+            if output_files:
+                msg = f"{result.get('message')} - {len(output_files)} archivo(s)"
+            else:
+                msg = result.get('message', 'Completado')
+            self._update_status(msg, "green")
+        else:
+            self._update_status(result.get('error', 'Error'), "red")
 
     def _execute_phase(self, phase: str, image_array: np.ndarray, options: Dict[str, Any]) -> Dict[str, Any]:
         """Execute processor phase. Returns result dict."""
@@ -682,7 +707,8 @@ class ImageToolUI(BaseToolUI):
             return {'success': False, 'error': f"Unknown operation: {phase}"}
 
         try:
-            return func(image_array, **options)
+            result = func(image_array, **options)
+            return result
         except Exception as e:
             return {'success': False, 'error': f"Processing error: {str(e)}"}
 
@@ -731,18 +757,26 @@ class ImageToolUI(BaseToolUI):
         """Update status label."""
         self.status_label.configure(text=message, text_color=color)
 
-    def _update_status_from_result(self, result: Dict[str, Any]) -> None:
-        """Update status based on processor result."""
-        if not result.get('success'):
-            self._update_status(result.get('error', 'Error'), "red")
+    def _update_preview(self) -> None:
+        """Display current image as preview in preview_label."""
+        if not self.current_image_data:
             return
+        try:
+            arr = self.current_image_data.get('array')
+            if arr is None:
+                return
+            # numpy array → PIL Image
+            if len(arr.shape) == 2:
+                pil_img = Image.fromarray(arr.astype('uint8'), mode='L')
+            else:
+                pil_img = Image.fromarray(arr.astype('uint8'))
+            # Scale to fit preview
+            w, h = pil_img.size
+            scale = min(400 / w, 300 / h, 1.0) if w and h else 1.0
+            pil_img = pil_img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+            self._preview_img = ImageTk.PhotoImage(pil_img)
+            self.preview_label.configure(image=self._preview_img, text="")
+        except Exception as e:
+            self.preview_label.configure(image=None, text=f"Preview error: {e}", text_color="red")
 
-        self.current_image_data = result.get('image_data')
-        output_files = result.get('output_files', [])
-
-        if output_files:
-            msg = f"{result.get('message')} - {len(output_files)} archivo(s)"
-        else:
-            msg = result.get('message', 'Completado')
-
-        self._update_status(msg, "green")
+    

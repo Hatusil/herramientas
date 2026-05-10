@@ -113,6 +113,11 @@ def _to_hsv(image: np.ndarray) -> Dict[str, Any]:
     try:
         if CV2_AVAILABLE:
             import cv2
+            if len(image.shape) == 2:
+                # Grayscale → RGB antes de HSV
+                rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+                hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+                return _ok(hsv, "Grayscale→RGB→HSV")
             hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
             return _ok(hsv, "Converted to HSV")
         return _fail("OpenCV not available for HSV conversion")
