@@ -24,8 +24,9 @@ class ImageTool(BaseTool):
         return "Procesamiento Digital de Imágenes — 7 fases"
 
     def build_ui(self, parent_frame):
-        # UI se implementa en PR #2
-        pass
+        from tools.image_tool.ui import ImageToolUI
+        self.ui = ImageToolUI(parent_frame, on_process=self.process)
+        self.ui.pack(fill="both", expand=True)
 
     def process(self, files: list, options: dict) -> dict:
         """Procesa imágenes según la operación seleccionada."""
