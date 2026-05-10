@@ -5,6 +5,7 @@ Procesamiento Digital de Imágenes con fases 1-7.
 import os
 from pathlib import Path
 from typing import List, Dict, Any
+import numpy as np
 
 import customtkinter as ctk
 from tkinter import filedialog
@@ -27,6 +28,7 @@ class ImageToolUI(BaseToolUI):
         self.current_image_path: str = None
         self.current_image_data: Dict[str, Any] = None
         super().__init__(master, on_process, **kwargs)
+        self._setup_progress_bar()
 
     def _setup_ui(self) -> None:
         """Setup main UI with title and help."""
@@ -649,24 +651,43 @@ class ImageToolUI(BaseToolUI):
 
     # === Common processing ===
     def _process_phase(self, phase: str, options: Dict[str, Any]) -> None:
-        """Wrapper that calls processor with current image."""
+        """Wrapper that calls processor with current image. Uses async feedback."""
         if not self.current_image_data:
-            self.status_label.configure(
-                text="Cargá una imagen primero",
-                text_color="orange"
-            )
+            self._update_status("Cargá una imagen primero", "orange")
             return
 
-        # Get current image array
         image_array = self.current_image_data.get('array')
         if image_array is None:
-            self.status_label.configure(
-                text="Sin datos de imagen",
-                text_color="red"
-            )
+            self._update_status("Sin datos de imagen", "red")
             return
 
-        # Import processor
+        # Start progress feedback
+        self.start_progress()
+        self.set_processing_state(True, "Procesando...")
+
+        # Run processing
+        result = self._execute_phase(phase, image_array, options)
+
+        # Stop progress
+        self.stop_progress()
+        self.set_processing_state(False, "Listo")
+
+        # Update status with result
+        self._update_status_from_result(result)
+
+    def _execute_phase(self, phase: str, image_array: np.ndarray, options: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute processor phase. Returns result dict."""
+        func = self._get_phase_func(phase)
+        if not func:
+            return {'success': False, 'error': f"Unknown operation: {phase}"}
+
+        try:
+            return func(image_array, **options)
+        except Exception as e:
+            return {'success': False, 'error': f"Processing error: {str(e)}"}
+
+    def _get_phase_func(self, phase: str):
+        """Map phase name to processor function."""
         from tools.image_tool.processor import (
             _to_grayscale, _to_hsv, _crop_region, _resize, _translate, _rotate,
             _compute_histogram, _equalize_histogram, _adjust_brightness_contrast, _adjust_gamma,
@@ -675,8 +696,6 @@ class ImageToolUI(BaseToolUI):
             _edge_sobel, _edge_prewitt, _edge_laplacian, _edge_canny, _find_contours, _bounding_boxes,
             _template_match, _pseudocolor, _haar_detect
         )
-
-        # Map phase to function
         phase_funcs = {
             '_to_grayscale': _to_grayscale,
             '_to_hsv': _to_hsv,
@@ -706,37 +725,24 @@ class ImageToolUI(BaseToolUI):
             '_pseudocolor': _pseudocolor,
             '_haar_detect': _haar_detect,
         }
+        return phase_funcs.get(phase)
 
-        func = phase_funcs.get(phase)
-        if not func:
-            self.status_label.configure(text=f"Operación desconocida: {phase}", text_color="red")
+    def _update_status(self, message: str, color: str) -> None:
+        """Update status label."""
+        self.status_label.configure(text=message, text_color=color)
+
+    def _update_status_from_result(self, result: Dict[str, Any]) -> None:
+        """Update status based on processor result."""
+        if not result.get('success'):
+            self._update_status(result.get('error', 'Error'), "red")
             return
 
-        # Call processor
-        try:
-            result = func(image_array, **options)
+        self.current_image_data = result.get('image_data')
+        output_files = result.get('output_files', [])
 
-            if result['success']:
-                self.current_image_data = result.get('image_data')
-                self.status_label.configure(
-                    text=result.get('message', 'Completado'),
-                    text_color="green"
-                )
+        if output_files:
+            msg = f"{result.get('message')} - {len(output_files)} archivo(s)"
+        else:
+            msg = result.get('message', 'Completado')
 
-                # Handle output files (like histogram, contours, etc.)
-                output_files = result.get('output_files', [])
-                if output_files:
-                    self.status_label.configure(
-                        text=f"{result.get('message')} - {len(output_files)} archivo(s) generado(s)",
-                        text_color="green"
-                    )
-            else:
-                self.status_label.configure(
-                    text=result.get('error', 'Error'),
-                    text_color="red"
-                )
-        except Exception as e:
-            self.status_label.configure(
-                text=f"Error: {str(e)}",
-                text_color="red"
-            )
+        self._update_status(msg, "green")

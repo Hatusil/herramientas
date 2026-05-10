@@ -354,3 +354,16 @@ class BaseToolUI(ctk.CTkFrame):
                     text=f"❌ {error_msg}",
                     text_color="red"
                 )
+
+    def set_processing_state(self, is_processing: bool, message: str = "") -> None:
+        """
+        Sets processing state and updates all relevant UI feedback.
+        Override for custom feedback (spinner, etc).
+        """
+        self.is_processing = is_processing
+        self._processing = is_processing
+        if self.status_label:
+            if is_processing:
+                self.status_label.configure(text=message or "Procesando...", text_color="blue")
+            else:
+                self.status_label.configure(text=message or "Listo", text_color="green")
