@@ -18,23 +18,7 @@ from pathlib import Path
 
 # Configuración
 ROOT = Path(__file__).parent
-MAXIMAS = {
-    "C2": {
-        "name": "Código compartido en core/",
-        "check": check_c2,
-        "message": "Evitar duplicación - usar core/ o módulos existentes"
-    },
-    "A12": {
-        "name": "Observabilidad",
-        "check": check_a12,
-        "message": "Usar métricas para operaciones lentas"
-    },
-    "E1": {
-        "name": "Multiplataforma",
-        "check": check_e1,
-        "message": "Usar platform.system() para paths"
-    }
-}
+
 
 def check_c2(file_path: Path) -> tuple:
     """Verifica C2: código duplicado o en core/"""
@@ -80,6 +64,26 @@ def check_e1(file_path: Path) -> tuple:
         return False, f"Path hardcodeado de Windows encontrado (E1)"
     
     return True, None
+
+
+MAXIMAS = {
+    "C2": {
+        "name": "Código compartido en core/",
+        "check": check_c2,
+        "message": "Evitar duplicación - usar core/ o módulos existentes"
+    },
+    "A12": {
+        "name": "Observabilidad",
+        "check": check_a12,
+        "message": "Usar métricas para operaciones lentas"
+    },
+    "E1": {
+        "name": "Multiplataforma",
+        "check": check_e1,
+        "message": "Usar platform.system() para paths"
+    }
+}
+
 
 def scan_files() -> dict:
     """Escanear archivos modificados"""

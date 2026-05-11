@@ -70,7 +70,7 @@ class TestConstants:
         assert isinstance(constants.DEFAULT_LUFS, (int, float))
         assert constants.DEFAULT_LUFS < 0
 
-    def test_tool_status_constants_are_strings(self):
+    def test_status_constants_strings(self):
         """Test TOOL_STATUS constants are defined."""
         from core import constants
         assert constants.TOOL_STATUS_OK == "OK"

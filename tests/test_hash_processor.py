@@ -74,7 +74,7 @@ class TestCalculateHash:
         assert result['success'] is True
         assert result['algorithm'] == 'sha512'
     
-    def test_calculate_hash_default_algorithm(self, temp_file):
+    def test_hash_default_algo(self, temp_file):
         """Test default algorithm is sha256."""
         result = calculate_hash(temp_file)
         
@@ -88,7 +88,7 @@ class TestCalculateHash:
         assert result['success'] is False
         assert 'error' in result
     
-    def test_calculate_hash_unsupported_algorithm(self, temp_file):
+    def test_hash_unsupported_algo(self, temp_file):
         """Test with unsupported algorithm."""
         result = calculate_hash(temp_file, 'invalid_algo')
         
@@ -111,7 +111,7 @@ class TestCalculateAllHashes:
         assert 'sha512' in result['hashes']
         assert result['file_name'] == os.path.basename(temp_file)
     
-    def test_calculate_all_hashes_file_not_found(self):
+    def test_hash_all_not_found(self):
         """Test with non-existent file."""
         result = calculate_all_hashes('/nonexistent/file.txt')
         
@@ -167,7 +167,7 @@ class TestVerifyHash:
 class TestCalculateFileHashList:
     """Tests for calculate_file_hash_list() function."""
     
-    def test_calculate_file_hash_list_multiple_files(self, temp_files):
+    def test_file_hash_multi_files(self, temp_files):
         """Test batch processing multiple files."""
         result = calculate_file_hash_list(temp_files, 'sha256')
         
@@ -175,7 +175,7 @@ class TestCalculateFileHashList:
         assert result['count'] == 3
         assert len(result['files']) == 3
     
-    def test_calculate_file_hash_list_single_file(self, temp_file):
+    def test_file_hash_single_file(self, temp_file):
         """Test batch processing with single file."""
         result = calculate_file_hash_list([temp_file], 'sha256')
         
@@ -183,14 +183,14 @@ class TestCalculateFileHashList:
         assert result['count'] == 1
         assert len(result['files']) == 1
     
-    def test_calculate_file_hash_list_with_nonexistent(self, temp_file):
+    def test_file_hash_with_missing(self, temp_file):
         """Test batch processing with mix of existing and non-existing files."""
         result = calculate_file_hash_list([temp_file, '/nonexistent/file.txt'], 'sha256')
         
         assert result['success'] is True
         assert result['count'] == 1
     
-    def test_calculate_file_hash_list_all_nonexistent(self):
+    def test_file_hash_all_missing(self):
         """Test batch processing with only non-existent files."""
         result = calculate_file_hash_list(['/nonexistent/1.txt', '/nonexistent/2.txt'], 'sha256')
         
@@ -198,7 +198,7 @@ class TestCalculateFileHashList:
         assert result['count'] == 0
         assert len(result['files']) == 0
     
-    def test_calculate_file_hash_list_empty_list(self):
+    def test_file_hash_empty_list(self):
         """Test with empty file list."""
         result = calculate_file_hash_list([], 'sha256')
         

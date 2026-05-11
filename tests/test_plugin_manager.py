@@ -34,7 +34,7 @@ class TestPluginManager:
             pm.discover_tools()
             assert len(pm.tool_instances) == 0
     
-    def test_discover_tools_skips_private_dirs(self, temp_dir):
+    def test_discover_skips_private(self, temp_dir):
         """Test discover_tools skips directories starting with underscore."""
         tools_path = Path(temp_dir) / 'tools'
         tools_path.mkdir()
@@ -60,7 +60,7 @@ class TestPluginManager:
     def test_load_tool_exception(self, temp_dir):
         pass
     
-    def test_find_tool_class_returns_base_tool_subclass(self):
+    def test_find_tool_returns_subclass(self):
         """Test _find_tool_class finds BaseTool subclass."""
         class TestTool(BaseTool):
             pass
@@ -73,7 +73,7 @@ class TestPluginManager:
         
         assert result == TestTool
     
-    def test_find_tool_class_returns_none_for_base_tool(self):
+    def test_find_tool_returns_none_base(self):
         """Test _find_tool_class returns None for BaseTool itself."""
         mock_module = MagicMock()
         mock_module.BaseTool = BaseTool
@@ -83,7 +83,7 @@ class TestPluginManager:
         
         assert result is None
     
-    def test_find_tool_class_returns_none_when_no_subclass(self):
+    def test_find_tool_returns_none(self):
         """Test _find_tool_class returns None when no subclass."""
         mock_module = MagicMock()
         
@@ -106,7 +106,7 @@ class TestPluginManager:
         
         assert result == []
     
-    def test_get_tools_list_returns_proper_structure(self):
+    def test_get_tools_list_structure(self):
         """Test get_tools_list returns proper data structure."""
         pm = PluginManager()
         
@@ -120,7 +120,7 @@ class TestPluginManager:
             assert 'description' in result[0]
             assert 'status' in result[0]
     
-    def test_get_tools_list_handles_get_name_error(self):
+    def test_get_tools_list_name_err(self):
         """Test get_tools_list handles errors in get_name."""
         pm = PluginManager()
         pm.tool_instances['bad_tool'] = MagicMock()
@@ -132,7 +132,7 @@ class TestPluginManager:
         
         assert any('[Error' in t.get('display_name', '') for t in result)
     
-    def test_get_tools_list_handles_get_icon_error(self):
+    def test_get_tools_list_icon_err(self):
         """Test get_tools_list handles errors in get_icon."""
         pm = PluginManager()
         pm.tool_instances['bad_tool'] = MagicMock()
@@ -144,7 +144,7 @@ class TestPluginManager:
         
         assert any('⚠️' in t.get('icon', '') for t in result)
     
-    def test_get_tools_list_handles_get_description_error(self):
+    def test_get_tools_list_desc_err(self):
         """Test get_tools_list handles errors in get_description."""
         pm = PluginManager()
         pm.tool_instances['bad_tool'] = MagicMock()
@@ -165,7 +165,7 @@ class TestPluginManager:
         
         assert result == 'OK'
     
-    def test_get_status_returns_error_for_unknown(self):
+    def test_get_status_unknown_err(self):
         """Test get_status returns ERROR for unknown tool."""
         pm = PluginManager()
         
@@ -173,7 +173,7 @@ class TestPluginManager:
         
         assert result == 'ERROR'
     
-    def test_discover_tools_finds_actual_tools(self):
+    def test_discover_finds_tools(self):
         """Test discover_tools finds actual tools in tools/ directory."""
         pm = PluginManager()
         pm.discover_tools()
@@ -189,7 +189,7 @@ class TestPluginManager:
             assert hasattr(tool, 'build_ui')
             assert hasattr(tool, 'process')
     
-    def test_discover_tools_with_real_tools_all_methods_work(self):
+    def test_discover_real_tools_work(self):
         """Test that real tools have working methods."""
         pm = PluginManager()
         pm.discover_tools()

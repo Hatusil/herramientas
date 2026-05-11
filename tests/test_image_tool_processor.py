@@ -164,7 +164,7 @@ class TestFilterGaussian:
         result = _filter_gaussian(color_image, ksize=5)
         assert result['success'] is True
 
-    def test_filter_gaussian_invalid_ksize_even(self, color_image):
+    def test_gaussian_even_ksize(self, color_image):
         """Test Gaussian with even ksize."""
         result = _filter_gaussian(color_image, ksize=4)
         assert result['success'] is False

@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 class TestSearchByName:
     """Test suite for search_by_name function."""
 
-    def test_search_by_name_empty_pattern_returns_all(self):
+    def test_search_name_empty_returns_all(self):
         """Test empty pattern returns original list."""
         from tools.search_tool.processor import search_by_name
         
@@ -35,7 +35,7 @@ class TestSearchByName:
         assert '/path/documento.txt' in result
         assert len(result) == 1
 
-    def test_search_by_name_exact_case_insensitive(self):
+    def test_search_name_exact_case_off(self):
         """Test exact mode is case insensitive by default."""
         from tools.search_tool.processor import search_by_name
         
@@ -44,7 +44,7 @@ class TestSearchByName:
         
         assert len(result) == 2
 
-    def test_search_by_name_exact_case_sensitive(self):
+    def test_search_name_exact_case_on(self):
         """Test exact mode with case sensitive."""
         from tools.search_tool.processor import search_by_name
         
@@ -74,7 +74,7 @@ class TestSearchByName:
         assert '/path/file1.txt' in result
         assert '/path/file10.txt' in result
 
-    def test_search_by_name_regex_invalid_pattern(self):
+    def test_search_name_regex_bad(self):
         """Test regex mode handles invalid patterns."""
         from tools.search_tool.processor import search_by_name
         
@@ -96,7 +96,7 @@ class TestSearchByName:
 class TestSearchByDate:
     """Test suite for search_by_date function."""
 
-    def test_search_by_date_no_dates_returns_all(self):
+    def test_search_date_no_filter_all(self):
         """Test with no date filters returns all files."""
         from tools.search_tool.processor import search_by_date
         
@@ -145,7 +145,7 @@ class TestSearchByDate:
             os.unlink(old_file)
             os.unlink(new_file)
 
-    def test_search_by_date_different_formats(self):
+    def test_search_date_formats(self):
         """Test parsing different date formats."""
         from tools.search_tool.processor import search_by_date
         
@@ -168,7 +168,7 @@ class TestSearchByDate:
         finally:
             os.unlink(temp_file)
 
-    def test_search_by_date_nonexistent_file(self):
+    def test_search_date_missing_file(self):
         """Test handling of nonexistent files."""
         from tools.search_tool.processor import search_by_date
         
@@ -242,7 +242,7 @@ class TestFilterBySize:
             os.unlink(small_file)
             os.unlink(large_file)
 
-    def test_filter_by_size_nonexistent_file(self):
+    def test_filter_size_missing_file(self):
         """Test handling nonexistent files."""
         from tools.search_tool.processor import filter_by_size
         
@@ -255,7 +255,7 @@ class TestFilterBySize:
 class TestFilterByExtension:
     """Test suite for filter_by_extension function."""
 
-    def test_filter_by_extension_empty_returns_all(self):
+    def test_filter_ext_empty_all(self):
         """Test empty extensions list returns all files."""
         from tools.search_tool.processor import filter_by_extension
         
@@ -285,7 +285,7 @@ class TestFilterByExtension:
         assert '/path/report.pdf' in result
         assert len(result) == 2
 
-    def test_filter_by_extension_case_insensitive(self):
+    def test_filter_ext_case_off(self):
         """Test extension matching is case insensitive."""
         from tools.search_tool.processor import filter_by_extension
         
@@ -364,7 +364,7 @@ class TestSearchContent:
         assert result['/path/file.txt']['matches'] == 1
 
     @patch('tools.search_tool.processor.get_file_content')
-    def test_search_content_case_insensitive(self, mock_content):
+    def test_search_content_case_off(self, mock_content):
         """Test case insensitive content search."""
         from tools.search_tool.processor import search_content
         
@@ -441,7 +441,7 @@ class TestSearchAll:
         assert result['success'] is True
         assert result['count'] == 1
 
-    def test_search_all_returns_proper_structure(self, temp_dir):
+    def test_search_all_structure(self, temp_dir):
         """Test search returns proper result structure."""
         # Create test file
         test_file = Path(temp_dir, 'test.txt')

@@ -71,7 +71,7 @@ class TestBaseTool:
         assert tool.get_icon() == "🔧"
         assert tool.get_description() == "Test desc"
 
-    def test_concrete_implementation_must_implement_all(self):
+    def test_concrete_impl_all(self):
         """Test that missing abstract methods cause TypeError."""
         from core.base_tool import BaseTool
         
