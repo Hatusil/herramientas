@@ -67,19 +67,24 @@ class ScrubberToolUI(BaseToolUI):
         # Panel de ayuda
         help_panel = add_help(
             self,
-            description="🧹 Limpia metadatos de imágenes (JPG), documentos (DOCX/XLSX), y PDFs. Útil para privacidad",
+            title="Ayuda - Limpiador de Metadatos",
+            description="🧹 Limpia metadatos de imágenes (JPG), documentos (DOCX/XLSX) y PDFs para privacidad",
             usage=[
                 "1. 📥 Agregar archivos (+)",
                 "2. ☑️ Seleccionar con Ctrl+click o botones",
                 "3. 📑 Elegir tipo (Imágenes/Documentos)",
-                "4. 🧹 Click en limpiar (procesa seleccionados)"
+                "4. 🧹 Click en limpiar (procesa seleccionados)",
+            ],
+            tips=[
+                "💡 Usá el tab 'Preview' para ver qué se eliminará",
+                "💡 Solo JPG soporta EXIF completo",
+                "💡 GPS en fotos revela ubicación exacta",
             ],
             warnings=[
                 "⚠️ Metadatos se ELIMINAN PERMANENTEMENTE",
-                "⚠️ Solo JPG soporta EXIF completo, PNG/WebP sin metadatos",
-                "⚠️ Usar tab 'Preview' para ver qué se eliminará",
-                "⚠️ GPS en fotos revela ubicación"
-            ]
+                "⚠️ GPS en fotos revela ubicación",
+                "⚠️ Esta acción no se puede deshacer",
+            ],
         )
         help_panel.pack(fill="x", padx=10, pady=5)
         

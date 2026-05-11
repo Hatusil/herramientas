@@ -33,21 +33,25 @@ class ImageToolUI(BaseToolUI):
 
     def _setup_ui(self):
         create_standard_tool_ui(
-            self, ("\U0001F5BC\ufe0f", "Procesamiento Digital de Im\u00e1genes"),
-            "\U0001F5BC\ufe0f PDI: 7 fases de procesamiento digital de im\u00e1genes",
+            self, ("\U0001F5BC\ufe0f", "Procesamiento Digital de Imágenes"),
+            "",  # description moved to help_config
             selector_type="none",
             help_config={
+                "description": "🖼️ PDI: 7 fases (filtros, geometría, bordes, morfología, histograma, ruido, restauración)",
                 "usage": [
-                    "1. \U0001F4E5 Carga una imagen (archivo o URL)",
-                    "2. \U0001F4D1 Explor\u00e1 las 7 fases de PDI:",
-                    "   - Adquisici\u00f3n: cargar imagen",
-                    "   - Geometr\u00eda: grayscale, HSV, crop, resize, rotate",
-                    "   - Mejora: histograma, brillo/contraste, gamma",
-                    "   - Filtros: gauss, median, mean",
-                    "   - Morfolog\u00eda: erode, dilate, open, close",
-                    "   - Bordes: sobel, prewitt, laplacian, canny",
-                    "   - An\u00e1lisis: contours, Haar detect",
-                    "3. \U0001F441\ufe0f El preview aparece en la pesta\u00f1a de cada operaci\u00f3n",
+                    "1. 📥 Cargar una imagen (archivo o URL)",
+                    "2. 📑 Elegir operación en las pestañas",
+                    "3. ⚙️ Ajustar parámetros",
+                    "4. ▶️ Aplicar y ver preview",
+                ],
+                "tips": [
+                    "💡 El preview aparece en la misma pestaña",
+                    "💡 Escape cancela la operación en curso",
+                    "💡 Podés encadenar operaciones (resultado pasa a la siguiente)",
+                ],
+                "warnings": [
+                    "⚠️ Algunas operaciones requieren OpenCV",
+                    "⚠️ La imagen original se sobrescribe al aplicar",
                 ],
             },
         )

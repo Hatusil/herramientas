@@ -428,25 +428,18 @@ class Sidebar(ctk.CTkFrame):
         dialog.geometry("450x620")
         dialog.resizable(False, False)
         
-        # Centrar respecto a la ventana principal (root)
+        # Centrar en la pantalla (no relativo al padre)
         dialog.transient(self)
         self.update_idletasks()
         
-        # Get the root window (main app)
-        root = self.winfo_toplevel()
-        root.update_idletasks()
-        
-        # Calcular posición centrada usando la ventana root
-        parent_x = root.winfo_x()
-        parent_y = root.winfo_y()
-        parent_w = root.winfo_width()
-        parent_h = root.winfo_height()
+        screen_w = dialog.winfo_screenwidth()
+        screen_h = dialog.winfo_screenheight()
         
         dialog_w = 450
         dialog_h = 620
         
-        x = parent_x + (parent_w - dialog_w) // 2
-        y = parent_y + (parent_h - dialog_h) // 2
+        x = (screen_w - dialog_w) // 2
+        y = (screen_h - dialog_h) // 2
         
         dialog.geometry(f"+{x}+{y}")
         

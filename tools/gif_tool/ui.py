@@ -18,30 +18,31 @@ class GifToolUI(BaseToolUI):
     def _setup_ui(self):
         r = create_standard_tool_ui(
             self, ("\U0001F39E\ufe0f", "Creador de GIFs"),
-            "\U0001F39E\ufe0f Crea GIFs animados de secuencias de im\u00e1genes. "
-            "Controla duraci\u00f3n y repeticiones",
+            "",  # description moved to help_config
             selector_type="file",
             file_types=[
-                ("Im\u00e1genes", "*.png *.jpg *.jpeg *.bmp *.webp *.gif"),
+                ("Imágenes", "*.png *.jpg *.jpeg *.bmp *.webp *.gif"),
                 ("Todos", "*.*"),
             ],
             help_config={
-                "file_label": "Im\u00e1genes para el GIF (orden importa):",
+                "description": "🎞️ Crea GIFs animados de secuencias de imágenes con control de duración y repeticiones",
+                "file_label": "Imágenes para el GIF (orden importa):",
                 "usage": [
-                    "1. \U0001F4E5 Agregar im\u00e1genes en orden de animaci\u00f3n",
-                    "2. \u2195\ufe0f Reordenar frames si es necesario",
-                    "3. \u23f1\ufe0f Configurar duraci\u00f3n (100-1000ms)",
-                    "4. \U0001F504 Elegir repeticiones (infinito/1/3)",
-                    "5. \u25b6\ufe0f Click en 'Crear GIF'",
+                    "1. 📥 Agregar imágenes en orden de animación",
+                    "2. ↕️ Reordenar frames si es necesario (↑↓)",
+                    "3. ⏱️ Configurar duración (100-1000ms por frame)",
+                    "4. 🔁 Elegir repeticiones (infinito/1/3)",
+                    "5. ▶️ Click en 'Crear GIF'",
+                ],
+                "tips": [
+                    "💡 Necesitás al menos 2 imágenes para crear un GIF",
+                    "💡 Todas las imágenes deben tener el mismo tamaño",
+                    "💡 Usá el botón 'Crear GIF' en la pestaña correspondiente",
                 ],
                 "warnings": [
-                    "\u26a0\ufe0f Se necesitan al menos 2 im\u00e1genes",
-                    "\u26a0\ufe0f Todas las im\u00e1genes deben tener mismo tama\u00f1o",
-                    "\u26a0\ufe0f GIFs ilimitados pueden ser muy grandes",
-                ],
-                "custom_buttons": [
-                    ("Ordenar \u2191", None, {"width": 70}),
-                    ("Ordenar \u2193", None, {"width": 70}),
+                    "⚠️ Se necesitan al menos 2 imágenes",
+                    "⚠️ Todas las imágenes deben tener mismo tamaño",
+                    "⚠️ GIFs ilimitados pueden ser muy grandes",
                 ],
             },
         )

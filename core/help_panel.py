@@ -31,20 +31,18 @@ class HelpPopup:
         self.window.geometry("500x450")
         self.window.resizable(False, False)
         
-        # Centrar respecto al padre
+        # Centrar en la pantalla (no relativo al padre)
         self.window.transient(parent)
         parent.update_idletasks()
         
-        parent_x = parent.winfo_x()
-        parent_y = parent.winfo_y()
-        parent_w = parent.winfo_width()
-        parent_h = parent.winfo_height()
+        screen_w = self.window.winfo_screenwidth()
+        screen_h = self.window.winfo_screenheight()
         
         win_w = 500
         win_h = 450
         
-        x = parent_x + (parent_w - win_w) // 2
-        y = parent_y + (parent_h - win_h) // 2
+        x = (screen_w - win_w) // 2
+        y = (screen_h - win_h) // 2
         
         self.window.geometry(f"+{x}+{y}")
         

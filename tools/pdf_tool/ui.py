@@ -125,18 +125,24 @@ class PDFToolUI(BaseToolUI):
         # Panel de ayuda
         help_panel = add_help(
             self,
-            description="📄 Procesa PDFs: watermark, anotar, rotar, combinar, extraer páginas, agregar números, encriptar, comprimir, ver info",
+            title="Ayuda - Procesamiento de PDF",
+            description="📄 Procesa PDFs: watermark, anotar, rotar, combinar, extraer páginas, números, encriptar, comprimir",
             usage=[
                 "1. 📥 Agregar PDFs con 'Agregar PDFs...'",
                 "2. 📑 Elegir operación (Watermark/Editar/Transformar/etc)",
                 "3. ⚙️ Configurar opciones",
-                "4. ▶️ Click en ejecutar"
+                "4. ▶️ Click en ejecutar",
+            ],
+            tips=[
+                "💡 Pipeline permite encadenar operaciones múltiples",
+                "💡 Usá 'Info' para ver propiedades antes de modificar",
+                "💡 Combinar crea un nuevo PDF, no modifica los originales",
             ],
             warnings=[
                 "⚠️ PDFs encriptados requieren contraseña primero",
                 "⚠️ Combinar/extraer son destructivos - crea nuevo archivo",
-                "⚠️ Watermark modifica el original"
-            ]
+                "⚠️ Watermark modifica el original",
+            ],
         )
         help_panel.pack(fill="x", padx=10, pady=5)
         

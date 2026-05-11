@@ -16,24 +16,31 @@ class RenameToolUI(BaseToolUI):
     def _setup_ui(self):
         r = create_standard_tool_ui(
             self, ("\U0001F524", "Renombrador de Archivos"),
-            "\U0001F524 Renombra archivos: prefijos, sufijos, buscar/reemplazar, n\u00fameros, may\u00fasculas/min\u00fasculas",
+            "",  # description moved to help_config
             selector_type="file",
             tab_configs=[
                 {"name": "Prefijo"}, {"name": "Sufijo"},
-                {"name": "Reemplazar"}, {"name": "N\u00fameros"},
+                {"name": "Reemplazar"}, {"name": "Números"},
                 {"name": "May/Min"},
             ],
             help_config={
+                "description": "🔤 Renombra archivos: prefijos, sufijos, buscar/reemplazar, números, mayúsculas/minúsculas",
                 "usage": [
-                    "1. \U0001F4E5 Agregar archivos (+)",
-                    "2. \u2611\ufe0f Seleccionar con Ctrl+click o botones",
-                    "3. \U0001F4D1 Elegir operaci\u00f3n",
-                    "4. \u25b6\ufe0f Click en ejecutar (procesa seleccionados)",
+                    "1. 📥 Agregar archivos (+)",
+                    "2. ☑️ Seleccionar con Ctrl+click o botones",
+                    "3. 📑 Elegir operación (Prefijo/Sufijo/Reemplazar/Números/May-Min)",
+                    "4. ⚙️ Ingresar parámetros según operación",
+                    "5. ▶️ Click en ejecutar (procesa seleccionados)",
+                ],
+                "tips": [
+                    "💡 Usá {name} y {n} en el patrón de números",
+                    "💡 Mayúsculas/minúsculas es reversible, prefijo/sufijo no",
+                    "💡 Podés combinar operaciones (primero números, luego prefijo)",
                 ],
                 "warnings": [
-                    "\u26a0\ufe0f Operaci\u00f3n DESTRUCTIVA sin deshacer",
-                    "\u26a0\ufe0f Verificar nombres ANTES de cerrar",
-                    "\u26a0\ufe0f N\u00fameros pueden sobrescribir existentes",
+                    "⚠️ Operación DESTRUCTIVA sin deshacer",
+                    "⚠️ Verificar nombres ANTES de cerrar",
+                    "⚠️ Números pueden sobrescribir existentes",
                 ],
             },
         )

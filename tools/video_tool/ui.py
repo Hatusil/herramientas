@@ -20,7 +20,7 @@ class VideoToolUI(BaseToolUI):
     def _setup_ui(self):
         r = create_standard_tool_ui(
             self, ("\U0001F3AC", "Herramienta de Video"),
-            "\U0001F3AC Procesa video: extrae audio, convierte formato, muestra info (bitrate, fps)",
+            "",  # description moved to help_config
             selector_type="file",
             tab_configs=[{"name": "Extraer Audio"}, {"name": "Convertir"}, {"name": "Info"}],
             file_types=[
@@ -28,21 +28,26 @@ class VideoToolUI(BaseToolUI):
                 ("Todos", "*.*"),
             ],
             help_config={
+                "description": "🎬 Procesa video: extrae audio, convierte formato, muestra información detallada",
                 "file_label": "Archivo de video:",
                 "usage": [
-                    "1. \U0001F4E5 Agregar videos (+)",
-                    "2. \u2611\ufe0f Seleccionar con Ctrl+click o botones 'Todos'/'Ninguno'",
-                    "3. \U0001F4D1 Elegir operaci\u00f3n (Extraer Audio/Convertir/Info)",
-                    "4. \u2699\ufe0f Configurar formato y calidad CRF",
-                    "5. \u25b6\ufe0f Click en ejecutar (procesa solo los seleccionados)",
+                    "1. 📥 Agregar videos (+)",
+                    "2. ☑️ Seleccionar con Ctrl+click o botones 'Todos'/'Ninguno'",
+                    "3. 📑 Elegir operación (Extraer Audio/Convertir/Info)",
+                    "4. ⚙️ Configurar formato y calidad CRF",
+                    "5. ▶️ Click en ejecutar (procesa solo los seleccionados)",
+                ],
+                "tips": [
+                    "💡 CRF: 18=mejor calidad, 23=normal, 28=más baja",
+                    "💡 CRF bajo = archivo más grande y mejor calidad",
+                    "💡 FFmpeg debe estar instalado para funcionar",
                 ],
                 "warnings": [
-                    "\u26a0\ufe0f CRF: 18=mejor calidad, 23=normal, 28=m\u00e1s baja",
-                    "\u26a0\ufe0f mp4\u2192mp4 con CRF23 se omite (ya en formato)",
-                    "\u26a0\ufe0f Cambiar CRF para forzar recodificaci\u00f3n",
-                    "\u26a0\ufe0f Conversi\u00f3n puede tardar minutos",
-                    "\u26a0\ufe0f FFmpeg debe estar instalado",
-                    "\u26a0\ufe0f Archivos >1GB necesitan mucho espacio",
+                    "⚠️ mp4→mp4 con CRF23 se omite (ya en formato)",
+                    "⚠️ Cambiar CRF para forzar recodificación",
+                    "⚠️ Conversión puede tardar minutos",
+                    "⚠️ FFmpeg debe estar instalado",
+                    "⚠️ Archivos >1GB necesitan mucho espacio",
                 ],
             },
         )

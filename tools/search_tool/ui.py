@@ -58,19 +58,24 @@ class SearchToolUI(BaseToolUI):
         # Help panel
         help_panel = add_help(
             self,
-            description="🔍 Busca archivos por nombre, contenido (DOCX/PDF/XLSX/PPTX), fecha y extensión.",
+            title="Ayuda - Buscador Avanzado",
+            description="🔍 Busca archivos por nombre, contenido (DOCX/PDF/XLSX/PPTX), fecha y extensión",
             usage=[
-                "1. Elegir carpeta a buscar",
-                "2. Escribir patrón (ej: *.pdf, informe)",
-                "3. Elegir modo: Contiene / Exacta / Regex",
-                "4. Opcional: filtrar por ext o fecha",
-                "5. BUSCAR → resultados",
-                "6. Exportar a CSV/TXT"
+                "1. 📁 Seleccionar carpeta raíz",
+                "2. ✏️ Ingresar criterios (nombre, contenido, fecha, extensión)",
+                "3. 🎯 Elegir modo de búsqueda",
+                "4. ▶️ Ejecutar búsqueda",
+                "5. 📤 Exportar resultados a CSV o TXT",
+            ],
+            tips=[
+                "💡 Usá *.pdf para buscar solo PDFs",
+                "💡 Dejá vacío para buscar todos los archivos",
+                "💡 La búsqueda por contenido soporta DOCX, PDF, XLSX, PPTX",
             ],
             warnings=[
-                "⚠️ Buscar en contenido es muy lento",
-                "💡 Use *.pdf para buscar PDFs"
-            ]
+                "⚠️ Buscar en contenido es más lento que por nombre",
+                "⚠️ Archivos grandes (>100MB) pueden tardar",
+            ],
         )
         help_panel.pack(fill="x", padx=10, pady=5)
         

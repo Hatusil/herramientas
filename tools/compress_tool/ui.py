@@ -19,7 +19,7 @@ class CompressToolUI(BaseToolUI):
     def _setup_ui(self):
         r = create_standard_tool_ui(
             self, ("\U0001F4E6", "Compresor de Archivos"),
-            "\U0001F4E6 Comprime archivos en ZIP/TAR.GZ/TAR.BZ2 o extrae contenidos",
+            "",  # description moved to help_config
             selector_type="file",
             tab_configs=[{"name": "Comprimir"}, {"name": "Extraer"}],
             file_types=[
@@ -29,18 +29,24 @@ class CompressToolUI(BaseToolUI):
                 ("Todos", "*.*"),
             ],
             help_config={
+                "description": "📦 Comprime archivos en ZIP/TAR.GZ/TAR.BZ2 o extrae contenidos comprimidos",
                 "file_label": "Archivos/Carpetas:",
                 "usage": [
-                    "1. \U0001F4E5 Agregar archivos/carpetas (+)",
-                    "2. \u2611\ufe0f Seleccionar con Ctrl+click o botones",
-                    "3. \U0001F4E6 Elegir formato (ZIP/TAR) y nivel de compresi\u00f3n",
-                    "4. \u25b6\ufe0f Click en Comprimir (procesa seleccionados)",
+                    "1. 📥 Agregar archivos/carpetas (+) o 'Agregar carpeta...'",
+                    "2. ☑️ Seleccionar con Ctrl+click o botones",
+                    "3. 📦 Elegir formato (ZIP/TAR.GZ/TAR.BZ2) y nivel de compresión",
+                    "4. ▶️ Click en Comprimir (procesa seleccionados)",
+                ],
+                "tips": [
+                    "💡 ZIP = más compatible (abre en Windows, Mac, Linux)",
+                    "💡 TAR.GZ = mejor para Linux/Mac, preserva estructura",
+                    "💡 Nivel 6 = buen balance velocidad/tamaño",
                 ],
                 "warnings": [
-                    "\u26a0\ufe0f ZIP\u2192ZIP se omite (ya comprimido)",
-                    "\u26a0\ufe0f ZIP l\u00edmite 4GB por archivo",
-                    "\u26a0\ufe0f TAR no abre en Windows directamente",
-                    "\u26a0\ufe0f Archivos >1GB pueden tomar minutos",
+                    "⚠️ ZIP→ZIP se omite (ya comprimido)",
+                    "⚠️ ZIP límite 4GB por archivo",
+                    "⚠️ TAR no abre en Windows directamente",
+                    "⚠️ Archivos >1GB pueden tomar minutos",
                 ],
             },
         )

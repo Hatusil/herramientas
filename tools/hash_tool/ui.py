@@ -18,26 +18,27 @@ class HashToolUI(BaseToolUI):
     def _setup_ui(self):
         r = create_standard_tool_ui(
             self, ("\U0001F510", "Hash y Checksums"),
-            "\U0001F510 Calcula y verifica hashes (MD5/SHA1/SHA256/SHA512) para verificar integridad",
+            "",  # description moved to help_config
             selector_type="file",
             tab_configs=[{"name": "Calcular"}, {"name": "Verificar"}, {"name": "Lista de Archivos"}],
             help_config={
+                "description": "🔐 Calcula y verifica hashes (MD5/SHA1/SHA256/SHA512) para verificar integridad de archivos",
                 "usage": [
-                    "1. \U0001F4E5 Agregar archivos (+)",
-                    "2. \u2611\ufe0f Seleccionar con Ctrl+click o botones",
-                    "3. \U0001F3AF Seleccionar algoritmo (SHA256 recomendado)",
-                    "4. \U0001F522 Click en calcular (procesa seleccionados)",
-                    "",
-                    "\U0001F4CC \u00bfPARA QU\u00c9 SIRVE?",
-                    "\u2022 Verificar descargas: Compara el hash calculado con el del servidor",
-                    "\u2022 Detectar cambios: Si hash es diferente, el archivo fue modificado",
-                    "\u2022 Identificar duplicados: Mismo hash = mismo archivo",
+                    "1. 📥 Agregar archivos (+)",
+                    "2. ☑️ Seleccionar con Ctrl+click o botones",
+                    "3. 🎯 Seleccionar algoritmo (SHA256 recomendado)",
+                    "4. ▶️ Click en calcular (procesa seleccionados)",
+                ],
+                "tips": [
+                    "💡 SHA256 es el balance óptimo seguridad/velocidad",
+                    "💡 Hash = identidad única del archivo",
+                    "💡 Verificá descargas comparando con el hash del servidor",
                 ],
                 "warnings": [
-                    "\u26a0\ufe0f Hash diferente = archivo modificado o corrupto",
-                    "\u26a0\ufe0f MD5 no es seguro - solo para verificaci\u00f3n de descarga",
-                    "\u26a0\ufe0f Verificaci\u00f3n debe ser exacta (case-sensitive)",
-                    "\u26a0\ufe0f Copiar un archivo NO cambia su hash",
+                    "⚠️ Hash diferente = archivo modificado o corrupto",
+                    "⚠️ MD5 no es seguro - solo para verificación de descarga",
+                    "⚠️ Verificación debe ser exacta (case-sensitive)",
+                    "⚠️ Copiar un archivo NO cambia su hash",
                 ],
             },
         )

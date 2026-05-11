@@ -28,12 +28,15 @@ def create_standard_tool_ui(
         parent, text=name, font=font("header", "bold")
     ).pack(pady=(0, 10))
 
+    # Usar description del help_config si no viene como parámetro
+    desc = description if description else hc.get("description", "")
+
     help_btn = None
-    if description or hc:
+    if desc or hc:
         help_btn = add_help(
             parent,
             title=hc.get("title", f"Ayuda - {name}"),
-            description=description,
+            description=desc,
             usage=hc.get("usage", []),
             tips=hc.get("tips", []),
             warnings=hc.get("warnings", []),

@@ -26,21 +26,27 @@ class DuplicateToolUI(BaseToolUI):
     def _setup_ui(self):
         create_standard_tool_ui(
             self, ("\U0001F4CB", "Encontrar Duplicados"),
-            "\U0001F4CB Encuentra y elimina duplicados por tama\u00f1o o hash MD5.",
+            "",  # description moved to help_config
             selector_type="none",
             help_config={
+                "description": "📋 Encuentra y elimina duplicados por tamaño o hash MD5",
                 "usage": [
-                    "1. Elegir carpeta a escanear",
-                    "2. M\u00e9todo: Tama\u00f1o (r\u00e1pido) o Hash (exacto)",
-                    "3. Seleccionar tipos de archivo",
-                    "4. Buscar Duplicados",
-                    "5. Marcar los que eliminar",
-                    "6. Eliminar Seleccionados",
+                    "1. 📁 Elegir carpeta a escanear",
+                    "2. 🎯 Método: Tamaño (rápido) o Hash (exacto)",
+                    "3. 📑 Seleccionar tipos de archivo a buscar",
+                    "4. 🔍 Buscar Duplicados",
+                    "5. ☑️ Marcar los que eliminar",
+                    "6. 🗑️ Eliminar Seleccionados",
+                ],
+                "tips": [
+                    "💡 Hash = resultados exactos (archivos 100% idénticos)",
+                    "💡 Tamaño = más rápido pero puede tener falsos positivos",
+                    "💡 Siempre dejá al menos 1 archivo de cada grupo",
                 ],
                 "warnings": [
-                    "\u26a0\ufe0f Eliminaci\u00f3n IRREVERSIBLE",
-                    "\u26a0\ufe0f Dej\u00e1 siempre al menos 1 archivo",
-                    "\U0001F4A1 Hash = resultados exactos",
+                    "⚠️ Eliminación IRREVERSIBLE",
+                    "⚠️ Dejá siempre al menos 1 archivo por grupo",
+                    "⚠️ Hash MD5 es rápido pero no es criptográficamente seguro",
                 ],
             },
         )

@@ -25,7 +25,7 @@ class AudioToolUI(BaseToolUI):
     def _setup_ui(self):
         r = create_standard_tool_ui(
             self, ("\U0001F3B5", "Procesamiento de Audio"),
-            "\U0001F3B5 Procesa audio MP3/WAV/FLAC/OGG/M4A: normaliza volumen, limpia metadatos ID3, convierte formato, repara archivos, muestra info",
+            "",  # description moved to help_config
             selector_type="file",
             tab_configs=[
                 {"name": "Normalizar"}, {"name": "Limpiar"},
@@ -38,20 +38,26 @@ class AudioToolUI(BaseToolUI):
                 ("Todos", "*.*"),
             ],
             help_config={
+                "description": "🎵 Normaliza, limpia metadatos y convierte archivos de audio",
                 "file_label": "Archivos de audio:",
                 "usage": [
-                    "1. \U0001F4E5 Agregar archivos (+)",
-                    "2. \u2611\ufe0f Seleccionar con Ctrl+click o botones 'Todos'/'Ninguno'",
-                    "3. \U0001F4D1 Elegir operaci\u00f3n (Normalizar/Limpiar/Convertir/Reparar/Info)",
-                    "4. \u2699\ufe0f Configurar opciones LUFS o calidad (192k default)",
-                    "5. \u25b6\ufe0f Click en ejecutar (procesa solo los seleccionados)",
+                    "1. 📥 Agregar archivos (+)",
+                    "2. ☑️ Seleccionar con Ctrl+click o botones 'Todos'/'Ninguno'",
+                    "3. 📑 Elegir operación (Normalizar/Limpiar/Convertir/Reparar/Info)",
+                    "4. ⚙️ Configurar opciones LUFS o calidad (192k default)",
+                    "5. ▶️ Click en ejecutar (procesa solo los seleccionados)",
+                ],
+                "tips": [
+                    "💡 LUFS -16 es el estándar para streaming",
+                    "💡 192kbps da buen balance calidad/tamaño",
+                    "💡 Verificá archivos antes de repararlos",
                 ],
                 "warnings": [
-                    "\u26a0\ufe0f mp3\u2192mp3 con calidad 192k se omite (ya en formato)",
-                    "\u26a0\ufe0f Cambiar calidad para forzar conversi\u00f3n",
-                    "\u26a0\ufe0f Normalizaci\u00f3n alta puede afectar calidad",
-                    "\u26a0\ufe0f Conversi\u00f3n siempre crea nuevo archivo",
-                    "\u26a0\ufe0f Reparar archivos severos puede dejar artefactos",
+                    "⚠️ mp3→mp3 con calidad 192k se omite (ya en formato)",
+                    "⚠️ Cambiar calidad para forzar conversión",
+                    "⚠️ Normalización alta puede afectar calidad",
+                    "⚠️ Conversión siempre crea nuevo archivo",
+                    "⚠️ Reparar archivos severos puede dejar artefactos",
                 ],
             },
         )
