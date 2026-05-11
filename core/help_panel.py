@@ -51,12 +51,17 @@ class HelpPopup:
         # Bloquear interacción con la ventana padre
         self.window.grab_set()
         
+        # Bloquear scroll propagation a la ventana de atrás
+        # grab_set() no siempre captura mousewheel, hay que cortarlo explícitamente
+        self._block_scroll(self.window)
+        
         # Frame principal - usar colores del tema
         main_frame = ctk.CTkFrame(
             self.window,
             fg_color=constants.COLORS.get("bg_dark", "#1a1a1a")
         )
         main_frame.pack(fill="both", expand=True, padx=0, pady=0)
+        self._block_scroll(main_frame)
         
         # Usar CTkScrollableFrame que maneja el scroll correctamente
         scrollable = ctk.CTkScrollableFrame(
@@ -150,6 +155,17 @@ class HelpPopup:
         
         # Cerrar con Escape
         self.window.bind("<Escape>", lambda e: self.close())
+    
+    def _block_scroll(self, widget):
+        """Bloquea scroll propagation a ventanas padre.
+        
+        grab_set() no siempre captura mousewheel events, así que
+        matamos la propagación explícitamente en la ventana y frames
+        contenedores. El CTkScrollableFrame interno sigue funcionando.
+        """
+        widget.bind("<MouseWheel>", lambda e: "break", add="+")
+        widget.bind("<Button-4>", lambda e: "break", add="+")
+        widget.bind("<Button-5>", lambda e: "break", add="+")
     
     def close(self) -> None:
         """Cierra el popup."""
