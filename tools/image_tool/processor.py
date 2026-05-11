@@ -239,7 +239,7 @@ def _compute_histogram(image: np.ndarray) -> Dict[str, Any]:
 
         return {
             'success': True,
-            'message': f"Histogram saved: {output_path}",
+            'message': f"Histogram: {output_path.name}",
             'output_files': [str(output_path)],
             'image_data': _image_to_dict(image),
             'error': None

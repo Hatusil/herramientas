@@ -1,6 +1,7 @@
 """
 UI: ImageTool — 7 tabs CTkTabview.
 Procesamiento Digital de Imágenes con fases 1-7.
+Preview por pestaña - Máxima A0 (<30 líneas), A7 (stateless), A12 (observabilidad).
 """
 import os
 from pathlib import Path
@@ -30,23 +31,6 @@ class ImageToolUI(BaseToolUI):
         self.current_image_data: Dict[str, Any] = None
         super().__init__(master, on_process, **kwargs)
 
-        # Feedback frame FIJO entre título y tabs (visible en todos los tabs)
-        self.feedback_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.feedback_frame.pack(fill="x", padx=10, pady=(5, 0))
-
-        self.status_label = ctk.CTkLabel(self.feedback_frame, text="Sin imagen cargada", text_color="gray")
-        self.status_label.pack()
-
-        self.progress_bar = ctk.CTkProgressBar(self.feedback_frame, mode='indeterminate')
-        self.progress_bar.set(0)
-
-        # Image preview
-        self.preview_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.preview_frame.pack(fill="both", expand=True, padx=10, pady=5)
-
-        self.preview_label = ctk.CTkLabel(self.preview_frame, text="", image=None)
-        self.preview_label.pack(fill="both", expand=True)
-
     def _setup_ui(self) -> None:
         """Setup main UI with title and help."""
         # Title
@@ -72,7 +56,7 @@ class ImageToolUI(BaseToolUI):
                 "   - Morfología: erode, dilate, open, close",
                 "   - Bordes: sobel, prewitt, laplacian, canny",
                 "   - Análisis: contours, Haar detect",
-                "3. 👁️ El preview se actualiza después de cada operación"
+                "3. 👁️ El preview aparece en la pestaña de cada operación"
             ]
         ).pack(fill="x", padx=10, pady=5)
 
@@ -93,6 +77,10 @@ class ImageToolUI(BaseToolUI):
         for tab_name in tab_names:
             self.tab_view.add(tab_name)
 
+        # Preview labels dict - one per tab
+        self._preview_labels: Dict[str, ctk.CTkLabel] = {}
+        self._histogram_label: ctk.CTkLabel = None  # Solo en Mejora
+
         # Setup each tab
         self._setup_tab_adquisicion()
         self._setup_tab_geometria()
@@ -102,9 +90,39 @@ class ImageToolUI(BaseToolUI):
         self._setup_tab_bordes()
         self._setup_tab_analisis()
 
+        # Feedback frame (visible en todos los tabs)
+        self.feedback_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.feedback_frame.pack(fill="x", padx=10, pady=(5, 0))
+
+        self.status_label = ctk.CTkLabel(self.feedback_frame, text="Sin imagen cargada", text_color="gray")
+        self.status_label.pack()
+
+        self.progress_bar = ctk.CTkProgressBar(self.feedback_frame, mode='indeterminate')
+        self.progress_bar.set(0)
+
+    # === Helpers ===
+    def _resize_for_preview(self, pil_img: Image.Image):
+        """Redimensiona imagen para preview (CTkImage o ImageTk.PhotoImage)."""
+        w, h = pil_img.size
+        scale = min(300 / w, 200 / h, 1.0)
+        new_w, new_h = int(w * scale), int(h * scale)
+        try:
+            return ctk.CTkImage(pil_img, size=(new_w, new_h))
+        except Exception:
+            return ImageTk.PhotoImage(pil_img.resize((new_w, new_h), Image.LANCZOS))
+
+    def _show_in_tab(self, tab_name: str, pil_img: Image.Image) -> None:
+        """Muestra imagen en el label de la pestaña."""
+        label = self._preview_labels.get(tab_name)
+        if label:
+            photo = self._resize_for_preview(pil_img)
+            label.configure(image=photo, text="")
+            label._photo = photo  # keep reference
+            label.pack(fill="both", expand=True)
+
     # === Tab 1: Adquisición ===
     def _setup_tab_adquisicion(self) -> None:
-        """Tab 1: file picker, URL input, preview."""
+        """Tab 1: file picker, URL input."""
         tab = self.tab_view.tab("Adquisición")
 
         # File picker
@@ -143,6 +161,10 @@ class ImageToolUI(BaseToolUI):
             height=30
         ).pack(pady=5)
 
+        # Preview label for Adquisición
+        preview_label = ctk.CTkLabel(tab, text="", fg_color="transparent")
+        self._preview_labels["Adquisición"] = preview_label
+
     def _on_select_image(self) -> None:
         """File picker + carga de imagen."""
         files = filedialog.askopenfilenames(
@@ -160,12 +182,11 @@ class ImageToolUI(BaseToolUI):
                 text_color="green"
             )
             self.path_label.configure(text=self.current_image_path)
-
-            # Load image using processor
             from tools.image_tool.processor import _load_from_file
             result = _load_from_file(self.current_image_path)
             if result['success']:
                 self.current_image_data = result['image_data']
+                self._show_preview_adquisicion()
             else:
                 self.status_label.configure(
                     text=f"❌ {result.get('error', 'Error')}",
@@ -186,6 +207,7 @@ class ImageToolUI(BaseToolUI):
 
         if result['success']:
             self.current_image_data = result['image_data']
+            self._show_preview_adquisicion()
             self.status_label.configure(
                 text=f"✅ Cargado desde URL",
                 text_color="green"
@@ -203,6 +225,27 @@ class ImageToolUI(BaseToolUI):
         self.current_image_data = None
         self.status_label.configure(text="Sin imagen cargada", text_color="gray")
         self.path_label.configure(text="")
+        # Limpiar todos los previews
+        for label in self._preview_labels.values():
+            label.configure(image=None, text="")
+        if self._histogram_label:
+            self._histogram_label.configure(image=None, text="")
+
+    def _show_preview_adquisicion(self) -> None:
+        """Muestra preview en pestaña Adquisición."""
+        if not self.current_image_data:
+            return
+        image_array = self.current_image_data.get('array')
+        if image_array is None:
+            return
+        pil_img = self._array_to_pil(image_array)
+        self._show_in_tab("Adquisición", pil_img)
+
+    def _array_to_pil(self, image_array: np.ndarray) -> Image.Image:
+        """Convierte array numpy a PIL Image."""
+        if len(image_array.shape) == 2:
+            return Image.fromarray(image_array, mode='L')
+        return Image.fromarray(image_array.astype('uint8'))
 
     # === Tab 2: Geometría ===
     def _setup_tab_geometria(self) -> None:
@@ -280,6 +323,10 @@ class ImageToolUI(BaseToolUI):
             command=lambda: self._process_phase('_rotate', {'angle': self.rotate_slider.get()})
         ).pack(pady=5)
 
+        # Preview label for Geometría
+        preview_label = ctk.CTkLabel(tab, text="", fg_color="transparent")
+        self._preview_labels["Geometría"] = preview_label
+
     def _on_crop(self) -> None:
         """Handle crop button."""
         try:
@@ -347,6 +394,13 @@ class ImageToolUI(BaseToolUI):
             command=lambda: self._process_phase('_adjust_gamma', {'gamma': self.gamma_slider.get()})
         ).pack(pady=5)
 
+        # Preview label for Mejora
+        preview_label = ctk.CTkLabel(tab, text="", fg_color="transparent")
+        self._preview_labels["Mejora"] = preview_label
+
+        # Histogram label (separate, appears only when calculated)
+        self._histogram_label = ctk.CTkLabel(tab, text="", fg_color="transparent")
+
     def _on_adjust_bc(self) -> None:
         """Apply brightness and contrast."""
         self._process_phase('_adjust_brightness_contrast', {
@@ -375,7 +429,6 @@ class ImageToolUI(BaseToolUI):
         ksize_label = self.ksize_label
 
         def update_ksize(value):
-            # Round to odd
             odd_val = int(value)
             if odd_val % 2 == 0:
                 odd_val += 1
@@ -408,6 +461,10 @@ class ImageToolUI(BaseToolUI):
             command=self._on_deconvolve
         ).pack(pady=5, padx=10, fill="x")
 
+        # Preview label for Filtros
+        preview_label = ctk.CTkLabel(tab, text="", fg_color="transparent")
+        self._preview_labels["Filtros"] = preview_label
+
     def _on_filter_gaussian(self) -> None:
         ksize = int(self.ksize_slider.get())
         if ksize % 2 == 0:
@@ -427,7 +484,6 @@ class ImageToolUI(BaseToolUI):
         self._process_phase('_filter_mean', {'ksize': ksize})
 
     def _on_deconvolve(self) -> None:
-        # Default kernel type
         self._process_phase('_deconvolve', {'kernel_type': 'gaussian'})
 
     # === Tab 5: Morfología ===
@@ -482,6 +538,10 @@ class ImageToolUI(BaseToolUI):
             text="🔒 Cierre (dilatación+erosión)",
             command=self._on_close
         ).pack(pady=5, padx=10, fill="x")
+
+        # Preview label for Morfología
+        preview_label = ctk.CTkLabel(tab, text="", fg_color="transparent")
+        self._preview_labels["Morfología"] = preview_label
 
     def _on_erode(self) -> None:
         ksize = int(self.morph_ksize_slider.get())
@@ -574,6 +634,10 @@ class ImageToolUI(BaseToolUI):
             command=self._on_bounding_boxes
         ).pack(pady=5)
 
+        # Preview label for Bordes
+        preview_label = ctk.CTkLabel(tab, text="", fg_color="transparent")
+        self._preview_labels["Bordes"] = preview_label
+
     def _on_canny(self) -> None:
         self._process_phase('_edge_canny', {
             'threshold1': int(self.canny_t1.get()),
@@ -651,6 +715,10 @@ class ImageToolUI(BaseToolUI):
             command=self._on_haar_detect
         ).pack(pady=5)
 
+        # Preview label for Análisis
+        preview_label = ctk.CTkLabel(tab, text="", fg_color="transparent")
+        self._preview_labels["Análisis"] = preview_label
+
     def _on_select_template(self) -> None:
         """Select template image for matching."""
         file = filedialog.askopenfilename(
@@ -679,7 +747,7 @@ class ImageToolUI(BaseToolUI):
 
     # === Common processing ===
     def _process_phase(self, phase: str, options: Dict[str, Any]) -> None:
-        """Wrapper that calls processor with current image."""
+        """Wrapper que detecta pestaña activa y muestra preview ahí."""
         if not self.current_image_data:
             self._update_status("Cargá una imagen primero", "orange")
             return
@@ -702,18 +770,45 @@ class ImageToolUI(BaseToolUI):
         self.progress_bar.stop()
         self.progress_bar.pack_forget()
 
-        # Actualizar estado según resultado
+        # Actualizar preview en pestaña correcta
         if result.get('success'):
             self.current_image_data = result.get('image_data')
-            self._update_preview()
+            self._show_preview_in_current_tab(result)
             output_files = result.get('output_files', [])
-            if output_files:
-                msg = f"{result.get('message')} - {len(output_files)} archivo(s)"
-            else:
-                msg = result.get('message', 'Completado')
+            # Histograma especial en pestaña Mejora
+            if phase == '_compute_histogram':
+                self._show_histogram(output_files)
+            msg = f"{result.get('message')}" + (f" - {len(output_files)} archivo(s)" if output_files else "")
             self._update_status(msg, "green")
         else:
             self._update_status(result.get('error', 'Error'), "red")
+
+    def _show_preview_in_current_tab(self, result: Dict[str, Any]) -> None:
+        """Muestra preview en la pestaña activa según la fase."""
+        active_tab = self.tab_view.get()
+        image_data = result.get('image_data')
+        if not image_data:
+            return
+        image_array = image_data.get('array')
+        if image_array is None:
+            return
+        pil_img = self._array_to_pil(image_array)
+        self._show_in_tab(active_tab, pil_img)
+
+    def _show_histogram(self, output_files: List[str]) -> None:
+        """Muestra histograma en pestaña Mejora."""
+        hist_file = next((f for f in output_files if 'histogram' in f), None)
+        if hist_file and Path(hist_file).exists():
+            hist_img = Image.open(hist_file)
+            # Redimensionar para preview
+            w, h = hist_img.size
+            scale = min(300 / w, 100 / h, 1.0)
+            new_w, new_h = int(w * scale), int(h * scale)
+            hist_img = hist_img.resize((new_w, new_h), Image.LANCZOS)
+            photo = self._resize_for_preview(hist_img)
+            self._histogram_label.configure(image=photo, text="")
+            self._histogram_label._photo = photo
+            self._histogram_label.pack(fill="x", pady=5)
 
     def _execute_phase(self, phase: str, image_array: np.ndarray, options: Dict[str, Any]) -> Dict[str, Any]:
         """Execute processor phase. Returns result dict."""
@@ -771,27 +866,3 @@ class ImageToolUI(BaseToolUI):
     def _update_status(self, message: str, color: str) -> None:
         """Update status label."""
         self.status_label.configure(text=message, text_color=color)
-
-    def _update_preview(self) -> None:
-        """Display current image as preview in preview_label."""
-        if not self.current_image_data:
-            return
-        try:
-            arr = self.current_image_data.get('array')
-            if arr is None:
-                return
-            # numpy array → PIL Image
-            if len(arr.shape) == 2:
-                pil_img = Image.fromarray(arr.astype('uint8'), mode='L')
-            else:
-                pil_img = Image.fromarray(arr.astype('uint8'))
-            # Scale to fit preview
-            w, h = pil_img.size
-            scale = min(400 / w, 300 / h, 1.0) if w and h else 1.0
-            pil_img = pil_img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
-            self._preview_img = ImageTk.PhotoImage(pil_img)
-            self.preview_label.configure(image=self._preview_img, text="")
-        except Exception as e:
-            self.preview_label.configure(image=None, text=f"Preview error: {e}", text_color="red")
-
-    
