@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import filedialog
 
 from core.base_tool_ui import BaseToolUI
+from core.constants import font
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
@@ -129,7 +130,7 @@ class TextAnalyzerUI(BaseToolUI):
         """Create title label."""
         ctk.CTkLabel(
             self, text="📊 Text Analyzer",
-            font=ctk.CTkFont(size=22, weight="bold")
+            font=font("title", "bold")
         ).pack(pady=(10, 5))
 
     def _setup_help(self) -> None:
@@ -152,7 +153,7 @@ class TextAnalyzerUI(BaseToolUI):
                 self._tab_frames[key] = self.tabview.add(f"{icon} {key.capitalize()}")
 
         self._create_tabs()
-        self.tabview.bind("<<TabChanged>>", self._on_tab_changed)
+        self.tabview.configure(command=self._on_tab_changed)
 
     def _create_tabs(self) -> None:
         """Instantiate all tabs from registry."""
@@ -162,11 +163,12 @@ class TextAnalyzerUI(BaseToolUI):
             if cls:
                 self.tabs[key] = cls(frame, self.state, self.callbacks)
 
-    def _on_tab_changed(self, event: Any = None) -> None:
+    def _on_tab_changed(self, tab_name: str = None) -> None:
         """Handle tab selection change."""
         try:
-            name = self.tabview.get()
-            key = name.split(" ")[-1].lower()
+            if tab_name is None:
+                tab_name = self.tabview.get()
+            key = tab_name.split(" ")[-1].lower()
             self.state.current_tab = key
             tab = self.tabs.get(key)
             if tab and hasattr(tab, 'on_tab_selected'):

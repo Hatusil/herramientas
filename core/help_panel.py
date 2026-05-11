@@ -5,8 +5,8 @@ Muestra la ayuda como un popup flotante (CTkToplevel) que no desplaza el conteni
 import customtkinter as ctk
 from pathlib import Path
 
-# Importar constants para colores del tema
 from core import constants
+from core.constants import font
 
 
 class HelpPopup:
@@ -72,7 +72,7 @@ class HelpPopup:
             desc_label = ctk.CTkLabel(
                 scrollable,
                 text=description,
-                font=ctk.CTkFont(size=14),
+                font=font("small"),
                 justify="left",
                 anchor="w",
                 wraplength=450,
@@ -84,7 +84,7 @@ class HelpPopup:
             ctk.CTkLabel(
                 scrollable,
                 text="📌 Uso:",
-                font=ctk.CTkFont(size=15, weight="bold"),
+                font=font("small", "bold"),
                 text_color=constants.COLORS.get("primary", "#3b82f6")
             ).pack(anchor="w", padx=10, pady=(10, 0))
             
@@ -92,7 +92,7 @@ class HelpPopup:
                 ctk.CTkLabel(
                     scrollable,
                     text=f"• {item}",
-                    font=ctk.CTkFont(size=14),
+                    font=font("small"),
                     text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
                     justify="left",
                     anchor="w",
@@ -103,7 +103,7 @@ class HelpPopup:
             ctk.CTkLabel(
                 scrollable,
                 text="💡 Tips:",
-                font=ctk.CTkFont(size=15, weight="bold"),
+                font=font("small", "bold"),
                 text_color=constants.COLORS.get("primary", "#3b82f6")
             ).pack(anchor="w", padx=10, pady=(15, 0))
             
@@ -111,7 +111,7 @@ class HelpPopup:
                 ctk.CTkLabel(
                     scrollable,
                     text=f"• {tip}",
-                    font=ctk.CTkFont(size=14),
+                    font=font("small"),
                     text_color=constants.COLORS.get("success", "#22c55e"),
                     justify="left",
                     anchor="w",
@@ -122,7 +122,7 @@ class HelpPopup:
             ctk.CTkLabel(
                 scrollable,
                 text="⚠️ Advertencias:",
-                font=ctk.CTkFont(size=15, weight="bold"),
+                font=font("small", "bold"),
                 text_color=constants.COLORS.get("primary", "#3b82f6")
             ).pack(anchor="w", padx=10, pady=(15, 0))
             
@@ -130,7 +130,7 @@ class HelpPopup:
                 ctk.CTkLabel(
                     scrollable,
                     text=f"• {warn}",
-                    font=ctk.CTkFont(size=14),
+                    font=font("small"),
                     text_color=constants.COLORS.get("warning", "#f59e0b"),
                     justify="left",
                     anchor="w",

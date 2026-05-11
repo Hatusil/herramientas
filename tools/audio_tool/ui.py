@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import List, Callable, Dict, Any
 from core.base_tool_ui import BaseToolUI
 from core.tool_builder import create_standard_tool_ui
+from core.constants import font
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ class AudioToolUI(BaseToolUI):
     def _setup_normalize_tab(self) -> None:
         frame = self.tab_normalize
 
-        ctk.CTkLabel(frame, text="Normalizar volumen del audio", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        ctk.CTkLabel(frame, text="Normalizar volumen del audio", font=font("normal", "bold")).pack(pady=10)
 
         lufs_frame = ctk.CTkFrame(frame)
         lufs_frame.pack(fill="x", padx=10, pady=5)
@@ -84,7 +85,7 @@ class AudioToolUI(BaseToolUI):
         ctk.CTkLabel(lufs_frame, text="Target LUFS:").pack(side="left", padx=5)
         self.lufs_var = ctk.StringVar(value="-16")
 
-        rb_font = ctk.CTkFont(size=14)
+        rb_font = font("small")
         for val, label in [("-20", "Muy bajo (-20)"), ("-16", "Est\u00e1ndar (-16)"),
                            ("-14", "Alto (-14)"), ("-12", "Muy alto (-12)")]:
             RadioButton(lufs_frame, text=label, variable=self.lufs_var, value=val, font=rb_font).pack(side="left", padx=5)
@@ -116,7 +117,7 @@ class AudioToolUI(BaseToolUI):
 
         self.btn_normalize = ctk.CTkButton(
             frame, text="\U0001F39A\ufe0f Normalizar Volumen", command=self._normalize,
-            height=40, font=ctk.CTkFont(size=14)
+            height=40, font=font("small")
         )
         self.btn_normalize.pack(pady=20)
 
@@ -139,12 +140,12 @@ class AudioToolUI(BaseToolUI):
     def _setup_clean_tab(self) -> None:
         frame = self.tab_clean
 
-        ctk.CTkLabel(frame, text="Limpiar metadatos (ID3, t\u00edtulo, artista, etc.)", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        ctk.CTkLabel(frame, text="Limpiar metadatos (ID3, t\u00edtulo, artista, etc.)", font=font("normal", "bold")).pack(pady=10)
 
         ctk.CTkLabel(frame, text="Esto eliminar\u00e1: t\u00edtulo, artista, \u00e1lbum, g\u00e9nero, a\u00f1o, etc.", text_color="gray").pack(pady=5)
 
         ctk.CTkButton(frame, text="\U0001F9F9 Limpiar Metadatos", command=self._clean_metadata,
-                       height=40, font=ctk.CTkFont(size=14)).pack(pady=20)
+                       height=40, font=font("small")).pack(pady=20)
 
     def _clean_metadata(self) -> None:
         if self.is_processing:
@@ -158,7 +159,7 @@ class AudioToolUI(BaseToolUI):
         frame = self.tab_edit_meta
 
         ctk.CTkLabel(frame, text="Editar metadatos (t\u00edtulo, artista, \u00e1lbum, g\u00e9nero...)",
-                      font=ctk.CTkFont(weight="bold")).pack(pady=10)
+                      font=font("normal", "bold")).pack(pady=10)
 
         container = ctk.CTkFrame(frame)
         container.pack(fill="both", expand=True, padx=20, pady=10)
@@ -184,7 +185,7 @@ class AudioToolUI(BaseToolUI):
             ctk.CTkEntry(container, textvariable=var, width=180).grid(row=row, column=col + 1, padx=5, pady=5, sticky="w")
 
         ctk.CTkButton(container, text="\u270F\ufe0f Editar Metadatos", command=self._edit_metadata,
-                       height=40, font=ctk.CTkFont(size=14)).grid(row=4, column=0, columnspan=4, pady=20)
+                       height=40, font=font("small")).grid(row=4, column=0, columnspan=4, pady=20)
 
     def _edit_metadata(self) -> None:
         if self.is_processing:
@@ -201,7 +202,7 @@ class AudioToolUI(BaseToolUI):
     def _setup_convert_tab(self) -> None:
         frame = self.tab_convert
 
-        ctk.CTkLabel(frame, text="Convertir a otro formato de audio", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        ctk.CTkLabel(frame, text="Convertir a otro formato de audio", font=font("normal", "bold")).pack(pady=10)
 
         format_frame = ctk.CTkFrame(frame)
         format_frame.pack(fill="x", padx=10, pady=5)
@@ -222,10 +223,10 @@ class AudioToolUI(BaseToolUI):
             RadioButton(quality_frame, text=f"{val} kbps", variable=self.conv_quality_var, value=val).pack(side="left", padx=5)
 
         ctk.CTkLabel(frame, text="Nota: WAV y FLAC usan calidad sin p\u00e9rdida",
-                      text_color="gray", font=ctk.CTkFont(size=14)).pack(pady=5)
+                      text_color="gray", font=font("small")).pack(pady=5)
 
         ctk.CTkButton(frame, text="\U0001F504 Convertir Formato", command=self._convert,
-                       height=40, font=ctk.CTkFont(size=14)).pack(pady=20)
+                       height=40, font=font("small")).pack(pady=20)
 
     def _convert(self) -> None:
         if self.is_processing:
@@ -241,7 +242,7 @@ class AudioToolUI(BaseToolUI):
     def _setup_repair_tab(self) -> None:
         frame = self.tab_repair
 
-        ctk.CTkLabel(frame, text="Reparar archivos de audio corruptos", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        ctk.CTkLabel(frame, text="Reparar archivos de audio corruptos", font=font("normal", "bold")).pack(pady=10)
 
         ctk.CTkLabel(frame, text="Primero verific\u00e1 qu\u00e9 archivos est\u00e1n corruptos, luego decid\u00ed qu\u00e9 reparar",
                       text_color="gray").pack(pady=5)
@@ -335,7 +336,7 @@ class AudioToolUI(BaseToolUI):
         frame = self.tab_verify
 
         ctk.CTkLabel(frame, text="Verificar integridad de archivos de audio",
-                      font=ctk.CTkFont(weight="bold")).pack(pady=10)
+                      font=font("normal", "bold")).pack(pady=10)
 
         ctk.CTkLabel(frame, text="Verifica qu\u00e9 archivos est\u00e1n corruptos antes de repararlos",
                       text_color="gray").pack(pady=5)
@@ -345,7 +346,7 @@ class AudioToolUI(BaseToolUI):
         self.verify_text.configure(state="disabled")
 
         ctk.CTkButton(frame, text="\U0001F50D Verificar Archivos", command=self._verify_audio,
-                       height=40, font=ctk.CTkFont(size=14)).pack(pady=10)
+                       height=40, font=font("small")).pack(pady=10)
 
     def _verify_audio(self) -> None:
         selected = self._get_selected_files()
@@ -392,7 +393,7 @@ class AudioToolUI(BaseToolUI):
     def _setup_info_tab(self) -> None:
         frame = self.tab_info
 
-        ctk.CTkLabel(frame, text="Informaci\u00f3n del archivo de audio:", font=ctk.CTkFont(weight="bold")).pack(pady=10)
+        ctk.CTkLabel(frame, text="Informaci\u00f3n del archivo de audio:", font=font("normal", "bold")).pack(pady=10)
 
         self.info_text = ctk.CTkTextbox(frame, width=500, height=300, wrap="word")
         self.info_text.pack(padx=10, pady=10)

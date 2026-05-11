@@ -8,6 +8,7 @@ import customtkinter as ctk
 from pathlib import Path
 
 from core import constants
+from core.constants import font
 from core import config
 from core.plugin_manager import PluginManager
 from ui.sidebar import Sidebar
@@ -232,7 +233,7 @@ class App(ctk.CTk):
         title = ctk.CTkLabel(
             welcome_frame,
             text="🔧 Herramientas",
-            font=ctk.CTkFont(size=32, weight="bold"),
+            font=font("title", "bold"),
             text_color=constants.COLORS.get("text_primary", "#e0e0e0")
         )
         title.pack(pady=(30, 10))
@@ -240,7 +241,7 @@ class App(ctk.CTk):
         subtitle = ctk.CTkLabel(
             welcome_frame,
             text="Seleccioná una herramienta para comenzar",
-            font=ctk.CTkFont(size=16),
+            font=font("normal"),
             text_color=constants.COLORS.get("text_secondary", "#9ca3af")
         )
         subtitle.pack(pady=(0, 30))
@@ -303,7 +304,7 @@ class App(ctk.CTk):
             btn = ctk.CTkButton(
                 card,
                 text=f"{icon} {tool.get('display_name', tool_name)}",
-                font=ctk.CTkFont(size=16, weight="bold"),
+                font=font("normal", "bold"),
                 fg_color=constants.COLORS.get("button_fg", "#3d3d3d"),
                 hover_color=constants.COLORS.get("button_hover", "#525252"),
                 text_color="white",
@@ -317,7 +318,7 @@ class App(ctk.CTk):
                 desc_label = ctk.CTkLabel(
                     card,
                     text=description,
-                    font=ctk.CTkFont(size=11),
+                    font=font("xsmall"),
                     text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
                     wraplength=150
                 )

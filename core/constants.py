@@ -59,9 +59,11 @@ if platform.system() == "Windows":
 else:
     FONT_FAMILY = "DejaVu Sans"
     
+FONT_SIZE_XSMALL = 12  # Para textos muy chicos (info, labels secundarios)
 FONT_SIZE_SMALL = 14    # Antes 12
 FONT_SIZE_NORMAL = 16    # Antes 14
 FONT_SIZE_LARGE = 18    # Antes 16
+FONT_SIZE_HEADER = 20   # Para títulos de tools (entre normal y title)
 FONT_SIZE_TITLE = 24    # Antes 20
 
 
@@ -79,9 +81,11 @@ def font(size: str = "normal", weight: str = "normal"):
         return None
     from customtkinter import CTkFont
     sizes = {
+        "xsmall": FONT_SIZE_XSMALL,
         "small": FONT_SIZE_SMALL,
         "normal": FONT_SIZE_NORMAL,
         "large": FONT_SIZE_LARGE,
+        "header": FONT_SIZE_HEADER,
         "title": FONT_SIZE_TITLE,
     }
     return CTkFont(size=sizes.get(size, FONT_SIZE_NORMAL), weight=weight)
@@ -117,9 +121,11 @@ __all__ = [
     'TOOL_STATUS_ERROR',
     'TOOL_STATUS_LOADING',
     'FONT_FAMILY',
+    'FONT_SIZE_XSMALL',
     'FONT_SIZE_SMALL',
     'FONT_SIZE_NORMAL',
     'FONT_SIZE_LARGE',
+    'FONT_SIZE_HEADER',
     'FONT_SIZE_TITLE',
     'font',
     'CTK_AVAILABLE',

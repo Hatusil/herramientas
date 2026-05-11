@@ -7,6 +7,7 @@ import customtkinter as ctk
 from typing import List, Dict, Callable, Any
 from pathlib import Path
 from core import constants
+from core.constants import font, FONT_SIZE_TITLE, FONT_SIZE_LARGE
 from core import config
 
 # Check for PIL availability
@@ -158,7 +159,7 @@ class Sidebar(ctk.CTkFrame):
             border_color=constants.COLORS.get("border", "#404040"),
             hover_color=constants.COLORS.get("primary", "#3b82f6"),
             height=36,
-            font=ctk.CTkFont(size=13)
+            font=font("small")
         )
         acerca_btn.pack(fill="x", padx=10, pady=(8, 0))
         try:
@@ -181,7 +182,7 @@ class Sidebar(ctk.CTkFrame):
             self.control_frame,
             text="CONFIGURACIÓN",
             text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
-            font=ctk.CTkFont(size=11, weight="bold")
+            font=font("xsmall", "bold")
         )
         config_label.pack(fill="x", padx=12, pady=(10, 8))
         
@@ -205,7 +206,7 @@ class Sidebar(ctk.CTkFrame):
             self.control_frame,
             text=f"Modo: {'Claro' if constants.get_theme() == 'light' else 'Oscuro'}",
             text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
-            font=ctk.CTkFont(size=11)
+            font=font("xsmall")
         )
         self._theme_label.pack(fill="x", padx=12, pady=(0, 8))
         
@@ -226,7 +227,7 @@ class Sidebar(ctk.CTkFrame):
             hover_color="#b91c1c",
             text_color="white",
             height=36,
-            font=ctk.CTkFont(size=13, weight="bold")
+            font=font("small", "bold")
         )
         salir_btn.pack(fill="x", padx=12, pady=(8, 12))
     
@@ -485,13 +486,13 @@ class Sidebar(ctk.CTkFrame):
         ctk.CTkLabel(
             main,
             text="Herramientas",
-            font=ctk.CTkFont(size=28, weight="bold")
+            font=font("title", "bold")
         ).pack(pady=(0, 2))
         
         ctk.CTkLabel(
             main,
             text="Version 1.0.0",
-            font=ctk.CTkFont(size=14),
+            font=font("small"),
             text_color="gray"
         ).pack(pady=(0, 15))
         
@@ -504,7 +505,7 @@ class Sidebar(ctk.CTkFrame):
         ctk.CTkLabel(
             desc_frame,
             text=desc_text,
-            font=ctk.CTkFont(size=11),
+            font=font("xsmall"),
             text_color="gray",
             wraplength=380
         ).pack(pady=5)
@@ -513,14 +514,14 @@ class Sidebar(ctk.CTkFrame):
         ctk.CTkLabel(
             main,
             text="Desarrollado por: Hatusil (Ewoc Logic)",
-            font=ctk.CTkFont(size=14, weight="bold")
+            font=font("small", "bold")
         ).pack(pady=(10, 0))
         
         ctk.CTkLabel(
             main,
             text="hatusil@proton.me",
             text_color="gray",
-            font=ctk.CTkFont(size=11)
+            font=font("xsmall")
         ).pack(pady=(2, 0))
         
         ctk.CTkLabel(
@@ -540,7 +541,7 @@ class Sidebar(ctk.CTkFrame):
         ctk.CTkLabel(
             main,
             text=f"Última actualización: Abril {año}",
-            font=ctk.CTkFont(size=11),
+            font=font("xsmall"),
             text_color="gray"
         ).pack(pady=(5, 0))
         
@@ -548,7 +549,7 @@ class Sidebar(ctk.CTkFrame):
         ctk.CTkLabel(
             main,
             text=f"© {año} - Todos los derechos reservados",
-            font=ctk.CTkFont(size=12)
+            font=font("small")
         ).pack(pady=(5, 0))
         
         # Separator
@@ -559,7 +560,7 @@ class Sidebar(ctk.CTkFrame):
         ctk.CTkLabel(
             main,
             text="Herramientas incluidas:",
-            font=ctk.CTkFont(size=14, weight="bold")
+            font=font("small", "bold")
         ).pack(pady=(5, 5))
         
         # Lista de tools
@@ -569,7 +570,7 @@ PDF • Renombrar • Scrubber • Search • Texto • Video"""
         ctk.CTkLabel(
             main,
             text=tools_list,
-            font=ctk.CTkFont(size=13)
+            font=font("small")
         ).pack(pady=5)
         
         # Separator

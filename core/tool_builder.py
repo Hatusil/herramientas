@@ -8,6 +8,7 @@ from typing import List, Optional
 import customtkinter as ctk
 
 from core.help_panel import add_help
+from core.constants import font
 
 
 def create_standard_tool_ui(
@@ -24,7 +25,7 @@ def create_standard_tool_ui(
     hc = help_config or {}
 
     ctk.CTkLabel(
-        parent, text=name, font=ctk.CTkFont(size=20, weight="bold")
+        parent, text=name, font=font("header", "bold")
     ).pack(pady=(0, 10))
 
     help_btn = None
@@ -43,6 +44,9 @@ def create_standard_tool_ui(
     files = []
     listbox = None
     status_label = None
+    btn_frame = None
+    add_folder = None
+    get_selected = None
 
     if selector_type != "none":
         fs = _build_file_selector(
@@ -56,6 +60,9 @@ def create_standard_tool_ui(
         files = fs["files"]
         listbox = fs["listbox"]
         status_label = fs["status_label"]
+        btn_frame = fs.get("btn_frame")
+        add_folder = fs.get("add_folder")
+        get_selected = fs.get("get_selected")
 
     tabview = None
     tabs = {}
@@ -74,6 +81,9 @@ def create_standard_tool_ui(
         "files": files,
         "listbox": listbox,
         "status_label": status_label,
+        "btn_frame": btn_frame,
+        "add_folder": add_folder,
+        "get_selected": get_selected,
     }
 
 
@@ -92,7 +102,7 @@ def _build_file_selector(parent, file_types=None, custom_buttons=None,
     frame.pack(fill="x", pady=(0, 10), padx=10)
 
     ctk.CTkLabel(
-        frame, text=file_label, font=ctk.CTkFont(weight="bold")
+        frame, text=file_label, font=font("normal", "bold")
     ).pack(anchor="w", padx=10, pady=(10, 5))
 
     list_cont = ctk.CTkFrame(frame, fg_color="transparent")

@@ -13,6 +13,8 @@ from tkinter import filedialog
 from pathlib import Path
 from typing import List, Callable, Optional, Dict, Any
 
+from core.constants import font
+
 
 class BaseToolUI(ctk.CTkFrame):
     """
@@ -102,7 +104,7 @@ class BaseToolUI(ctk.CTkFrame):
         ctk.CTkLabel(
             frame, 
             text=self._get_file_label(), 
-            font=ctk.CTkFont(weight="bold")
+            font=font("normal", "bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
         
         # Contenedor para lista con scrollbar

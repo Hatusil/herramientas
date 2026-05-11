@@ -5,6 +5,7 @@ import tkinter as tk
 from typing import Callable
 from core.base_tool_ui import BaseToolUI
 from core.tool_builder import create_standard_tool_ui
+from core.constants import font
 
 
 class HashToolUI(BaseToolUI):
@@ -56,12 +57,12 @@ class HashToolUI(BaseToolUI):
 
         ctk.CTkLabel(
             frame, text="Calcular hash (huella \u00fanica del archivo):",
-            font=ctk.CTkFont(weight="bold")
+            font=font("normal", "bold")
         ).pack(pady=10)
 
         info = ctk.CTkLabel(
             frame, text="SHA256 = recommended | MD5 = only for old downloads",
-            text_color="gray", font=ctk.CTkFont(size=11)
+            text_color="gray", font=font("xsmall")
         )
         info.pack(pady=5)
 
@@ -98,12 +99,12 @@ class HashToolUI(BaseToolUI):
 
         ctk.CTkLabel(
             frame, text="Verificar hash (comparar con valor conocido):",
-            font=ctk.CTkFont(weight="bold")
+            font=font("normal", "bold")
         ).pack(pady=5)
 
         info = ctk.CTkLabel(
             frame, text="Ingresa el hash del servidor o el original para comparar",
-            text_color="gray", font=ctk.CTkFont(size=12)
+            text_color="gray", font=font("small")
         )
         info.pack(pady=5)
 
@@ -158,7 +159,7 @@ class HashToolUI(BaseToolUI):
 
         ctk.CTkLabel(
             frame, text="Lista de archivos con todos los hashes:",
-            font=ctk.CTkFont(weight="bold")
+            font=font("normal", "bold")
         ).pack(pady=10)
 
         ctk.CTkButton(
