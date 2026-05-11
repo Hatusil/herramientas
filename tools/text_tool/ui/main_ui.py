@@ -113,10 +113,11 @@ class TextAnalyzerUI(BaseToolUI):
                 tab.refresh()
 
     def _on_analysis_request(self, method: str, args: Any = None) -> None:
-        """Handle requests from tabs (e.g., open modal)."""
+        """Handle requests from tabs (e.g., open modal, full analysis)."""
         handlers = {
             "open_modal": self._open_chart_modal,
-            "run_specific": self._run_specific_analysis
+            "run_specific": self._run_specific_analysis,
+            "full_analysis": lambda _: self._run_all_analysis(),
         }
         handler = handlers.get(method)
         if handler:
@@ -157,11 +158,11 @@ class TextAnalyzerUI(BaseToolUI):
         self.tabview = ctk.CTkTabview(self)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=5)
 
-        # Create tab frames
+        # Create tab frames (icon-only, tooltip on hover via status bar)
         for key in TAB_ORDER:
             if key in self._tab_registry:
                 icon = TAB_ICONS.get(key, "")
-                self._tab_frames[key] = self.tabview.add(f"{icon} {key.capitalize()}")
+                self._tab_frames[key] = self.tabview.add(icon)
 
         self._create_tabs()
         self.tabview.configure(command=self._on_tab_changed)
@@ -179,7 +180,9 @@ class TextAnalyzerUI(BaseToolUI):
         try:
             if tab_name is None:
                 tab_name = self.tabview.get()
-            key = tab_name.split(" ")[-1].lower()
+            # Map icon back to key (tab_name is now just the icon)
+            rev = {v: k for k, v in TAB_ICONS.items()}
+            key = rev.get(tab_name, "input")
             self.state.current_tab = key
             tab = self.tabs.get(key)
             if tab and hasattr(tab, 'on_tab_selected'):

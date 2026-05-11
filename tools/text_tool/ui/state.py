@@ -15,6 +15,8 @@ class TextAnalyzerState:
     sources: Dict[str, List[Any]] = field(
         default_factory=lambda: {"text": [], "files": [], "urls": []}
     )
+    exclude_words: str = ""
+    remove_stopwords: bool = True
     status: str = ""
     status_color: str = "gray"
     is_processing: bool = False

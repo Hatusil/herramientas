@@ -46,8 +46,8 @@ class CleanTab(BaseTab):
         self._build_sources_section()
         self._build_clean_options()
         self._build_action_buttons()
-        self._build_results_section()
         self._build_generate_button()
+        self._build_results_section()
 
     def _build_sources_section(self) -> None:
         """Build the sources summary section."""

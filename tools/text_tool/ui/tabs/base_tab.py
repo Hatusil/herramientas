@@ -32,6 +32,8 @@ class BaseTab(ABC):
         self._callbacks = callbacks
         self._frame: Optional[ctk.CTkFrame] = None
         self._setup_frame()
+        if self._frame is not None:
+            self._frame.pack(fill="both", expand=True)
 
     def _setup_frame(self) -> None:
         """Create the main frame for this tab. Override in subclasses."""

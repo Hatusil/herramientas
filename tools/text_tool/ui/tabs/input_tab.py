@@ -9,6 +9,7 @@ import tkinter as tk
 from tkinter import filedialog
 
 from tools.text_tool.ui.tabs.base_tab import BaseTab
+from core.utils import clean_text
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
@@ -243,7 +244,8 @@ class InputTab(BaseTab):
             self.state.update_text(text)
 
         self.state.sources["text"].append(text[:100])
-        self.state.update_cleaned(None)
+        self.state.update_cleaned(clean_text(self.state.text_content, remove_stopwords=True))
+        self._callbacks.emit_text_changed()
         self.update_status(
             f"Texto cargado: {len(self.state.text_content)} caracteres", "green"
         )
@@ -280,7 +282,8 @@ class InputTab(BaseTab):
                 self.state.update_text(new_text)
 
             self.state.sources["files"].extend(files)
-            self.state.update_cleaned(None)
+            self.state.update_cleaned(clean_text(self.state.text_content, remove_stopwords=True))
+            self._callbacks.emit_text_changed()
             self.update_status(
                 f"{len(files)} archivos: {len(self.state.text_content)} caracteres", "green"
             )
@@ -325,7 +328,8 @@ class InputTab(BaseTab):
                 self.state.update_text(new_text)
 
             self.state.sources["urls"].extend(urls)
-            self.state.update_cleaned(None)
+            self.state.update_cleaned(clean_text(self.state.text_content, remove_stopwords=True))
+            self._callbacks.emit_text_changed()
             self.update_status(
                 f"{len(urls)} URLs: {len(self.state.text_content)} caracteres", "green"
             )
