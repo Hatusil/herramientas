@@ -66,6 +66,10 @@ class TextAnalyzerUI(BaseToolUI):
 
     _add_folder_custom = True  # Skip global file selector
 
+    def _setup_ui(self) -> None:
+        """Override: text_tool construye UI desde cero."""
+        pass
+
     def __init__(self, master: Any, on_process: Callable, **kwargs) -> None:
         from tools.text_tool.ui.state import TextAnalyzerState
         from tools.text_tool.ui.callbacks import AppCallbacks
@@ -124,8 +128,14 @@ class TextAnalyzerUI(BaseToolUI):
         """Build complete UI layout."""
         self._setup_title()
         self._setup_help()
+        self._setup_status()
         self._setup_tabs()
         self._setup_shortcuts()
+
+    def _setup_status(self) -> None:
+        """Create status label."""
+        self.status_label = ctk.CTkLabel(self, text="", text_color="gray")
+        self.status_label.pack(pady=5)
 
     def _setup_title(self) -> None:
         """Create title label."""
