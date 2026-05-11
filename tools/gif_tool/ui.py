@@ -1,162 +1,132 @@
 """UI: Interfaz para crear GIFs animados."""
-import logging
-import os
-from core.help_panel import add_help
 from ui.radiobutton import RadioButton
 import customtkinter as ctk
 import tkinter as tk
 from pathlib import Path
-from typing import List, Callable
-
-# Import BaseToolUI from core
+from typing import Callable
 from core.base_tool_ui import BaseToolUI
-
-logger = logging.getLogger(__name__)
+from core.tool_builder import create_standard_tool_ui
 
 
 class GifToolUI(BaseToolUI):
     """UI para crear GIFs animados."""
-    
+
     def __init__(self, master, on_process: Callable, **kwargs):
-        # Call BaseToolUI __init__ which calls _setup_ui()
         super().__init__(master, on_process, **kwargs)
-        
-        # Estado: evitar doble click
         self.is_processing = False
-        
-        # Build tool-specific UI after base selector
-        self._setup_options()
-    
-    def _get_file_label(self) -> str:
-        """Override: Label for images section."""
-        return "Imágenes para el GIF (orden importa):"
-    
-    def _get_file_dialog_filters(self) -> List[tuple]:
-        """Override: Filters for image files."""
-        return [
-            ("Imágenes", "*.png *.jpg *.jpeg *.bmp *.webp *.gif"),
-            ("Todos", "*.*")
-        ]
-    
-    def _get_custom_buttons(self) -> List[tuple]:
-        """Override: Custom buttons for sorting images."""
-        return [
-            ("Ordenar ↑", self._move_up, {"width": 70}),
-            ("Ordenar ↓", self._move_down, {"width": 70}),
-        ]
-    
-    def _setup_ui(self) -> None:
-        # Title
-        title = ctk.CTkLabel(
-            self,
-            text="Creador de GIFs",
-            font=ctk.CTkFont(size=20, weight="bold")
-        )
-        title.pack(pady=(0, 10))
-        
-        # Help panel
-        help_panel = add_help(
-            self,
-            description="🎞️ Crea GIFs animados de secuencias de imágenes (PNG/JPG/BMP/WEBP). Controla duración y repeticiones",
-            usage=[
-                "1. 📥 Agregar imágenes en orden de animación",
-                "2. ↕️ Reordenar frames si es necesario",
-                "3. ⏱️ Configurar duración (100-1000ms)",
-                "4. 🔄 Elegir repeticiones (infinito/1/3)",
-                "5. ▶️ Click en 'Crear GIF'"
+
+    def _setup_ui(self):
+        r = create_standard_tool_ui(
+            self, ("\U0001F39E\ufe0f", "Creador de GIFs"),
+            "\U0001F39E\ufe0f Crea GIFs animados de secuencias de im\u00e1genes. "
+            "Controla duraci\u00f3n y repeticiones",
+            selector_type="file",
+            file_types=[
+                ("Im\u00e1genes", "*.png *.jpg *.jpeg *.bmp *.webp *.gif"),
+                ("Todos", "*.*"),
             ],
-            warnings=[
-                "⚠️ Se necesitan al menos 2 imágenes",
-                "⚠️ Todas las imágenes deben tener mismo tamaño",
-                "⚠️ GIFs ilimitados pueden ser muy grandes"
-            ]
+            help_config={
+                "file_label": "Im\u00e1genes para el GIF (orden importa):",
+                "usage": [
+                    "1. \U0001F4E5 Agregar im\u00e1genes en orden de animaci\u00f3n",
+                    "2. \u2195\ufe0f Reordenar frames si es necesario",
+                    "3. \u23f1\ufe0f Configurar duraci\u00f3n (100-1000ms)",
+                    "4. \U0001F504 Elegir repeticiones (infinito/1/3)",
+                    "5. \u25b6\ufe0f Click en 'Crear GIF'",
+                ],
+                "warnings": [
+                    "\u26a0\ufe0f Se necesitan al menos 2 im\u00e1genes",
+                    "\u26a0\ufe0f Todas las im\u00e1genes deben tener mismo tama\u00f1o",
+                    "\u26a0\ufe0f GIFs ilimitados pueden ser muy grandes",
+                ],
+                "custom_buttons": [
+                    ("Ordenar \u2191", None, {"width": 70}),
+                    ("Ordenar \u2193", None, {"width": 70}),
+                ],
+            },
         )
-        help_panel.pack(fill="x", padx=10, pady=5)
-        
-        # File selector (from BaseToolUI)
-        self._setup_file_selector()
-        
-        # Status label (from BaseToolUI sets self.status_label)
-    
-    def _move_up(self) -> None:
-        """Move selected image up in list."""
-        selection = self.file_listbox.curselection()
-        if not selection or selection[0] == 0:
-            return
-        
-        idx = selection[0]
-        self.files[idx], self.files[idx-1] = self.files[idx-1], self.files[idx]
-        self._refresh_list()
-        self.file_listbox.selection_set(idx-1)
-    
-    def _move_down(self) -> None:
-        """Move selected image down in list."""
-        selection = self.file_listbox.curselection()
-        if not selection or selection[0] >= len(self.files) - 1:
-            return
-        
-        idx = selection[0]
-        self.files[idx], self.files[idx+1] = self.files[idx+1], self.files[idx]
-        self._refresh_list()
-        self.file_listbox.selection_set(idx+1)
-    
-    def _refresh_list(self) -> None:
-        """Refresh the file listbox display."""
-        self.file_listbox.delete(0, tk.END)
-        for f in self.files:
-            self.file_listbox.insert(tk.END, Path(f).name)
-    
+        self.files = r["files"]
+        self.file_listbox = r["listbox"]
+        self.status_label = r["status_label"]
+
+        self._move_up = self._make_move(-1)
+        self._move_down = self._make_move(1)
+
+        ctk.CTkButton(
+            r.get("btn_frame"), text="Ordenar \u2191",
+            command=self._move_up, width=70
+        ).pack(side="left", padx=2)
+
+        ctk.CTkButton(
+            r.get("btn_frame"), text="Ordenar \u2193",
+            command=self._move_down, width=70
+        ).pack(side="left", padx=2)
+
+        self._setup_options()
+
+    def _make_move(self, direction):
+        def _move():
+            sel = self.file_listbox.curselection()
+            if not sel:
+                return
+            idx = sel[0]
+            new_idx = idx + direction
+            if new_idx < 0 or new_idx >= len(self.files):
+                return
+            self.files[idx], self.files[new_idx] = self.files[new_idx], self.files[idx]
+            self.file_listbox.delete(0, tk.END)
+            for f in self.files:
+                self.file_listbox.insert(tk.END, Path(f).name)
+            self.file_listbox.selection_set(new_idx)
+        return _move
+
     def _setup_options(self) -> None:
-        """Build GIF-specific options."""
         opts_frame = ctk.CTkFrame(self)
         opts_frame.pack(fill="x", padx=10, pady=5)
-        
-        # Duración
+
         dur_frame = ctk.CTkFrame(opts_frame)
         dur_frame.pack(fill="x", pady=5)
-        
-        ctk.CTkLabel(dur_frame, text="Duración por frame (ms):").pack(side="left", padx=5)
+
+        ctk.CTkLabel(dur_frame, text="Duraci\u00f3n por frame (ms):").pack(side="left", padx=5)
         self.duration_var = ctk.StringVar(value="500")
-        
-        for val, label in [("100", "100ms (rápido)"), ("200", "200ms"), ("500", "500ms (normal)"), ("1000", "1s (lento)")]:
+
+        for val, label in [("100", "100ms (r\u00e1pido)"), ("200", "200ms"), ("500", "500ms (normal)"), ("1000", "1s (lento)")]:
             RadioButton(dur_frame, text=label, variable=self.duration_var, value=val).pack(side="left", padx=5)
-        
-        # Loop
+
         loop_frame = ctk.CTkFrame(opts_frame)
         loop_frame.pack(fill="x", pady=5)
-        
+
         ctk.CTkLabel(loop_frame, text="Repeticiones:").pack(side="left", padx=5)
         self.loop_var = ctk.StringVar(value="0")
-        
+
         RadioButton(loop_frame, text="Infinito", variable=self.loop_var, value="0").pack(side="left", padx=5)
         RadioButton(loop_frame, text="1 vez", variable=self.loop_var, value="1").pack(side="left", padx=5)
         RadioButton(loop_frame, text="3 veces", variable=self.loop_var, value="3").pack(side="left", padx=5)
-        
-        # Botón crear
-        ctk.CTkButton(self, text="🎬 Crear GIF", command=self._create_gif, height=40, font=ctk.CTkFont(size=14)).pack(pady=10)
-        
-        # Info
+
+        ctk.CTkButton(
+            self, text="\U0001F3AC Crear GIF", command=self._create_gif,
+            height=40, font=ctk.CTkFont(size=14)
+        ).pack(pady=10)
+
         self.info_text = ctk.CTkTextbox(self, width=400, height=100)
         self.info_text.pack(padx=10, pady=10)
-    
+
     def _create_gif(self) -> None:
-        """Create the GIF from selected images."""
         if not self._check_files() or len(self.files) < 2:
-            self.status_label.configure(text="Necesitas al menos 2 imágenes", text_color="#FFA500")
+            self.status_label.configure(text="Necesitas al menos 2 im\u00e1genes", text_color="#FFA500")
             return
-        
+
         duration = int(self.duration_var.get())
         loop = int(self.loop_var.get())
-        
+
         self.status_label.configure(text="Creando GIF...", text_color="#FFD700")
-        
+
         from tools.gif_tool.processor import create_gif
-        
         result = create_gif(self.files, duration=duration, loop=loop)
-        
-        if result['success']:
-            self.status_label.configure(text=result['message'], text_color="green")
+
+        if result["success"]:
+            self.status_label.configure(text=result["message"], text_color="green")
             self.info_text.delete("1.0", tk.END)
-            self.info_text.insert("1.0", f"✅ GIF creado exitosamente!\n\nArchivos: {len(self.files)}\nDuración: {duration}ms por frame\nLoop: {'infinito' if loop == 0 else loop}")
+            self.info_text.insert("1.0", f"\u2705 GIF creado exitosamente!\n\nArchivos: {len(self.files)}\nDuraci\u00f3n: {duration}ms por frame\nLoop: {'infinito' if loop == 0 else loop}")
         else:
-            self.status_label.configure(text=result.get('error', 'Error'), text_color="red")
+            self.status_label.configure(text=result.get("error", "Error"), text_color="red")

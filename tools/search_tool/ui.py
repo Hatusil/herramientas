@@ -264,6 +264,7 @@ class SearchToolUI(BaseToolUI):
         self.search_btn.configure(state="disabled")
         self.stop_btn.pack()  # Mostrar botón detener
         self._search_cancelled = False
+        self._cancel_event = threading.Event()
         self.status_label.configure(text="Buscando...", text_color="#FFD700")
         
         # Ejecutar en thread separado
@@ -274,16 +275,16 @@ class SearchToolUI(BaseToolUI):
     def _stop_search(self) -> None:
         """Detiene la búsqueda en curso."""
         self._search_cancelled = True
-        # También llamar a la función del processor para interrumpir el background worker
-        from tools.search_tool.processor import cancel_search
-        cancel_search()
+        if self._cancel_event:
+            self._cancel_event.set()
         self.status_label.configure(text="Deteniendo...", text_color="#FFA500")
     
     def _search_worker(self, options: Dict[str, Any]) -> None:
         """Worker que ejecuta la búsqueda en background."""
         try:
             from tools.search_tool.processor import search_all
-            result = search_all(self.folder, options)
+            result = search_all(self.folder, options,
+                                cancel_flag=self._cancel_event)
             
             # Actualizar UI en thread principal
             self.after(0, lambda: self._search_complete(result))
@@ -292,9 +293,7 @@ class SearchToolUI(BaseToolUI):
     
     def _search_complete(self, result: Dict[str, Any]) -> None:
         """Called when search completes."""
-        from tools.search_tool.processor import reset_search
-        reset_search()
-        
+        self._cancel_event = None
         self.search_btn.configure(state="normal")
         self.stop_btn.pack_forget()  # Ocultar botón detener
         self._search_cancelled = False
@@ -323,9 +322,7 @@ class SearchToolUI(BaseToolUI):
     
     def _search_error(self, error: str) -> None:
         """Called when search fails."""
-        from tools.search_tool.processor import reset_search
-        reset_search()
-        
+        self._cancel_event = None
         self.search_btn.configure(state="normal")
         self.stop_btn.pack_forget()  # Ocultar botón detener
         self.status_label.configure(text=f"Error: {error}", text_color="red")

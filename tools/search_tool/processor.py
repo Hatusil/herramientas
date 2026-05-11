@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 import os
 import re
 import csv
+import threading
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -14,43 +15,6 @@ from typing import List, Dict, Any, Optional
 # Importar funciones compartidas de core (máxima C2: Consistency)
 from core.utils import validate_input_file, get_output_path
 from core.metrics import Timer, Counter, get_metric
-
-# A7: Stateful controller en vez de global flag
-class SearchController:
-    """Controlador para manejar estado de búsqueda (A7: Stateless violations)."""
-    
-    def __init__(self):
-        self._cancelled = False
-    
-    def cancel(self):
-        """Cancela la búsqueda en curso."""
-        self._cancelled = True
-    
-    def reset(self):
-        """Resetea el flag de cancelación."""
-        self._cancelled = False
-    
-    def is_cancelled(self) -> bool:
-        """Retorna True si la búsqueda fue cancelada."""
-        return self._cancelled
-
-# Instancia global del controlador
-_search_controller = SearchController()
-
-
-def cancel_search():
-    """Cancela la búsqueda en curso."""
-    _search_controller.cancel()
-
-
-def reset_search():
-    """Resetea el flag de cancelación."""
-    _search_controller.reset()
-
-
-def is_search_cancelled() -> bool:
-    """Retorna True si la búsqueda fue cancelada."""
-    return _search_controller.is_cancelled()
 
 # Libraries para extraer contenido
 try:
@@ -385,7 +349,8 @@ def _format_search_results(files: List[str], content_matches: Dict[str, Dict]) -
     return final_results
 
 
-def search_all(folder: str, options: Dict[str, Any]) -> Dict[str, Any]:
+def search_all(folder: str, options: Dict[str, Any],
+               cancel_flag: threading.Event = None) -> Dict[str, Any]:
     """
     Función principal de búsqueda (orquesta las funciones helper - A1: SRP).
     
@@ -417,7 +382,7 @@ def search_all(folder: str, options: Dict[str, Any]) -> Dict[str, Any]:
         all_files = _collect_files_recursive(folder)
         files_counter.increment(len(all_files))
         
-        if _search_controller.is_cancelled():
+        if cancel_flag and cancel_flag.is_set():
             return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
         
         # 2. Aplicar filtros en cadena
@@ -430,7 +395,7 @@ def search_all(folder: str, options: Dict[str, Any]) -> Dict[str, Any]:
                 options.get('name_mode', 'contains'),
                 options.get('case_sensitive', False)
             )
-            if _search_controller.is_cancelled():
+            if cancel_flag and cancel_flag.is_set():
                 return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
         
         results = _apply_date_filter(results, options.get('date_from'), options.get('date_to'))
@@ -446,7 +411,7 @@ def search_all(folder: str, options: Dict[str, Any]) -> Dict[str, Any]:
                 options.get('case_sensitive', False)
             )
             
-            if _search_controller.is_cancelled():
+            if cancel_flag and cancel_flag.is_set():
                 return {'success': True, 'cancelled': True, 'results': [], 'count': 0}
             
             # Filtrar solo archivos con matches
