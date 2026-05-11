@@ -28,6 +28,27 @@ dependencies = [
     "opencv-python>=4.8",
     "numpy>=1.24",
     "matplotlib>=3.7",
+    # PDF processing
+    "pypdf>=4.0",
+    "reportlab",
+    "pdfplumber",
+    "PyMuPDF>=1.23",
+    # Document processing
+    "python-docx",
+    "python-pptx",
+    "openpyxl",
+    # Web scraping
+    "requests",
+    "beautifulsoup4",
+    # ML/NLP
+    "nltk",
+    "scikit-learn",
+    "scipy",
+    # Image processing
+    "pdf2image",
+    "piexif",
+    # Text analysis
+    "wordcloud",
 ]
 
 [project.optional-dependencies]
