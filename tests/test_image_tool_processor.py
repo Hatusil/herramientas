@@ -6,12 +6,8 @@ import pytest
 import numpy as np
 import tempfile
 import os
-from pathlib import Path
 
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent / 'tools' / 'image_tool'))
-
-from processor import (
+from tools.image_tool.processor import (
     _to_grayscale, _crop_region, _resize, _rotate,
     _filter_gaussian, _filter_median, _filter_mean,
     _erode, _dilate, _open, _close,
