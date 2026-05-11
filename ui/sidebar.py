@@ -446,6 +446,9 @@ class Sidebar(ctk.CTkFrame):
         # Aplicar grab después de que renderice
         dialog.after(100, lambda: dialog.grab_set())
         
+        # Cerrar con Escape
+        dialog.bind("<Escape>", lambda e: dialog.destroy())
+        
         # Frame principal
         main = ctk.CTkFrame(dialog, fg_color="transparent")
         main.pack(fill="both", expand=True, padx=25, pady=25)
@@ -486,7 +489,7 @@ class Sidebar(ctk.CTkFrame):
             main,
             text="Version 1.0.0",
             font=font("small"),
-            text_color="gray"
+            text_color=constants.COLORS.get("text_secondary", "#9ca3af")
         ).pack(pady=(0, 15))
         
         # Descripción personal
@@ -499,7 +502,7 @@ class Sidebar(ctk.CTkFrame):
             desc_frame,
             text=desc_text,
             font=font("xsmall"),
-            text_color="gray",
+            text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
             wraplength=380
         ).pack(pady=5)
         
@@ -513,35 +516,37 @@ class Sidebar(ctk.CTkFrame):
         ctk.CTkLabel(
             main,
             text="hatusil@proton.me",
-            text_color="gray",
+            text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
             font=font("xsmall")
         ).pack(pady=(2, 0))
         
         ctk.CTkLabel(
             main,
             text="github.com/Hatusil",
-            text_color="blue"
+            text_color=constants.COLORS.get("primary", "#3b82f6")
         ).pack(pady=(2, 0))
         
         ctk.CTkLabel(
             main,
             text="☕ buymeacoffee.com/hatusil",
-            text_color="orange"
+            text_color=constants.COLORS.get("warning", "#f59e0b")
         ).pack(pady=(2, 10))
         
         # Fecha de última actualización
-        año = datetime.datetime.now().year
+        ahora = datetime.datetime.now()
+        meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
         ctk.CTkLabel(
             main,
-            text=f"Última actualización: Abril {año}",
+            text=f"Última actualización: {meses[ahora.month-1]} {ahora.year}",
             font=font("xsmall"),
-            text_color="gray"
+            text_color=constants.COLORS.get("text_secondary", "#9ca3af")
         ).pack(pady=(5, 0))
         
         # Copyright
         ctk.CTkLabel(
             main,
-            text=f"© {año} - Todos los derechos reservados",
+            text=f"© {datetime.datetime.now().year} - Todos los derechos reservados",
             font=font("small")
         ).pack(pady=(5, 0))
         
@@ -557,8 +562,8 @@ class Sidebar(ctk.CTkFrame):
         ).pack(pady=(5, 5))
         
         # Lista de tools
-        tools_list = """Audio • Comprimir • Duplicados • GIF • Hash
-PDF • Renombrar • Scrubber • Search • Texto • Video"""
+        tools_list = """Audio • Comprimir • Duplicados • GIF • Hash • Imagen
+PDF • Renombrar • Scrubber • Search • Text Analyzer • Video"""
         
         ctk.CTkLabel(
             main,
@@ -574,7 +579,7 @@ PDF • Renombrar • Scrubber • Search • Texto • Video"""
         ctk.CTkLabel(
             main,
             text="¡Gracias por usar esta herramienta!",
-            text_color="green"
+            text_color=constants.COLORS.get("success", "#22c55e")
         ).pack(pady=5)
         
         # Botón cerrar
