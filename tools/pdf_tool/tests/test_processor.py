@@ -134,7 +134,7 @@ class TestAddTextWatermark:
         assert len(result['output_files']) == 1
         assert os.path.exists(result['output_files'][0])
 
-    def test_add_text_watermark_custom_options(self, sample_pdf):
+    def test_add_text_watermark_opts(self, sample_pdf):
         """Test watermark with custom options."""
         from tools.pdf_tool.processor import add_text_watermark
         
@@ -150,7 +150,7 @@ class TestAddTextWatermark:
         assert result['success'] is True
         assert len(result['output_files']) == 1
 
-    def test_add_text_watermark_nonexistent_file(self):
+    def test_add_text_watermark_missing(self):
         """Test handling of non-existent file."""
         from tools.pdf_tool.processor import add_text_watermark
         
@@ -173,7 +173,7 @@ class TestAddImageWatermark:
         assert len(result['output_files']) == 1
         assert os.path.exists(result['output_files'][0])
 
-    def test_add_image_watermark_custom_options(self, sample_pdf, test_image):
+    def test_add_image_watermark_opts(self, sample_pdf, test_image):
         """Test image watermark with custom options."""
         from tools.pdf_tool.processor import add_image_watermark
         
@@ -186,7 +186,7 @@ class TestAddImageWatermark:
         
         assert result['success'] is True
 
-    def test_add_image_watermark_nonexistent_image(self, sample_pdf):
+    def test_add_image_watermark_missing(self, sample_pdf):
         """Test handling of non-existent image."""
         from tools.pdf_tool.processor import add_image_watermark
         
@@ -411,7 +411,7 @@ class TestCleanMetadata:
         assert info['title'] == ''
         assert info['author'] == ''
 
-    def test_clean_metadata_nonexistent_file(self):
+    def test_clean_metadata_missing(self):
         """Test handling of non-existent file."""
         from tools.pdf_tool.processor import clean_metadata
         
@@ -511,7 +511,7 @@ class TestExtractAndReorder:
         
         assert result['success'] is False
 
-    def test_extract_range_start_greater_than_end(self, multi_page_pdf):
+    def test_extract_range_start_gt_end(self, multi_page_pdf):
         """Test extract with start > end."""
         from tools.pdf_tool.processor import extract_range
         

@@ -87,9 +87,8 @@ def font(size: str = "normal", weight: str = "normal"):
     return CTkFont(size=sizes.get(size, FONT_SIZE_NORMAL), weight=weight)
 
 
-# Inicializar tema al importar (solo si CTK disponible)
-if CTK_AVAILABLE:
-    init_theme()
+# Nota: init_theme() NO se llama aquí para evitar side effects durante el import.
+# El theme se inicializa desde app.py o el punto de entrada de la UI.
 
 __all__ = [
     # Theme (re-exportado)

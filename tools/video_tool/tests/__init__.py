@@ -25,7 +25,7 @@ class TestVideoConvertSkipLogic:
         assert len(result['skipped']) == 1
         assert 'Ya está en formato MP4' in result['skipped'][0]
 
-    def test_video_convert_skips_mkv_same_format(self, tmp_path):
+    def test_convert_skips_mkv_same_fmt(self, tmp_path):
         """Converting MKV to MKV should skip."""
         test_file = tmp_path / "test.mkv"
         test_file.write_bytes(b"fake mkv content for testing")

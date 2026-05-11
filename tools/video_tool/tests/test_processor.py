@@ -17,7 +17,7 @@ class TestVideoConvertSkipLogic:
     When ffprobe fails, conversion is attempted instead of skipping.
     """
 
-    def test_video_convert_skip_same_format_with_ffprobe(self, tmp_path, monkeypatch):
+    def test_video_convert_skip_same_fmt(self, tmp_path, monkeypatch):
         """Converting MP4 to MP4 should skip when video_info succeeds."""
         test_file = tmp_path / "test.mp4"
         test_file.write_bytes(b"fake mp4 content for testing")
