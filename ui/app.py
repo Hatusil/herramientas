@@ -108,8 +108,8 @@ class App(ctk.CTk):
         if self.content_frame:
             self.content_frame.configure(fg_color=constants.COLORS["bg_medium"])
 
-        # Recorrer todos los widgets recursivamente y aplicar tema
-        self._apply_theme_recursive(self)
+        # NO recorrer recursivamente — rompe estilos específicos de widgets hijos
+        # Solo actualizar sidebar (maneja sus propios estilos internamente)
 
         # Actualizar sidebar
         if self.sidebar:
@@ -127,42 +127,6 @@ class App(ctk.CTk):
             # Recargar pantalla de bienvenida
             tools = self.plugin_manager.get_tools_list()
             self._show_welcome_screen(tools)
-    
-    def _apply_theme_recursive(self, widget) -> None:
-        """Aplica colores del tema actual a widget y sus hijos."""
-        try:
-            widget_type = type(widget).__name__
-            
-            if widget_type in ("CTkFrame", "CTkScrollableFrame"):
-                widget.configure(fg_color=constants.COLORS.get("bg_light", "#2d2d2d"))
-            elif widget_type == "CTkButton":
-                widget.configure(
-                    fg_color=constants.COLORS.get("button_fg", "#3d3d3d"),
-                    hover_color=constants.COLORS.get("button_hover", "#525252"),
-                    text_color=constants.COLORS.get("text_primary", "#e0e0e0")
-                )
-            elif widget_type == "CTkLabel":
-                widget.configure(text_color=constants.COLORS.get("text_primary", "#e0e0e0"))
-            elif widget_type == "CTkEntry":
-                widget.configure(
-                    fg_color=constants.COLORS.get("bg_input", "#3d3d3d"),
-                    text_color=constants.COLORS.get("text_primary", "#e0e0e0")
-                )
-            elif widget_type == "CTkSwitch":
-                widget.configure(
-                    text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
-                    fg_color=constants.COLORS.get("bg_hover", "#3d3d3d"),
-                    progress_color=constants.COLORS.get("primary", "#3b82f6")
-                )
-        except Exception:
-            pass
-        
-        # Recursivo para hijos
-        try:
-            for child in widget.winfo_children():
-                self._apply_theme_recursive(child)
-        except Exception:
-            pass
     
     def _setup_ui(self) -> None:
         """Configura la interfaz de usuario."""
