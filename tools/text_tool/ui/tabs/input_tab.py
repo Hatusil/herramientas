@@ -310,6 +310,7 @@ class InputTab(BaseTab):
             from tools.text_tool.processor import extract_text_from_url
 
             all_text = []
+            failed = []
             for idx, url in enumerate(urls, 1):
                 logger.info(f"URL SCRAPER: Processing {idx}/{len(urls)}: {url}")
                 self.update_status(f"Procesando {idx}/{len(urls)}: {url[:30]}...", "yellow")
@@ -320,8 +321,10 @@ class InputTab(BaseTab):
                         all_text.append(result["text"])
                         logger.info(f"URL SCRAPER: Success - {len(result['text'])} chars from {url}")
                     else:
+                        failed.append(url)
                         logger.warning(f"URL SCRAPER: Failed - {result.get('error')} for {url}")
                 except Exception as e:
+                    failed.append(url)
                     logger.error(f"URL SCRAPER: Error - {e} for {url}")
 
             new_text = "\n\n".join(all_text)
@@ -335,9 +338,14 @@ class InputTab(BaseTab):
             self.state.sources["urls"].extend(urls)
             self.state.update_cleaned(clean_text(self.state.text_content, remove_stopwords=True))
             self._callbacks.emit_text_changed()
-            self.update_status(
-                f"{len(urls)} URLs: {len(self.state.text_content)} caracteres", "green"
-            )
+            if failed:
+                self.update_status(
+                    f"{len(all_text)}/{len(urls)} URLs: {len(self.state.text_content)} chars ({len(failed)} fallidas)", "orange"
+                )
+            else:
+                self.update_status(
+                    f"{len(urls)} URLs: {len(self.state.text_content)} caracteres", "green"
+                )
             logger.info(f"URL SCRAPER: Done - final text_content is {len(self.state.text_content)} chars")
         except Exception as e:
             self.update_status(f"Error: {e}", "red")

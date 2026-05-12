@@ -181,8 +181,11 @@ class WCTab(BaseTab):
         margin = int(self._margin_slider.get()) if self._margin_slider else 10
         shape = self._shape.get() if self._shape else "rectangle"
 
-        exclude_text = self._exclude_entry.get().strip() if self._exclude_entry else ""
-        exclude_words = [w.strip().lower() for w in exclude_text.split(",")] if exclude_text else []
+        exclude_text = self.state.exclude_words  # Usar el estado centralizado del clean_tab
+        if exclude_text:
+            exclude_words = [w.strip().lower() for w in exclude_text.split(",")]
+        else:
+            exclude_words = []
 
         try:
             from tools.text_tool.processor import analyze_wordcloud

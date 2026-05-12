@@ -233,6 +233,7 @@ class CleanTab(BaseTab):
                 if exclude_text
                 else []
             )
+            self.state.exclude_words = exclude_text  # Sincronizar con estado centralizado
 
             cleaned = clean_text(
                 self.state.text_content,
@@ -249,6 +250,7 @@ class CleanTab(BaseTab):
 
             self._update_freq_display(top_20, "limpio")
             self.state.update_cleaned(cleaned)
+            self._callbacks.emit_text_changed()  # Refrescar otras tabs con texto limpio
 
             self._preview_raw_btn.configure(fg_color="#888", hover_color="#666")
             self._apply_clean_btn.configure(fg_color="#4a4", hover_color="#383")
