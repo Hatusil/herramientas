@@ -106,7 +106,8 @@ class TopicsTab(BaseTab):
         n_topics = int(self._count_slider.get()) if self._count_slider else 5
 
         try:
-            from tools.text_tool.processor import analyze_topics, clean_text
+            from tools.text_tool.processor import analyze_topics
+            from core.utils import clean_text
 
             self.update_status("🔄 Analizando temas con LDA...", "blue")
 

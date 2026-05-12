@@ -64,7 +64,7 @@ class WCTab(BaseTab):
         self._wc_label = ctk.CTkLabel(
             self._frame, text="WordCloud aparecerá aquí", text_color="gray"
         )
-        self._wc_label.pack(expand=True)
+        self._wc_label.pack(fill="both", expand=True)
 
     def _add_count_slider(self, parent: ctk.CTkFrame) -> None:
         """Add word count slider row."""
@@ -185,7 +185,8 @@ class WCTab(BaseTab):
         exclude_words = [w.strip().lower() for w in exclude_text.split(",")] if exclude_text else []
 
         try:
-            from tools.text_tool.processor import analyze_wordcloud, clean_text
+            from tools.text_tool.processor import analyze_wordcloud
+            from core.utils import clean_text
 
             cleaned = clean_text(
                 self.state.text_content,

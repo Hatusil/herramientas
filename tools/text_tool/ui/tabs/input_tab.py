@@ -238,6 +238,9 @@ class InputTab(BaseTab):
             self.update_status("Ingresá texto", "orange")
             return
 
+        self.update_status(f"Procesando texto...", "yellow")
+        self._parent.update()
+
         if self.state.text_content:
             self.state.text_content += "\n\n" + text
         else:
@@ -265,6 +268,7 @@ class InputTab(BaseTab):
             return
 
         self.update_status(f"Procesando {len(files)} archivos...", "yellow")
+        self._parent.update()  # Forzar update de UI antes del trabajo pesado
 
         try:
             from tools.text_tool.processor import extract_text_from_file
@@ -300,6 +304,7 @@ class InputTab(BaseTab):
 
         logger.info(f"URL SCRAPER: Found {len(urls)} URLs to process: {urls}")
         self.update_status(f"Procesando {len(urls)} URLs...", "yellow")
+        self._parent.update()
 
         try:
             from tools.text_tool.processor import extract_text_from_url
