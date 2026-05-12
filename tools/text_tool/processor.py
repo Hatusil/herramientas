@@ -42,6 +42,8 @@ from tools.text_tool.processors import (
     analyze_summary,
     # trends
     analyze_trends,
+    # kwic
+    analyze_kwic,
     # extractors
     extract_text_from_file,
     extract_text_from_url,

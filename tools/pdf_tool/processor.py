@@ -51,7 +51,7 @@ from tools.pdf_tool.modules import (
 )
 
 # Constantes de validación
-PDF_EXTENSIONS = ['.pdf']
+PDF_EXTENSIONS = ('.pdf',)
 MAX_PDF_SIZE_MB = 100  # 100MB max for PDF files
 
 

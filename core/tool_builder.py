@@ -3,12 +3,33 @@
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Any, Callable
 
 import customtkinter as ctk
 
 from core.help_panel import add_help
 from core.constants import font
+
+
+def create_radiobutton(
+    master,
+    text: str = "",
+    variable: ctk.Variable | None = None,
+    value: Any = None,
+    command: Callable | None = None,
+    font: ctk.CTkFont | None = None,
+    **kwargs,
+) -> ctk.CTkRadioButton:
+    """Wrapper para CTkRadioButton — simplifica la API."""
+    return ctk.CTkRadioButton(
+        master,
+        text=text,
+        variable=variable,
+        value=value,
+        command=command,
+        font=font,
+        **kwargs,
+    )
 
 
 def create_standard_tool_ui(

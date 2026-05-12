@@ -5,6 +5,7 @@ import logging
 import subprocess
 import os
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Dict, List, Tuple, Optional
 
 from core.utils import get_ffmpeg_path, get_ffprobe_path, check_ffmpeg, get_output_path, validate_input_file, validate_file_extension, validate_file_size
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 # - get_ffmpeg_path(), check_ffmpeg()
 # - validate_input_file(), validate_file_extension(), validate_file_size()
 
-VIDEO_EXTENSIONS = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v']
+VIDEO_EXTENSIONS = ('.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v')
 MAX_VIDEO_SIZE_MB = 2000  # 2GB max for video files
 
 
@@ -101,19 +102,27 @@ def extract_audio(video_path: str, output_format: str = 'mp3') -> Dict[str, Any]
 
 # A1: Funciones helper para SRP - convert_video refactorizada
 
-VIDEO_CODECS = {
+_VIDEO_CODECS = MappingProxyType({
     'mp4': 'libx264',
     'avi': 'mpeg4',
     'mkv': 'libx264',
     'mov': 'mpeg4'
-}
+})
 
-AUDIO_CODECS = {
+_AUDIO_CODECS = MappingProxyType({
     'mp4': 'aac',
     'avi': 'mp3',
     'mkv': 'aac',
     'mov': 'aac'
-}
+})
+
+
+def _get_video_codecs():
+    return _VIDEO_CODECS
+
+
+def _get_audio_codecs():
+    return _AUDIO_CODECS
 
 
 def _should_skip_conversion(video_path: str, output_format: str, options: Dict[str, Any]) -> Optional[str]:
@@ -130,8 +139,8 @@ def _should_skip_conversion(video_path: str, output_format: str, options: Dict[s
 
 def _build_ffmpeg_command(video_path: str, output_path: Path, output_format: str, options: Dict[str, Any]) -> List[str]:
     """2. Construir comando ffmpeg."""
-    video_codec = VIDEO_CODECS.get(output_format, 'libx264')
-    audio_codec = AUDIO_CODECS.get(output_format, 'aac')
+    video_codec = _get_video_codecs().get(output_format, 'libx264')
+    audio_codec = _get_audio_codecs().get(output_format, 'aac')
     crf = options.get('crf', 23)
     
     cmd = [get_ffmpeg_path(), '-y', '-i', video_path, '-codec:v', video_codec]

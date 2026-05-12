@@ -68,6 +68,10 @@ from tools.text_tool.processors.trends import (
     analyze_trends,
 )
 
+from tools.text_tool.processors.kwic import (
+    analyze_kwic,
+)
+
 # Re-export extractors
 from tools.text_tool.processors.extractors import (
     extract_text_from_file,
@@ -123,6 +127,8 @@ __all__ = [
     'analyze_summary',
     # trends
     'analyze_trends',
+    # kwic
+    'analyze_kwic',
     # extractors
     'extract_text_from_file',
     'extract_text_from_url',

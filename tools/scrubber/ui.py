@@ -349,7 +349,7 @@ class ScrubberToolUI(BaseToolUI):
                     from tools.scrubber.processor import get_xlsx_metadata
                     info = get_xlsx_metadata(file_path)
                 elif ext == '.pdf':
-                    from tools.pdf_tool.modules.info import get_pdf_info
+                    from core.pdf_utils import get_pdf_info
                     info = get_pdf_info(file_path)
                 elif ext == '.mp3':
                     self.preview_text.insert(tk.END, "Info: MP3 sin metadatos EXIF\n")

@@ -23,7 +23,7 @@ except ImportError:
     CV2_AVAILABLE = False
 
 # === Supported formats ===
-SUPPORTED_FORMATS = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.webp'}
+SUPPORTED_FORMATS = frozenset({'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.webp'})
 
 
 def _validate_format(file_path: str) -> bool:

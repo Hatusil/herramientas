@@ -27,6 +27,59 @@ def check_pypdf() -> bool:
     return _pypdf_available
 
 
+def get_pdf_info(file_path: str) -> Dict[str, Any]:
+    """
+    Obtiene información y metadatos de un PDF.
+    
+    Args:
+        file_path: Ruta al archivo PDF
+        
+    Returns:
+        dict: Información del PDF
+    """
+    if not check_pypdf():
+        return {'success': False, 'error': 'pypdf no está instalado'}
+    
+    if not os.path.exists(file_path):
+        return {'success': False, 'error': 'Archivo no encontrado'}
+    
+    try:
+        reader = PdfReader(file_path)
+        
+        is_encrypted = reader.is_encrypted
+        metadata = reader.metadata or {}
+        info = {
+            'success': True,
+            'file_name': os.path.basename(file_path),
+            'file_size': os.path.getsize(file_path),
+            'num_pages': len(reader.pages),
+            'is_encrypted': is_encrypted,
+            'title': metadata.get('/Title', ''),
+            'author': metadata.get('/Author', ''),
+            'subject': metadata.get('/Subject', ''),
+            'creator': metadata.get('/Creator', ''),
+            'producer': metadata.get('/Producer', ''),
+            'creation_date': metadata.get('/CreationDate', ''),
+            'modification_date': metadata.get('/ModDate', ''),
+        }
+        
+        pages_info = []
+        for i, page in enumerate(reader.pages):
+            pages_info.append({
+                'page_num': i + 1,
+                'rotation': page.get('/Rotate', 0),
+                'mediabox': str(page.mediabox) if page.mediabox else None,
+            })
+        
+        info['pages'] = pages_info
+        
+        return info
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo info de PDF: {e}")
+        return {'success': False, 'error': str(e)}
+
+
 def clean_metadata(files: List[str]) -> Dict[str, Any]:
     """
     Limpia metadatos de un PDF.
