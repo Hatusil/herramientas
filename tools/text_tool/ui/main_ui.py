@@ -288,7 +288,12 @@ class TextAnalyzerUI(BaseToolUI):
     def _on_analysis_complete(self, results: Dict[str, Any]) -> None:
         """Handle analysis completion."""
         self._is_processing = False
-        self._on_status("Análisis completado", "green")
+        errors = [k for k, v in results.items() if isinstance(v, dict) and v.get("error")]
+        ok = len(results) - len(errors)
+        if errors:
+            self._on_status(f"Visualizaciones: {ok} ok, {len(errors)} fallaron", "orange")
+        else:
+            self._on_status(f"Visualizaciones y análisis: {ok} generados", "green")
         self._on_text_changed()
 
     def _open_chart_modal(self, args: Dict[str, Any]) -> None:
