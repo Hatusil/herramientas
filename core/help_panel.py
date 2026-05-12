@@ -49,140 +49,65 @@ class HelpPopup:
         # Bloquear interacción con la ventana padre
         self.window.grab_set()
         
-        # Frame principal - usar colores del tema
+        # Frame principal
         main_frame = ctk.CTkFrame(
             self.window,
             fg_color=constants.COLORS.get("bg_dark", "#1a1a1a")
         )
         main_frame.pack(fill="both", expand=True, padx=0, pady=0)
-        
-        # Usar CTkScrollableFrame que maneja el scroll correctamente
-        scrollable = ctk.CTkScrollableFrame(
+
+        # Textbox para contenido — scroll contenido en el popup, no propaga
+        textbox = ctk.CTkTextbox(
             main_frame,
+            height=380,
+            font=font("small"),
             fg_color=constants.COLORS.get("bg_dark", "#1a1a1a"),
-            label_text="",
-            label_fg_color=constants.COLORS.get("bg_dark", "#1a1a1a")
+            text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
+            border_width=0,
+            state="disabled",
         )
-        scrollable.pack(fill="both", expand=True, padx=15, pady=15)
+        textbox.pack(fill="both", expand=True, padx=15, pady=15)
+        textbox.tag_configure("desc", foreground=constants.COLORS.get("text_primary", "#e0e0e0"), justify="left")
+        textbox.tag_configure("section", foreground=constants.COLORS.get("primary", "#3b82f6"), justify="left")
+        textbox.tag_configure("body", foreground=constants.COLORS.get("text_secondary", "#9ca3af"), justify="left")
+        textbox.tag_configure("tip", foreground=constants.COLORS.get("success", "#22c55e"), justify="left")
+        textbox.tag_configure("warn", foreground=constants.COLORS.get("warning", "#f59e0b"), justify="left")
 
-        # CTkScrollableFrame usa un canvas interno — bindear scroll al canvas
-        # para que NO se propague a la ventana padre
-        try:
-            canvas = scrollable._scrollbar.winfo_parent()
-            if canvas:
-                canvas_widget = scrollable.nametowidget(canvas)
-                canvas_widget.bind("<MouseWheel>", lambda e: "break", add="+")
-                canvas_widget.bind("<Button-4>", lambda e: "break", add="+")
-                canvas_widget.bind("<Button-5>", lambda e: "break", add="+")
-        except Exception:
-            pass
+        def tb_insert(tag, text):
+            textbox.insert("end", text + "\n", tag)
 
-        # Guardar referencia para verificar eventos de scroll
-        self._scrollable = scrollable
-        
-        # Contenido con wraplength - colores del tema
         if description:
-            desc_label = ctk.CTkLabel(
-                scrollable,
-                text=description,
-                font=font("small"),
-                justify="left",
-                anchor="w",
-                wraplength=450,
-                text_color=constants.COLORS.get("text_primary", "#e0e0e0")
-            )
-            desc_label.pack(anchor="w", padx=10, pady=(5, 10), fill="x")
-        
+            tb_insert("desc", description)
+
         if self._usage:
-            ctk.CTkLabel(
-                scrollable,
-                text="📌 Uso:",
-                font=font("small", "bold"),
-                text_color=constants.COLORS.get("primary", "#3b82f6")
-            ).pack(anchor="w", padx=10, pady=(10, 0))
-            
+            tb_insert("section", "📌 Uso:")
             for item in self._usage:
-                ctk.CTkLabel(
-                    scrollable,
-                    text=f"• {item}",
-                    font=font("small"),
-                    text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
-                    justify="left",
-                    anchor="w",
-                    wraplength=420
-                ).pack(anchor="w", padx=20, pady=1, fill="x")
-        
+                tb_insert("body", f"• {item}")
+
         if self._tips:
-            ctk.CTkLabel(
-                scrollable,
-                text="💡 Tips:",
-                font=font("small", "bold"),
-                text_color=constants.COLORS.get("primary", "#3b82f6")
-            ).pack(anchor="w", padx=10, pady=(15, 0))
-            
+            tb_insert("section", "💡 Tips:")
             for tip in self._tips:
-                ctk.CTkLabel(
-                    scrollable,
-                    text=f"• {tip}",
-                    font=font("small"),
-                    text_color=constants.COLORS.get("success", "#22c55e"),
-                    justify="left",
-                    anchor="w",
-                    wraplength=420
-                ).pack(anchor="w", padx=20, pady=1, fill="x")
-        
+                tb_insert("tip", f"• {tip}")
+
         if self._warnings:
-            ctk.CTkLabel(
-                scrollable,
-                text="⚠️ Advertencias:",
-                font=font("small", "bold"),
-                text_color=constants.COLORS.get("primary", "#3b82f6")
-            ).pack(anchor="w", padx=10, pady=(15, 0))
-            
+            tb_insert("section", "⚠️ Advertencias:")
             for warn in self._warnings:
-                ctk.CTkLabel(
-                    scrollable,
-                    text=f"• {warn}",
-                    font=font("small"),
-                    text_color=constants.COLORS.get("warning", "#f59e0b"),
-                    justify="left",
-                    anchor="w",
-                    wraplength=420
-                ).pack(anchor="w", padx=20, pady=1, fill="x")
-        
-        # Botón cerrar - con margen
+                tb_insert("warn", f"• {warn}")
+
+        # Botón cerrar
         close_btn = ctk.CTkButton(
             self.window,
             text="Cerrar",
             command=self.close,
             width=100,
             fg_color=constants.COLORS.get("primary", "#3b82f6"),
-            hover_color=constants.COLORS.get("primary_hover", "#2563eb")
+            hover_color=constants.COLORS.get("primary_hover", "#2563eb"),
         )
         close_btn.pack(pady=(15, 20))
-        
+
         # Cerrar con Escape
         self.window.bind("<Escape>", lambda e: self.close())
-    
-    def _block_scroll(self, widget):
-        """Bloquea scroll propagation solo si el evento NO es sobre el scrollable."""
-        def _on_wheel(event):
-            try:
-                w = event.widget
-                while w:
-                    if w is self._scrollable:
-                        return  # Deja pasar, el scrollable maneja
-                    try:
-                        w = w.master
-                    except:
-                        w = None
-            except:
-                pass
-            return "break"
-        widget.bind("<MouseWheel>", _on_wheel, add="+")
-        widget.bind("<Button-4>", _on_wheel, add="+")
-        widget.bind("<Button-5>", _on_wheel, add="+")
-    
+
     def close(self) -> None:
         """Cierra el popup."""
         self.window.grab_release()

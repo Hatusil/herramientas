@@ -225,7 +225,7 @@ class CleanTab(BaseTab):
             return
 
         try:
-            from tools.text_tool.processor import clean_text
+            from core.utils import clean_text
 
             exclude_text = self._exclude_entry.get().strip()
             exclude_words = (

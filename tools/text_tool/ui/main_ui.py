@@ -265,13 +265,13 @@ class TextAnalyzerUI(BaseToolUI):
         def worker() -> None:
             try:
                 from tools.text_tool.processor import (
-                    analyze_stats, get_word_frequency, get_ngrams, get_trends_data
+                    analyze_stats, analyze_frequency, analyze_ngrams, analyze_trends
                 )
                 analyses = [
                     ("stats", lambda: analyze_stats(text)),
-                    ("frequency", lambda: get_word_frequency(text)),
-                    ("ngrams", lambda: get_ngrams(text, n=2)),
-                    ("trends", lambda: get_trends_data(text))
+                    ("frequency", lambda: analyze_frequency(text)),
+                    ("ngrams", lambda: analyze_ngrams(text, n=2)),
+                    ("trends", lambda: analyze_trends(text))
                 ]
                 results = {}
                 for name, fn in analyses:
@@ -281,7 +281,7 @@ class TextAnalyzerUI(BaseToolUI):
                         results[name] = {"error": str(e)}
                 self.after(0, lambda: self._on_analysis_complete(results))
             except Exception as e:
-                self.after(0, lambda: self._handle_error(str(e)))
+                self.after(0, lambda err=e: self._handle_error(str(err)))
 
         self.executor.submit(worker)
 
