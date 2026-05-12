@@ -14,6 +14,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from tools.image_tool.ui.main_ui import ImageToolUI
 
+# Constante local para evitar acceso a ui.COLORMAP_OPTIONS (que es de módulo)
+_COLORMAP_OPTIONS = [
+    'jet', 'ocean', 'summer', 'winter', 'autumn', 'bone',
+    'cool', 'copper', 'flag', 'hsv', 'inferno', 'magma',
+    'plasma', 'turbo', 'viridis'
+]
+
 
 def setup_tab(ui: 'ImageToolUI') -> None:
     """Configura el tab de Análisis."""
@@ -37,7 +44,7 @@ def setup_tab(ui: 'ImageToolUI') -> None:
     ctk.CTkLabel(pseudo_frame, text="Pseudocolor:").pack()
 
     ui.colormap_var = ctk.StringVar(value="jet")
-    colormap_menu = ctk.CTkOptionMenu(pseudo_frame, values=ui.COLORMAP_OPTIONS, variable=ui.colormap_var, width=200)
+    colormap_menu = ctk.CTkOptionMenu(pseudo_frame, values=_COLORMAP_OPTIONS, variable=ui.colormap_var, width=200)
     colormap_menu.pack(pady=5)
 
     ctk.CTkButton(pseudo_frame, text="\U0001F308 Aplicar pseudocolor", command=lambda: ui._on_pseudocolor()).pack(pady=5)
