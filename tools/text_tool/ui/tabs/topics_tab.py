@@ -70,7 +70,7 @@ class TopicsTab(BaseTab):
             topic_count_row,
             from_=3,
             to=15,
-            number_of_steps=12,
+            number_of_steps=12,  # 15-3 = 12 pasos (valores: 3..15)
             command=self._on_count_change,
         )
         self._count_slider.set(5)

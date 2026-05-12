@@ -130,7 +130,6 @@ class MandalaTab(BaseTab):
 
             if result.get("success") and result.get("image_data"):
                 self._display_image(result["image_data"])
-                self.update_status(f"Mandala generado: {n_terms} términos, {n_rings} anillos", "green")
             else:
                 self.update_status(result.get("error", "Error"), "red")
         except Exception as e:

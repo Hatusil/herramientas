@@ -94,6 +94,7 @@ class TextAnalyzerUI(BaseToolUI):
         self.executor = ThreadPoolExecutor(max_workers=1)
         self._process_queue: deque = deque()
         self._is_processing = False
+        self._is_batch_analysis = False  # Flag para que tabs no actualicen status durante batch
         self._progress_start_time = 0.0
         self._progress_threshold = 2.0
 
@@ -102,8 +103,8 @@ class TextAnalyzerUI(BaseToolUI):
     # === Callbacks ===
 
     def _on_status(self, message: str, color: str = "gray") -> None:
-        """Update status label."""
-        if self.status_label:
+        """Update status label (ignores during batch analysis)."""
+        if self.status_label and not getattr(self, '_is_batch_analysis', False):
             self.status_label.configure(text=message, text_color=color)
 
     def _on_text_changed(self) -> None:
@@ -260,6 +261,7 @@ class TextAnalyzerUI(BaseToolUI):
 
         text = self.state.cleaned_content or self.state.text_content
         self._is_processing = True
+        self._is_batch_analysis = True
         self._on_status("Ejecutando análisis...", "blue")
 
         def worker() -> None:
@@ -282,6 +284,8 @@ class TextAnalyzerUI(BaseToolUI):
                 self.after(0, lambda: self._on_analysis_complete(results))
             except Exception as e:
                 self.after(0, lambda err=e: self._handle_error(str(err)))
+            finally:
+                self.after(0, lambda: setattr(self, '_is_batch_analysis', False))
 
         self.executor.submit(worker)
 
