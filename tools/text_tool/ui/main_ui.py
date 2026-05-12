@@ -324,11 +324,11 @@ class TextAnalyzerUI(BaseToolUI):
 
     def _run_frequency(self, params: Dict[str, Any]) -> None:
         """Run frequency analysis."""
-        from tools.text_tool.processor import get_word_frequency
+        from tools.text_tool.processor import analyze_frequency
         text = self.state.cleaned_content or self.state.text_content
         if text:
             self.executor.submit(
-                lambda: self._on_freq_complete(get_word_frequency(text, params.get("top_n", 50)))
+                lambda: self._on_freq_complete(analyze_frequency(text, n=params.get("top_n", 50)))
             )
 
     def _on_freq_complete(self, result: Dict[str, Any]) -> None:

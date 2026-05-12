@@ -110,6 +110,7 @@ class TopicsTab(BaseTab):
             from core.utils import clean_text
 
             self.update_status("🔄 Analizando temas con LDA...", "blue")
+            self._parent.update()
 
             exclude_text = self.state.exclude_words
             cleaned = clean_text(

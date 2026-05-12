@@ -123,6 +123,9 @@ class MandalaTab(BaseTab):
         try:
             from tools.text_tool.processor import analyze_mandala
 
+            self.update_status("🔄 Generando mandala...", "blue")
+            self._parent.update()
+
             result = analyze_mandala(self.state.cleaned_content, n_terms=n_terms, n_rings=n_rings)
 
             if result.get("success") and result.get("image_data"):
