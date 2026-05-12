@@ -9,7 +9,7 @@ import tkinter as tk
 from collections import Counter
 
 from tools.text_tool.ui.tabs.base_tab import BaseTab
-from tools.text_tool.ui.constants import COLORS
+from core.constants import COLORS
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState

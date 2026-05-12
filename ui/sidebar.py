@@ -336,6 +336,35 @@ class Sidebar(ctk.CTkFrame):
     
     def update_theme(self) -> None:
         """Actualiza los colores del sidebar cuando cambia el tema."""
+        # Actualizar sidebar principal
+        if hasattr(self, 'master'):
+            try:
+                self.configure(fg_color=constants.COLORS.get("bg_medium", "#252525"))
+            except Exception:
+                pass
+        
+        # Actualizar scroll frame
+        if hasattr(self, 'scroll_frame'):
+            try:
+                self.scroll_frame.configure(fg_color="transparent")
+            except Exception:
+                pass
+        
+        # Actualizar tool buttons
+        for name, btn in self.tool_buttons.items():
+            try:
+                selected_color = constants.COLORS["primary"]
+                normal_color = constants.COLORS["bg_light"]
+                if name == getattr(self, '_selected_tool', None):
+                    btn.configure(fg_color=selected_color, text_color="white")
+                else:
+                    btn.configure(
+                        fg_color=normal_color,
+                        text_color=constants.COLORS["text_secondary"]
+                    )
+            except Exception:
+                pass
+        
         # Actualizar control_frame (configuración)
         if hasattr(self, 'control_frame'):
             self.control_frame.configure(
@@ -358,14 +387,18 @@ class Sidebar(ctk.CTkFrame):
                 text_color=constants.COLORS.get("text_primary", "#e0e0e0")
             )
         
-        # Actualizar botónAcerca de
-        if hasattr(self, '_acerca_btn'):
-            self._acerca_btn.configure(
-                fg_color=constants.COLORS.get("bg_medium", "#252525"),
-                text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
-                border_color=constants.COLORS.get("border", "#404040"),
-                hover_color=constants.COLORS.get("primary", "#3b82f6")
-            )
+        # Actualizar botón Acerca de
+        for child in self.winfo_children():
+            if isinstance(child, ctk.CTkButton) and child != self.inicio_btn:
+                try:
+                    child.configure(
+                        fg_color=constants.COLORS.get("bg_medium", "#252525"),
+                        text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
+                        border_color=constants.COLORS.get("border", "#404040"),
+                        hover_color=constants.COLORS.get("primary", "#3b82f6")
+                    )
+                except Exception:
+                    pass
     
     def _highlight_tool(self, tool_name: str = None) -> None:
         """Resalta el botón seleccionado. Si tool_name es None, deselecciona todos."""
