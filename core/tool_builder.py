@@ -8,7 +8,7 @@ from typing import List, Optional, Any, Callable
 import customtkinter as ctk
 
 from core.help_panel import add_help
-from core.constants import font
+from core.constants import font, COLORS
 
 
 def create_radiobutton(
@@ -188,7 +188,7 @@ def _build_file_selector(parent, file_types=None, custom_buttons=None,
     ctk.CTkButton(btn_frame, text="Agregar...", command=_add_files, height=35).pack(side="left", padx=2)
     ctk.CTkButton(btn_frame, text="\u2713 Todos", command=_select_all, height=35).pack(side="left", padx=2)
     ctk.CTkButton(btn_frame, text="\u2717 Ninguno", command=_deselect_all, height=35).pack(side="left", padx=2)
-    ctk.CTkButton(btn_frame, text="\U0001F5D1\ufe0f", command=_clear_all, fg_color="#dc2626", width=40, height=35).pack(side="left", padx=2)
+    ctk.CTkButton(btn_frame, text="\U0001F5D1\ufe0f", command=_clear_all, fg_color=COLORS["error"], width=40, height=35).pack(side="left", padx=2)
 
     if custom_buttons:
         for text, cmd, opts in custom_buttons:

@@ -7,6 +7,7 @@ import customtkinter as ctk
 import tkinter as tk
 
 from tools.text_tool.ui.tabs.base_tab import BaseTab
+from core.constants import COLORS
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
@@ -96,6 +97,8 @@ class NgramsTab(BaseTab):
             container,
             font=("Courier New", 14),
             height=345,
+            fg_color=COLORS["bg_input"],
+            text_color=COLORS["text_primary"],
         )
         self._ngram_text.grid(row=2, column=0, sticky="nsew", padx=10, pady=(5, 10))
 

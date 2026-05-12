@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Callable
 from core.base_tool_ui import BaseToolUI
 from core.tool_builder import create_standard_tool_ui
+from core.constants import COLORS
 
 
 class VideoToolUI(BaseToolUI):
@@ -230,7 +231,7 @@ class VideoToolUI(BaseToolUI):
 
         ctk.CTkButton(frame, text="\U0001F441\ufe0f Ver Info", command=self._show_info).pack(pady=10)
 
-        self.info_text = ctk.CTkTextbox(frame, width=500, height=300, wrap="word")
+        self.info_text = ctk.CTkTextbox(frame, width=500, height=300, wrap="word", fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
         self.info_text.pack(padx=10, pady=10)
         self.info_text.configure(state="disabled")
 

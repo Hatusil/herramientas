@@ -9,6 +9,7 @@ import tkinter as tk
 from collections import Counter
 
 from tools.text_tool.ui.tabs.base_tab import BaseTab
+from tools.text_tool.ui.constants import COLORS
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
@@ -65,21 +66,21 @@ class CleanTab(BaseTab):
             remove_frame,
             text="❌ Quitar Textos",
             command=lambda: self._remove_source("text"),
-            fg_color="#c44",
+            fg_color=COLORS["error"],
         ).pack(side="left", padx=2)
 
         ctk.CTkButton(
             remove_frame,
             text="❌ Quitar Archivos",
             command=lambda: self._remove_source("files"),
-            fg_color="#c44",
+            fg_color=COLORS["error"],
         ).pack(side="left", padx=2)
 
         ctk.CTkButton(
             remove_frame,
             text="❌ Quitar URLs",
             command=lambda: self._remove_source("urls"),
-            fg_color="#c44",
+            fg_color=COLORS["error"],
         ).pack(side="left", padx=2)
 
     def _build_clean_options(self) -> None:
@@ -120,8 +121,8 @@ class CleanTab(BaseTab):
             text="👁 Preview Texto Bruto",
             command=self._preview_raw_text,
             width=180,
-            fg_color="#888",
-            hover_color="#666",
+            fg_color=COLORS["bg_medium"],
+            hover_color=COLORS["bg_hover"],
         )
         self._preview_raw_btn.pack(side="left", padx=5)
 
@@ -130,8 +131,8 @@ class CleanTab(BaseTab):
             text="🔄 Aplicar Limpieza",
             command=self._apply_clean,
             width=180,
-            fg_color="#48a",
-            hover_color="#386",
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["primary_hover"],
         )
         self._apply_clean_btn.pack(side="left", padx=5)
 
@@ -149,7 +150,7 @@ class CleanTab(BaseTab):
         )
         clean_label.pack(anchor="w", padx=10, pady=(5, 0))
 
-        self._clean_text = ctk.CTkTextbox(self._frame, wrap="word", height=150)
+        self._clean_text = ctk.CTkTextbox(self._frame, wrap="word", height=150, fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
         self._clean_text.pack(fill="both", expand=False, padx=10, pady=5)
 
         top_words_label = ctk.CTkLabel(
@@ -158,7 +159,7 @@ class CleanTab(BaseTab):
         top_words_label.pack(anchor="w", padx=10, pady=(10, 0))
 
         self._clean_freq_text = ctk.CTkTextbox(
-            self._frame, wrap="word", font=("Courier New", 11)
+            self._frame, wrap="word", font=("Courier New", 11), fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"]
         )
         self._clean_freq_text.pack(fill="both", expand=True, padx=10, pady=5)
 
@@ -170,8 +171,8 @@ class CleanTab(BaseTab):
             command=self._run_all_analysis,
             height=45,
             font=ctk.CTkFont(size=16, weight="bold"),
-            fg_color="#e62",
-            hover_color="#c50",
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["primary_hover"],
         ).pack(fill="x", padx=10, pady=(20, 10))
 
     def get_frame(self) -> ctk.CTkFrame:
@@ -214,8 +215,8 @@ class CleanTab(BaseTab):
         top_20 = word_freq.most_common(20)
 
         self._update_freq_display(top_20, "texto bruto (sin filtros)")
-        self._preview_raw_btn.configure(fg_color="#4a4", hover_color="#383")
-        self._apply_clean_btn.configure(fg_color="#48a", hover_color="#386")
+        self._preview_raw_btn.configure(fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"])
+        self._apply_clean_btn.configure(fg_color=COLORS["success"], hover_color=COLORS["success"])
         self.update_status("Preview: texto en bruto (sin filtros)", "green")
 
     def _apply_clean(self) -> None:
@@ -252,8 +253,8 @@ class CleanTab(BaseTab):
             self.state.update_cleaned(cleaned)
             self._callbacks.emit_text_changed()  # Refrescar otras tabs con texto limpio
 
-            self._preview_raw_btn.configure(fg_color="#888", hover_color="#666")
-            self._apply_clean_btn.configure(fg_color="#4a4", hover_color="#383")
+            self._preview_raw_btn.configure(fg_color=COLORS["bg_medium"], hover_color=COLORS["bg_hover"])
+            self._apply_clean_btn.configure(fg_color=COLORS["success"], hover_color=COLORS["success"])
             self.update_status(
                 f"Limpieza aplicada: {len(cleaned.split())} palabras", "green"
             )

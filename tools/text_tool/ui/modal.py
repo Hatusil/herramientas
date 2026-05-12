@@ -6,6 +6,8 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog
 
+from core.constants import COLORS
+
 logger = logging.getLogger(__name__)
 
 
@@ -187,7 +189,7 @@ class ChartModal(ctk.CTkToplevel):
         self.canvas_frame.pack(fill="both", expand=True)
 
         self.canvas = tk.Canvas(
-            self.canvas_frame, bg="#2b2b2b", highlightthickness=0, takefocus=True
+            self.canvas_frame, bg=COLORS["bg_light"], highlightthickness=0, takefocus=True
         )
         self.canvas.pack(side="left", fill="both", expand=True)
 
@@ -312,8 +314,8 @@ class ChartModal(ctk.CTkToplevel):
             text="✕ Cerrar",
             command=self.destroy,
             width=100,
-            fg_color="#c44",
-            hover_color="#a33"
+            fg_color=COLORS["error"],
+            hover_color=COLORS["error"],
         )
         close_btn.pack(side="right", padx=10, pady=5)
 

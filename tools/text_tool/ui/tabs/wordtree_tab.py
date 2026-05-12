@@ -7,6 +7,7 @@ import customtkinter as ctk
 import tkinter as tk
 
 from tools.text_tool.ui.tabs.base_tab import BaseTab
+from core.constants import COLORS
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
@@ -156,7 +157,7 @@ class WordTreeTab(BaseTab):
 
         if self._simple_text is None:
             self._simple_text = ctk.CTkTextbox(
-                self._frame, wrap="word", font=("Courier New", 12)
+                self._frame, wrap="word", font=("Courier New", 12), fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"]
             )
 
         lines = [f"Continuaciones para '{phrase}':\n", "=" * 40 + "\n\n"]

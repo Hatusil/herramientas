@@ -13,7 +13,7 @@ from tkinter import filedialog
 from pathlib import Path
 from typing import List, Callable, Optional, Dict, Any
 
-from core.constants import font
+from core.constants import font, COLORS
 
 
 class BaseToolUI(ctk.CTkFrame):
@@ -151,7 +151,7 @@ class BaseToolUI(ctk.CTkFrame):
             btn_frame, 
             text="🗑️", 
             command=self._clear_files, 
-            fg_color="#dc2626", 
+            fg_color=COLORS["error"], 
             width=40, 
             height=35
         ).pack(side="left", padx=2)

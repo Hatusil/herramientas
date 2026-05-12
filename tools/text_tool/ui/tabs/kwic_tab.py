@@ -7,6 +7,7 @@ import customtkinter as ctk
 import tkinter as tk
 
 from tools.text_tool.ui.tabs.base_tab import BaseTab
+from core.constants import COLORS
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
@@ -48,7 +49,7 @@ class KwicTab(BaseTab):
         ).grid(row=1, column=0, sticky="w", padx=10, pady=(10, 5))
         # Results text
         self._results_text = ctk.CTkTextbox(
-            container, font=("Courier New", 12), height=180
+            container, font=("Courier New", 12), height=180, fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"]
         )
         self._results_text.grid(row=2, column=0, sticky="nsew", padx=10, pady=(5, 10))
 

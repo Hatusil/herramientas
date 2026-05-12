@@ -14,6 +14,8 @@ import customtkinter as ctk
 from tkinter import filedialog
 from typing import TYPE_CHECKING
 
+from core.constants import COLORS
+
 if TYPE_CHECKING:
     from tools.image_tool.ui.main_ui import ImageToolUI
 
@@ -36,7 +38,7 @@ def setup_tab(ui: 'ImageToolUI') -> None:
 
     ctk.CTkButton(url_frame, text="Cargar", command=lambda: ui._on_load_url(), width=80).pack(side="left", padx=5)
 
-    ctk.CTkButton(tab, text="\U0001F5D1\ufe0f Limpiar", command=lambda: ui._on_clear_image(), fg_color="#dc2626", height=30).pack(pady=5)
+    ctk.CTkButton(tab, text="\U0001F5D1\ufe0f Limpiar", command=lambda: ui._on_clear_image(), fg_color=COLORS["error"], height=30).pack(pady=5)
 
     preview_label = ctk.CTkLabel(tab, text="", fg_color="transparent")
     ui._preview_labels["Adquisici\u00f3n"] = preview_label

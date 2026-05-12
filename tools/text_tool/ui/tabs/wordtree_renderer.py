@@ -11,23 +11,25 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from core.constants import COLORS
+
 if TYPE_CHECKING:
     from tools.text_tool.ui.callbacks import AppCallbacks
 
 
-# Default colors for the dark theme tree
-TREE_BG = "#1a1a1a"
-CARD_BG = "#2d2d2d"
-HEADER_BG = "#3A3A3A"
-BTN_NORMAL = "#3A3A3A"
-BTN_HOVER = "#505050"
-BTN_ROOT = "#4A90D9"
-BTN_ROOT_HOVER = "#6BA8E0"
-BTN_COLLAPSE = "#4A4A4A"
-TEXT_PRIMARY = "white"
-TEXT_SECONDARY = "#AAAAAA"
-TEXT_MUTED = "#666666"
-TEXT_DARK_MUTED = "#888888"
+# Default colors for the dark theme tree (fallback for standalone use)
+TREE_BG = COLORS.get("bg_dark", "#1a1a1a")
+CARD_BG = COLORS.get("bg_light", "#2d2d2d")
+HEADER_BG = COLORS.get("bg_hover", "#3A3A3A")
+BTN_NORMAL = COLORS.get("bg_hover", "#3A3A3A")
+BTN_HOVER = COLORS.get("bg_medium", "#505050")
+BTN_ROOT = COLORS.get("primary", "#4A90D9")
+BTN_ROOT_HOVER = COLORS.get("primary_hover", "#6BA8E0")
+BTN_COLLAPSE = COLORS.get("bg_medium", "#4A4A4A")
+TEXT_PRIMARY = COLORS.get("text_primary", "white")
+TEXT_SECONDARY = COLORS.get("text_secondary", "#AAAAAA")
+TEXT_MUTED = COLORS.get("text_muted", "#666666")
+TEXT_DARK_MUTED = COLORS.get("text_secondary", "#888888")
 
 
 def build_interactive_tree(

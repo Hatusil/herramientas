@@ -5,7 +5,7 @@ import tkinter as tk
 from typing import Callable
 from core.base_tool_ui import BaseToolUI
 from core.tool_builder import create_standard_tool_ui
-from core.constants import font
+from core.constants import font, COLORS
 
 
 class HashToolUI(BaseToolUI):
@@ -77,7 +77,7 @@ class HashToolUI(BaseToolUI):
             command=self._calculate, height=40
         ).pack(pady=20)
 
-        self.calc_result = ctk.CTkTextbox(frame, width=400, height=150)
+        self.calc_result = ctk.CTkTextbox(frame, width=400, height=150, fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
         self.calc_result.pack(padx=10, pady=10)
 
     def _calculate(self) -> None:
@@ -129,7 +129,7 @@ class HashToolUI(BaseToolUI):
             frame, text="\u2713 Verificar", command=self._verify, height=40
         ).pack(pady=10)
 
-        self.verify_result = ctk.CTkTextbox(frame, width=400, height=150)
+        self.verify_result = ctk.CTkTextbox(frame, width=400, height=150, fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
         self.verify_result.pack(padx=10, pady=10)
 
     def _verify(self) -> None:
@@ -168,7 +168,7 @@ class HashToolUI(BaseToolUI):
             command=self._calc_all
         ).pack(pady=10)
 
-        self.all_hashes = ctk.CTkTextbox(frame, width=400, height=250)
+        self.all_hashes = ctk.CTkTextbox(frame, width=400, height=250, fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
         self.all_hashes.pack(padx=10, pady=10)
 
     def _calc_all(self) -> None:

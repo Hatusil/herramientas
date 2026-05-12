@@ -7,6 +7,7 @@ import customtkinter as ctk
 import tkinter as tk
 
 from tools.text_tool.ui.tabs.base_tab import BaseTab
+from core.constants import COLORS
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
@@ -65,6 +66,8 @@ class FreqTab(BaseTab):
             font=("Courier New", 14),
             wrap="word",
             height=397,
+            fg_color=COLORS["bg_input"],
+            text_color=COLORS["text_primary"],
         )
         self._freq_text.pack(fill="both", expand=True, padx=10, pady=(5, 10))
 

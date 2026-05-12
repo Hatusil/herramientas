@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Callable
 from core.base_tool_ui import BaseToolUI
 from core.tool_builder import create_standard_tool_ui
+from core.constants import COLORS
 
 
 class GifToolUI(BaseToolUI):
@@ -109,7 +110,7 @@ class GifToolUI(BaseToolUI):
             height=40, font=ctk.CTkFont(size=14)
         ).pack(pady=10)
 
-        self.info_text = ctk.CTkTextbox(self, width=400, height=100)
+        self.info_text = ctk.CTkTextbox(self, width=400, height=100, fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
         self.info_text.pack(padx=10, pady=10)
 
     def _create_gif(self) -> None:

@@ -10,6 +10,7 @@ from tkinter import filedialog
 
 from tools.text_tool.ui.tabs.base_tab import BaseTab
 from core.utils import clean_text
+from core.constants import COLORS
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
@@ -84,7 +85,7 @@ class InputTab(BaseTab):
 
     def _build_text_input(self) -> None:
         """Build the direct text input area."""
-        self._text_area = ctk.CTkTextbox(self._frame, wrap="word")
+        self._text_area = ctk.CTkTextbox(self._frame, wrap="word", fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
         self._text_area.pack(fill="both", expand=True, padx=10, pady=10)
         self._setup_keyboard_shortcuts()
 

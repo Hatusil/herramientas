@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Callable
 from core.base_tool_ui import BaseToolUI
 from core.tool_builder import create_standard_tool_ui
+from core.constants import COLORS
 
 
 class CompressToolUI(BaseToolUI):
@@ -115,7 +116,7 @@ class CompressToolUI(BaseToolUI):
             frame, text="Seleccionar ZIP/TAR...", command=self._extract_file
         ).pack(pady=10)
 
-        self.extract_info = ctk.CTkTextbox(frame, width=400, height=200)
+        self.extract_info = ctk.CTkTextbox(frame, width=400, height=200, fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
         self.extract_info.pack(padx=10, pady=10)
 
     def _extract_file(self) -> None:

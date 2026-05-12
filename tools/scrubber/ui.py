@@ -1,6 +1,7 @@
 import os
 import logging
 from core.help_panel import add_help
+from core.constants import COLORS
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog
@@ -313,7 +314,7 @@ class ScrubberToolUI(BaseToolUI):
         ).pack(pady=10)
         
         # Área de texto
-        self.preview_text = ctk.CTkTextbox(frame, width=450, height=250)
+        self.preview_text = ctk.CTkTextbox(frame, width=450, height=250, fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
         self.preview_text.pack(padx=10, pady=10)
         
         # Botón ver

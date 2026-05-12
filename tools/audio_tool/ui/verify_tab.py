@@ -8,7 +8,7 @@ Funciones:
 
 import tkinter as tk
 import customtkinter as ctk
-from core.constants import font
+from core.constants import font, COLORS
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ def setup_tab(ui: 'AudioToolUI') -> None:
     ctk.CTkLabel(frame, text="Verifica qu\u00e9 archivos est\u00e1n corruptos antes de repararlos",
                   text_color="gray").pack(pady=5)
 
-    ui.verify_text = ctk.CTkTextbox(frame, width=500, height=280, wrap="word")
+    ui.verify_text = ctk.CTkTextbox(frame, width=500, height=280, wrap="word", fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
     ui.verify_text.pack(padx=10, pady=10)
     ui.verify_text.configure(state="disabled")
 

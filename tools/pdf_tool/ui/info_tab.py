@@ -9,6 +9,7 @@ Funciones:
 import tkinter as tk
 import customtkinter as ctk
 from typing import TYPE_CHECKING
+from core.constants import COLORS
 
 if TYPE_CHECKING:
     from tools.pdf_tool.ui.main_ui import PDFToolUI
@@ -23,7 +24,7 @@ def setup_info_tab(ui: 'PDFToolUI') -> None:
 
     ctk.CTkLabel(info_frame, text="Información del PDF:", font=ctk.CTkFont(weight="bold")).pack(anchor="n", pady=5)
 
-    ui.info_text = ctk.CTkTextbox(info_frame, width=400, height=200)
+    ui.info_text = ctk.CTkTextbox(info_frame, width=400, height=200, fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
     ui.info_text.pack(padx=10, pady=10, fill="both", expand=True)
 
     ctk.CTkButton(

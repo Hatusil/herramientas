@@ -14,6 +14,7 @@ import os
 import customtkinter as ctk
 import tkinter as tk
 from typing import TYPE_CHECKING
+from core.constants import COLORS
 
 if TYPE_CHECKING:
     from tools.pdf_tool.ui.main_ui import PDFToolUI
@@ -99,7 +100,7 @@ def setup_pipeline_tab(ui: 'PDFToolUI') -> None:
 
     ctk.CTkLabel(list_frame, text="Operaciones acumuladas:").pack(anchor="w", pady=5)
 
-    ui.pipeline_listbox = ctk.CTkTextbox(list_frame, height=150)
+    ui.pipeline_listbox = ctk.CTkTextbox(list_frame, height=150, fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
     ui.pipeline_listbox.pack(padx=10, pady=5, fill="both", expand=True)
 
     # Botones de acción
