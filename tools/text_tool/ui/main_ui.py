@@ -283,15 +283,15 @@ class TextAnalyzerUI(BaseToolUI):
                         results[name] = {"error": str(e)}
                 self.after(0, lambda: self._on_analysis_complete(results))
             except Exception as e:
+                self._is_batch_analysis = False
                 self.after(0, lambda err=e: self._handle_error(str(err)))
-            finally:
-                self.after(0, lambda: setattr(self, '_is_batch_analysis', False))
 
         self.executor.submit(worker)
 
     def _on_analysis_complete(self, results: Dict[str, Any]) -> None:
         """Handle analysis completion."""
         self._is_processing = False
+        self._is_batch_analysis = False  # Habilitar status antes de mostrar mensaje
         errors = [k for k, v in results.items() if isinstance(v, dict) and v.get("error")]
         ok = len(results) - len(errors)
         if errors:
