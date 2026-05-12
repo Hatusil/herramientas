@@ -64,12 +64,21 @@ class HelpPopup:
             label_fg_color=constants.COLORS.get("bg_dark", "#1a1a1a")
         )
         scrollable.pack(fill="both", expand=True, padx=15, pady=15)
-        
+
+        # CTkScrollableFrame usa un canvas interno — bindear scroll al canvas
+        # para que NO se propague a la ventana padre
+        try:
+            canvas = scrollable._scrollbar.winfo_parent()
+            if canvas:
+                canvas_widget = scrollable.nametowidget(canvas)
+                canvas_widget.bind("<MouseWheel>", lambda e: "break", add="+")
+                canvas_widget.bind("<Button-4>", lambda e: "break", add="+")
+                canvas_widget.bind("<Button-5>", lambda e: "break", add="+")
+        except Exception:
+            pass
+
         # Guardar referencia para verificar eventos de scroll
         self._scrollable = scrollable
-        
-        # Bloquear scroll solo si el evento NO es sobre el scrollable
-        self._block_scroll(main_frame)
         
         # Contenido con wraplength - colores del tema
         if description:
