@@ -7,39 +7,9 @@ import os
 from pathlib import Path
 from typing import List, Dict, Any
 
-try:
-    from pypdf import PdfReader, PdfWriter
-except ImportError:
-    PdfReader = None
-    PdfWriter = None
-
-try:
-    from PIL import Image
-except ImportError:
-    Image = None
-
-try:
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import letter
-    from reportlab.lib.units import inch
-    from io import BytesIO
-except ImportError:
-    canvas = None
-    letter = None
-    inch = None
-    BytesIO = None
-
-# Importar función compartida de core (máxima C2: Consistency)
 from core.utils import get_output_path, ensure_directory, check_pypdf
 
 logger = logging.getLogger(__name__)
-
-# Verificar si pdf2image está disponible
-try:
-    from pdf2image import convert_from_path
-    PDF2IMAGE_AVAILABLE = True
-except ImportError:
-    PDF2IMAGE_AVAILABLE = False
 
 
 # =============================================================================
@@ -61,7 +31,9 @@ def images_to_pdf(image_paths: List[str], output_path: str = None) -> Dict[str, 
     Returns:
         dict: Resultado de la operación
     """
-    if Image is None:
+    try:
+        from PIL import Image
+    except ImportError:
         return {'success': False, 'error': 'Pillow no instalado', 'output_files': []}
     
     if not image_paths:
@@ -116,11 +88,17 @@ def pdf_to_images(files: List[str], output_dir: str = None, dpi: int = 200) -> D
     Returns:
         dict: Resultado de la operación con lista de imágenes generadas
     """
-    if not check_pypdf() or Image is None:
-        return {'success': False, 'error': 'pypdf o Pillow no instalado', 'output_files': []}
+    if not check_pypdf():
+        return {'success': False, 'error': 'pypdf no instalado', 'output_files': []}
     
-    # Verificar pdf2image
-    if not PDF2IMAGE_AVAILABLE:
+    try:
+        from PIL import Image
+    except ImportError:
+        return {'success': False, 'error': 'Pillow no instalado', 'output_files': []}
+    
+    try:
+        from pdf2image import convert_from_path
+    except ImportError:
         return {
             'success': False,
             'error': 'pdf2image no está instalado. Instalar con: pip install pdf2image',
@@ -190,8 +168,23 @@ def redact_area(files: List[str], page: int = 0, x: float = 100, y: float = 100,
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf() or canvas is None or BytesIO is None:
-        return {'success': False, 'error': 'pypdf o reportlab no instalado', 'output_files': []}
+    if not check_pypdf():
+        return {'success': False, 'error': 'pypdf no instalado', 'output_files': []}
+    
+    try:
+        from reportlab.pdfgen import canvas
+    except ImportError:
+        return {'success': False, 'error': 'reportlab no instalado', 'output_files': []}
+    
+    try:
+        from io import BytesIO
+    except ImportError:
+        return {'success': False, 'error': 'io no disponible', 'output_files': []}
+    
+    try:
+        from pypdf import PdfReader, PdfWriter
+    except ImportError:
+        return {'success': False, 'error': 'pypdf no instalado', 'output_files': []}
     
     output_files = []
     errors = []
