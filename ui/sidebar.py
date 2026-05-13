@@ -8,7 +8,7 @@ from core import constants
 from core.constants import font, FONT_SIZE_TITLE, FONT_SIZE_LARGE
 from core import config
 from ui.sidebar_helpers import create_tool_callback, make_circle_image, find_logo_path
-from ui.sidebar_helpers import create_tool_button, update_tool_buttons
+from ui.sidebar_helpers import create_tool_button, update_tool_buttons, highlight_tool
 from ui.sidebar_dialogs import show_acerca_de, show_salir
 from ui.sidebar_setup import setup_logo, setup_title, setup_buttons
 
@@ -228,15 +228,8 @@ class Sidebar(ctk.CTkFrame):
                     pass
     
     def _highlight_tool(self, tool_name: str = None) -> None:
-        """Resalta el botón seleccionado. Si tool_name es None, deselecciona todos."""
-        selected_color = constants.COLORS["primary"]
-        normal_color = constants.COLORS["bg_light"]
-        
-        for name, btn in self.tool_buttons.items():
-            if tool_name is not None and name == tool_name:
-                btn.configure(fg_color=selected_color, text_color="white")
-            else:
-                btn.configure(fg_color=normal_color, text_color=constants.COLORS["text_secondary"])
+        """Resalta el botón seleccionado."""
+        highlight_tool(self.tool_buttons, tool_name)
     
     def _on_salir(self) -> None:
         """Cierra la aplicación."""

@@ -138,3 +138,15 @@ def update_sidebar_theme(sidebar, scroll_frame, tool_buttons, selected_tool):
             hover_color=constants.COLORS.get("primary", "#3b82f6"),
             text_color=constants.COLORS.get("text_primary", "#e0e0e0")
         )
+
+
+def highlight_tool(tool_buttons: Dict[str, ctk.CTkButton], tool_name: str = None) -> None:
+    """Resalta el botón seleccionado."""
+    selected_color = constants.COLORS["primary"]
+    normal_color = constants.COLORS["bg_light"]
+    
+    for name, btn in tool_buttons.items():
+        if tool_name is not None and name == tool_name:
+            btn.configure(fg_color=selected_color, text_color="white")
+        else:
+            btn.configure(fg_color=normal_color, text_color=constants.COLORS["text_secondary"])
