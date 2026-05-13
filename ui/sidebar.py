@@ -9,6 +9,7 @@ from core.constants import font, FONT_SIZE_TITLE, FONT_SIZE_LARGE
 from core import config
 from ui.sidebar_helpers import create_tool_callback, make_circle_image, find_logo_path
 from ui.sidebar_helpers import create_tool_button, update_tool_buttons
+from ui.sidebar_dialogs import show_acerca_de, show_salir
 
 logger = logging.getLogger(__name__)
 
@@ -349,13 +350,7 @@ class Sidebar(ctk.CTkFrame):
     
     def _on_salir(self) -> None:
         """Cierra la aplicación."""
-        from tkinter import messagebox
-        if messagebox.askyesno("Salir", "¿Está seguro que desea cerrar?"):
-            # Usar quit en vez de destroy para evitar bug de CTkButton
-            try:
-                self.master.quit()
-            except Exception as e:
-                logger.warning(f"Error quitting app: {e}")
+        show_salir(self)
     
     def _on_inicio(self) -> None:
         """Vuelve a la pantalla de bienvenida."""
@@ -388,14 +383,8 @@ class Sidebar(ctk.CTkFrame):
         logger.info(f"Tema cambiado a: {new_theme}")
     
     def _on_acerca_de(self) -> None:
-        """Muestra diálogo Acerca de - estilo profesional."""
-        import datetime
-        
-        # Crear ventana Toplevel
-        dialog = ctk.CTkToplevel(self)
-        dialog.title("Acerca de")
-        dialog.geometry("450x620")
-        dialog.resizable(False, False)
+        """Muestra diálogo Acerca de."""
+        show_acerca_de(self)
         
         # Centrar en la pantalla (no relativo al padre)
         dialog.transient(self)
