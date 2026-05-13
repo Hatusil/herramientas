@@ -380,13 +380,528 @@ repair_audio_async(files, callback=None)
 
 ### 9.2 Video Tool
 
-*(Pendiente)*
+**Propósito**: Extraer audio y convertir videos entre formatos.
+
+**Icono**: 🎬
+
+#### Arquitectura
+
+```
+tools/video_tool/
+├── __init__.py          → VideoTool(BaseTool)
+├── processor.py         → extract_audio_async, convert_video_async
+├── ui.py                → VideoToolUI
+└── tests/
+    └── test_processor.py
+```
+
+#### Casos de Uso
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Extraer audio | `extract_audio` | `processor.extract_audio_async` | `.mp3/.ogg/.wav` |
+| Convertir video | `convert` | `processor.convert_video_async` | `.mp4/.avi/.mkv` |
+| Ver info | `info` | `get_video_info` | display en UI |
+
+#### Skip Logic
+- **convert**: Si formato origen == formato destino y CRF=23, omite
+- **extract**: Siempre procesa
+
+#### Métricas (A12)
+- ✅ Implementadas: `video_tool.audio_extracted`, `video_tool.video_converted`, `video_tool.errors`
+
+#### Notas Técnicas
+- Dependencias: `ffmpeg`, `ffprobe`
+- Validación: extensión (.mp4/.avi/.mkv/.mov), tamaño máx 2GB
+- Timeout: 300s extracción, 600s conversión
 
 ---
 
 ### 9.3 Image Tool
 
-*(Pendiente)*
+**Propósito**: Procesamiento Digital de Imágenes — 7 fases (adquisición, análisis, bordes, morfología, filtros, mejora, geometría).
+
+**Icono**: 🖼️
+
+#### Arquitectura
+
+```
+tools/image_tool/
+├── __init__.py          → ImageTool(BaseTool)
+├── processor.py         → Coordinación de processors
+├── ui.py                → Re-export backward compatibility
+├── ui/
+│   ├── main_ui.py      → ImageToolUI(BaseToolUI)
+│   ├── adquisicion_tab.py
+│   ├── analisis_tab.py
+│   ├── bordes_tab.py
+│   ├── morfologia_tab.py
+│   ├── filtros_tab.py
+│   ├── mejora_tab.py
+│   └── geometria_tab.py
+└── processors/
+    ├── __init__.py
+    ├── adquisicion.py
+    ├── analisis.py
+    ├── bordes.py
+    ├── morfologia.py
+    ├── filtros.py
+    ├── mejora.py
+    ├── geometria.py
+    └── _ok.py
+```
+
+#### Casos de Uso
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Adquisición | `adquisicion` | `processors.adquisicion` | imagen procesada |
+| Análisis | `analisis` | `processors.analisis` | display en UI |
+| Detección bordes | `bordes` | `processors.bordes` | imagen procesada |
+| Morfología | `morfologia` | `processors.morfologia` | imagen procesada |
+| Filtros | `filtros` | `processors.filtros` | imagen procesada |
+| Mejora | `mejora` | `processors.mejora` | imagen procesada |
+| Geometría | `geometria` | `processors.geometria` | imagen procesada |
+
+#### Skip Logic
+- No implementada actualmente
+
+#### Métricas (A12)
+- ❌ No implementadas aún
+
+#### Notas Técnicas
+- Dependencias: `Pillow` (PIL), `numpy`, `opencv` (opcional)
+- 7 fases de PDI organizadas en tabs
+
+---
+
+### 9.4 PDF Tool
+
+**Propósito**: Watermark, editar, combinar, encriptar, optimizar PDFs.
+
+**Icono**: 📄
+
+#### Arquitectura
+
+```
+tools/pdf_tool/
+├── __init__.py          → PDFTool(BaseTool), maneja _on_process
+├── processor.py         → Funciones de procesamiento
+├── ui.py                → Re-export
+├── ui/
+│   ├── main_ui.py      → PDFToolUI(BaseToolUI)
+│   ├── watermark_tab.py
+│   ├── edit_tab.py
+│   ├── combine_tab.py
+│   ├── transform_tab.py
+│   ├── security_tab.py
+│   ├── optimize_tab.py
+│   ├── pipeline_tab.py
+│   ├── info_tab.py
+│   └── numbers_tab.py
+├── modules/
+│   ├── __init__.py
+│   ├── watermarks.py   → Watermark (add/remove)
+│   ├── transform.py    → Rotate, reorder, extract
+│   ├── security.py     → Encrypt, decrypt
+│   ├── conversion.py   → Formatos
+│   ├── pipeline.py    → Workflows
+│   ├── info.py         → Metadata
+│   └── watermark_removal.py → WM detection/removal
+└── tests/
+```
+
+#### Casos de Uso
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Watermark texto | `text_watermark` | `processor.add_text_watermark` | PDF modificado |
+| Watermark imagen | `image_watermark` | `processor.add_image_watermark` | PDF modificado |
+| Quitar watermark | `remove_watermark` | `processor.remove_watermarks` | PDF limpio |
+| Añadir anotación | `add_annotation` | `processor.add_text_annotation` | PDF modificado |
+| Redactar área | `redact` | `processor.redact_area` | PDF modificado |
+| Rotar páginas | `rotate` | `processor.rotate_pages` | PDF modificado |
+| Reordenar | `reorder` | `processor.reorder_pages` | PDF modificado |
+| Combinar | `merge` | `processor.merge_pdfs` | PDF nuevo |
+| Extraer páginas | `extract` | `processor.extract_pages` | PDF nuevo |
+| Encriptar | `encrypt` | `processor.encrypt_pdf` | PDF protegido |
+| Desencriptar | `decrypt` | `processor.decrypt_pdf` | PDF desprotegido |
+| Comprimir | `compress` | `processor.compress_pdf` | PDF optimizado |
+| Limpiar metadata | `clean_metadata` | `processor.clean_metadata` | PDF limpio |
+| Numerar páginas | `page_numbers` | `processor.add_page_numbers` | PDF numerado |
+
+#### Skip Logic
+- Varias operaciones verifican precondiciones antes de procesar
+
+#### Métricas (A12)
+- ❌ No implementadas aún
+
+#### Notas Técnicas
+- Dependencias: `pypdf`, `pikepdf`, `pdfplumber`, `reportlab` (watermarks)
+- Módulos especializados para watermark removal avanzado
+
+---
+
+### 9.5 Text Analyzer Tool
+
+**Propósito**: Análisis de texto: WordCloud, frecuencia, estadísticas, N-grams.
+
+**Icono**: 📊
+
+#### Arquitectura
+
+```
+tools/text_tool/
+├── __init__.py         → TextAnalyzerTool(BaseTool)
+├── processor.py        → Coordinación
+├── ui.py               → Re-export
+├── ui/
+│   ├── main_ui.py     → TextAnalyzerUI(BaseToolUI)
+│   ├── state.py       → Estado de análisis
+│   ├── callbacks.py   → Callbacks de UI
+│   ├── common.py      → Componentes comunes
+│   ├── constants.py   → Constantes
+│   ├── modal.py       → Modales
+│   └── tabs/
+│       ├── __init__.py
+│       ├── base_tab.py
+│       ├── input_tab.py
+│       ├── clean_tab.py
+│       ├── freq_tab.py
+│       ├── stats_tab.py
+│       ├── wc_tab.py      → WordCloud
+│       ├── ngrams_tab.py → N-grams
+│       ├── topics_tab.py → LDA topics
+│       ├── kwic_tab.py   → KWIC
+│       ├── mandala_tab.py
+│       ├── wordtree_tab.py
+│       ├── trends_tab.py
+│       ├── scatter_tab.py
+│       ├── corr_tab.py
+│       ├── streamgraph_tab.py
+│       └── bubblelines_tab.py
+└── processors/
+    ├── __init__.py
+    ├── utils.py
+    ├── extractors.py
+    ├── frequency.py
+    ├── wordcloud.py
+    ├── topics.py
+    ├── kwic.py
+    ├── mandala.py
+    ├── wordtree.py
+    ├── trends.py
+    ├── correlations.py
+    ├── scatter.py
+    ├── streamgraph.py
+    ├── bubblelines.py
+    └── category.py
+```
+
+#### Casos de Uso
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Input/Cargar | `load` | `extractors` | texto en memoria |
+| Limpiar | `clean` | `utils.clean_text` | texto limpiado |
+| Frecuencia | `frequency` | `processors.frequency` | display en UI |
+| Estadísticas | `stats` | `extractors.get_stats` | display en UI |
+| WordCloud | `wordcloud` | `processors.wordcloud` | imagen |
+| N-grams | `ngrams` | `processors.frequency` | display en UI |
+| Topics | `topics` | `processors.topics` | display en UI |
+| KWIC | `kwic` | `processors.kwic` | display en UI |
+| Mandala | `mandala` | `processors.mandala` | imagen |
+| WordTree | `wordtree` | `processors.wordtree` | visualización |
+| Trends | `trends` | `processors.trends` | visualización |
+| Scatter | `scatter` | `processors.scatter` | visualización |
+
+#### Skip Logic
+- No implementada actualmente
+
+#### Métricas (A12)
+- ❌ No implementadas aún
+
+#### Notas Técnicas
+- Dependencias: `wordcloud`, `nltk`, `matplotlib`, `scipy` (opcional)
+- Múltiples visualizaciones: wordcloud, mandala, wordtree, trends, scatter, streamgraph, bubblelines
+
+---
+
+### 9.6 Compress Tool
+
+**Propósito**: Comprimir y extraer archivos ZIP, TAR.
+
+**Icono**: 📦
+
+#### Arquitectura
+
+```
+tools/compress_tool/
+├── __init__.py         → CompressTool(BaseTool)
+├── processor.py        → compress_to_zip, compress_to_tar, decompress
+├── ui.py               → CompressToolUI
+└── tests/
+    └── test_processor.py
+```
+
+#### Casos de Uso
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Comprimir ZIP | `compress_zip` | `processor.compress_to_zip` | `.zip` |
+| Comprimir TAR | `compress_tar` | `processor.compress_to_tar` | `.tar/.tar.gz` |
+| Extraer ZIP | `decompress_zip` | `processor.decompress_zip` | carpeta |
+| Extraer TAR | `decompress_tar` | `processor.decompress_tar` | carpeta |
+| Ver contenido | `list` | `processor.list_zip_contents` | display en UI |
+
+#### Skip Logic
+- **compress_zip**: Si extensión == .zip, omite
+- **compress_tar**: Si extensión es .tar/.tar.gz/.tgz/etc, omite
+
+#### Métricas (A12)
+- ✅ Implementadas: `compress_operations_total`, `compress_errors`
+
+#### Notas Técnicas
+- Dependencias: standard library (`zipfile`, `tarfile`)
+- Nivel ZIP: 0-9 (default 6)
+- Compression TAR: None, gz, bz2, xz
+
+---
+
+### 9.7 Hash Tool
+
+**Propósito**: Calcular y verificar MD5, SHA1, SHA256.
+
+**Icono**: #️⃣
+
+#### Arquitectura
+
+```
+tools/hash_tool/
+├── __init__.py         → HashTool(BaseTool)
+├── processor.py        → calculate_hash, verify_hash
+└── ui.py               → HashToolUI
+```
+
+#### Casos de Uso
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Calcular hash | `calculate` | `processor.calculate_hash` | hash string |
+| Calcular todos | `calculate_all` | `processor.calculate_all_hashes` | dict todos |
+| Verificar hash | `verify` | `processor.verify_hash` | match boolean |
+| Lista archivos | `list` | `processor.calculate_file_hash_list` | lista hashes |
+
+#### Skip Logic
+- No implementada (operación idempotente)
+
+#### Métricas (A12)
+- ✅ Implementadas: `hash_operations_total`, `hash_errors`
+
+#### Notas Técnicas
+- Dependencias: standard library (`hashlib`)
+- Timeout configurable (default 300s para archivos grandes)
+- Algoritmos: md5, sha1, sha256, sha512
+- Lectura en chunks (8192 bytes) para archivos grandes
+
+---
+
+### 9.8 Duplicate Tool
+
+**Propósito**: Encontrar archivos duplicados por contenido.
+
+**Icono**: 📋
+
+#### Arquitectura
+
+```
+tools/duplicate_tool/
+├── __init__.py         → DuplicateTool(BaseTool)
+├── processor.py        → find_duplicates_by_hash, find_duplicates_async
+├── ui.py               → DuplicateToolUI
+└── tests/
+    └── test_processor.py
+```
+
+#### Casos de Uso
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Por tamaño | `by_size` | `processor.find_duplicates_by_size` | dict duplicates |
+| Por hash | `by_hash` | `processor.find_duplicates_by_hash` | dict duplicates |
+| Async paralelo | `async` | `processor.find_duplicates_async` | dict duplicates |
+
+#### Skip Logic
+- Archivos de tamaño 0 se ignoran
+- Solo extensiones específicas (configurable)
+
+#### Métricas (A12)
+- ❌ No implementadas aún
+
+#### Notas Técnicas
+- Dependencias: standard library (`hashlib`)
+- Uso de ThreadPoolExecutor para paralelismo
+- Callback de progreso para UI
+- Extensiones por defecto: .jpg, .jpeg, .png, .mp3, .mp4, .pdf, .doc, .docx, .xls, .xlsx
+
+---
+
+### 9.9 Rename Tool
+
+**Propósito**: Renombrar archivos en masa.
+
+**Icono**: ✏️
+
+#### Arquitectura
+
+```
+tools/rename_tool/
+├── __init__.py         → RenameTool(BaseTool)
+├── processor.py        → rename_with_prefix, rename_with_suffix, etc.
+└── ui.py               → RenameToolUI
+```
+
+#### Casos de Uso
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Agregar prefijo | `prefix` | `processor.rename_with_prefix` | archivos renombrados |
+| Agregar sufijo | `suffix` | `processor.rename_with_suffix` | archivos renombrados |
+| Reemplazar texto | `replace` | `processor.rename_replace` | archivos renombrados |
+| Secuencial | `sequence` | `processor.rename_sequential` | archivos renombrados |
+| Mayúsculas | `uppercase` | `processor.rename_to_uppercase` | archivos renombrados |
+| Minúsculas | `lowercase` | `processor.rename_to_lowercase` | archivos renombrados |
+
+#### Skip Logic
+- Si el nombre resultado ya existe, omite o reporta error
+
+#### Métricas (A12)
+- ✅ Implementadas: `rename_operations_total`, `rename_errors`
+
+#### Notas Técnicas
+- Usa `shutil.copy2` para idempotencia (copia en lugar de renombrar)
+- Múltiples patrones de renaming: prefijo, sufijo, reemplazo, secuencial, caso
+
+---
+
+### 9.10 Search Tool
+
+**Propósito**: Búsqueda avanzada por nombre, fecha y contenido.
+
+**Icono**: 🔍
+
+#### Arquitectura
+
+```
+tools/search_tool/
+├── __init__.py         → SearchTool(BaseTool)
+├── processor.py        → search_by_name, search_by_date, search_by_content
+├── ui/
+│   ├── __init__.py
+│   ├── main_ui.py     → SearchToolUI
+│   ├── folder_selector.py
+│   ├── search_options.py
+│   ├── results_view.py
+│   ├── callbacks.py
+│   └── state.py
+└── test_processor.py
+```
+
+#### Casos de Uso
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Buscar por nombre | `by_name` | `processor.search_by_name` | lista archivos |
+| Buscar por fecha | `by_date` | `processor.search_by_date` | lista archivos |
+| Buscar contenido | `by_content` | `processor.search_by_content` | lista archivos |
+| Búsqueda combinada | `all` | `processor.search_all` | lista archivos |
+| Exportar CSV | `export` | `processor.export_to_csv` | archivo CSV |
+
+#### Skip Logic
+- Manejo de regex inválido graceful
+
+#### Métricas (A12)
+- ❌ No implementadas aún
+
+#### Notas Técnicas
+- Dependencias opcionales: `python-docx`, `pdfplumber`, `openpyxl`, `python-pptx`
+- Soporte para búsqueda en contenido de: .docx, .pdf, .xlsx, .pptx
+- Modos: exact, contains, regex
+
+---
+
+### 9.11 Scrubber
+
+**Propósito**: Limpiar metadatos de imágenes y documentos.
+
+**Icono**: 🧹
+
+#### Arquitectura
+
+```
+tools/scrubber/
+├── __init__.py         → ScrubberTool(BaseTool)
+├── processor.py        → clean_image_metadata, clean_docx, clean_xlsx
+└── ui.py               → ScrubberToolUI
+```
+
+#### Casos de Uso
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Limpiar imagen | `clean_image` | `processor.clean_image_metadata` | imagen limpia |
+| Limpiar DOCX | `clean_docx` | `processor.clean_docx` | DOCX limpio |
+| Limpiar XLSX | `clean_xlsx` | `processor.clean_xlsx` | XLSX limpio |
+| Limpiar PDF | `clean_pdf` | `core.utils.clean_metadata` | PDF limpio |
+| Ver metadata | `view` | `processor.get_image_metadata` | display en UI |
+
+#### Skip Logic
+- Formatos no soportados retornan error
+
+#### Métricas (A12)
+- ✅ Implementadas: `scrubber_operations_total`, `scrubber_errors`
+
+#### Notas Técnicas
+- Dependencias: `Pillow` (imágenes), `python-docx` (DOCX), `openpyxl` (XLSX)
+- Soporta: JPG, JPEG, PNG, TIFF, WEBP (imágenes)
+- Verificación de existencia de metadatos antes de limpiar
+
+---
+
+### 9.12 GIF Tool
+
+**Propósito**: Crear GIFs animados desde imágenes.
+
+**Icono**: 🎞️
+
+#### Arquitectura
+
+```
+tools/gif_tool/
+├── __init__.py         → GifTool(BaseTool)
+├── processor.py        → create_gif, optimize_gif
+├── ui.py               → GifToolUI
+└── tests/
+    └── test_processor.py
+```
+
+#### Casos de Uso
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Crear GIF | `create` | `processor.create_gif` | `.gif` animado |
+| Optimizar | `optimize` | `processor.optimize_gif` | `.gif` optimizado |
+
+#### Skip Logic
+- **create**: Si todas las entradas ya son .gif, omite
+
+#### Métricas (A12)
+- ✅ Implementadas: `gif_operations_total`, `gif_errors`
+
+#### Notas Técnicas
+- Dependencias: `Pillow` (PIL)
+- Parámetros: duration (ms), loop (0=infinito), resize automático al primer frame
+- Conversión automática a modo RGBA si es necesario
 
 ---
 
