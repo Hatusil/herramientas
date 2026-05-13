@@ -28,9 +28,8 @@ def setup_tab(ui: 'AudioToolUI') -> None:
 
 def clean_metadata(ui: 'AudioToolUI') -> None:
     """Limpia los metadatos del audio."""
-    if ui.is_processing:
-        return
     if not ui._check_files():
         return
-    ui.is_processing = True
+    
+    ui.status_label.configure(text="🔄 Limpiando metadatos...", text_color="#FFD700")
     ui.process_async("clean", ui.files, {})

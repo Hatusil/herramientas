@@ -6,6 +6,7 @@ seleccionar archivos. Las herramientas heredan de esta clase y sobrescriben
 los hooks según sea necesario.
 """
 import os
+import logging
 
 import customtkinter as ctk
 import tkinter as tk
@@ -14,6 +15,9 @@ from pathlib import Path
 from typing import List, Callable, Optional, Dict, Any
 
 from core.constants import font, COLORS
+
+
+logger = logging.getLogger(__name__)
 
 
 class BaseToolUI(ctk.CTkFrame):
@@ -316,37 +320,55 @@ class BaseToolUI(ctk.CTkFrame):
         if hasattr(self, 'is_processing') and self.is_processing:
             return
         
-        def on_done(result: Dict[str, Any]) -> None:
-            self.stop_progress()
-            # Reset estado
-            if hasattr(self, 'is_processing'):
-                self.is_processing = False
-            self._show_result(result)
-        
-        # Set estado procesando
+        # Marcar como procesando
         if hasattr(self, 'is_processing'):
             self.is_processing = True
-        
         self.start_progress()
         
-        # Intentar process_async del tool si existe, si no usar on_process
+        def on_done(result: Dict[str, Any]) -> None:
+            try:
+                # Usar after() para actualizar UI en thread principal de Tkinter
+                self.after(0, self._finish_processing, result)
+            except Exception as e:
+                logger.error(f"Error en callback: {e}")
+                self.after(0, self._handle_error, str(e))
+        
+        # Ejecutar el proceso
         tool = getattr(self, 'tool', None)
+        
         if tool and hasattr(tool, 'process_async'):
             tool.process_async(files, {'action': action, **options}, on_done)
-        else:
-            # Fallback a sync via on_process callback
+        elif hasattr(self, 'on_process'):
             def run_sync():
                 return self.on_process(action, files, options)
             
             from core.async_utils import run_in_background
             run_in_background(run_sync, callback=on_done)
+
+    def _finish_processing(self, result: Dict[str, Any]) -> None:
+        """Maneja resultado en thread principal."""
+        self.stop_progress()
+        if hasattr(self, 'is_processing'):
+            self.is_processing = False
+        self._show_result(result)
+
+    def _handle_error(self, error: str) -> None:
+        """Maneja error en thread principal."""
+        if hasattr(self, 'is_processing'):
+            self.is_processing = False
+        if self.status_label:
+            self.status_label.configure(text=f"Error: {error}", text_color="red")
     
     def _show_result(self, result: Dict[str, Any]) -> None:
         """Muestra el resultado (override en subclasses si needed)."""
         if self.status_label:
             if result.get('success'):
+                msg = result.get('message', 'Completado')
+                # Si no hay message útil, mostrar completado
+                if not msg or msg.strip() == '':
+                    msg = 'Completado'
                 self.status_label.configure(
-                    text=result.get('message', 'Completado'),
+                    text=msg,
                     text_color="green"
                 )
             else:

@@ -42,17 +42,17 @@ def setup_tab(ui: 'AudioToolUI') -> None:
     ctk.CTkLabel(frame, text="Nota: WAV y FLAC usan calidad sin p\u00e9rdida",
                   text_color="gray", font=font("small")).pack(pady=5)
 
-    ctk.CTkButton(frame, text="\U0001F504 Convertir Formato", command=lambda: ui._convert(),
+    ctk.CTkButton(frame, text="\U0001F504 Convertir Formato", command=ui._convert,
                    height=40, font=font("small")).pack(pady=20)
 
 
 def convert(ui: 'AudioToolUI') -> None:
     """Convierte el formato del audio."""
-    if ui.is_processing:
+    check = ui._check_files()
+    if not check:
         return
-    if not ui._check_files():
-        return
-    ui.is_processing = True
+    
+    ui.status_label.configure(text="🔄 Convirtiendo formato...", text_color="#FFD700")
     ui.process_async("convert", ui.files, {
         "format": ui.format_var.get(),
         "quality": int(ui.conv_quality_var.get()),

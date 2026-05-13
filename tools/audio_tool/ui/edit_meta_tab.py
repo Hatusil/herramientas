@@ -50,13 +50,13 @@ def setup_tab(ui: 'AudioToolUI') -> None:
 
 def edit_metadata(ui: 'AudioToolUI') -> None:
     """Edita los metadatos del audio."""
-    if ui.is_processing:
-        return
     if not ui._check_files():
         return
+    
     options = {k: v.get() for k, v in ui.meta_vars.items() if v.get().strip()}
     if not options:
         ui.status_label.configure(text="Ingresa al menos un campo", text_color="#FFA500")
         return
-    ui.is_processing = True
+    
+    ui.status_label.configure(text="🔄 Editando metadatos...", text_color="#FFD700")
     ui.process_async("edit_metadata", ui.files, options)

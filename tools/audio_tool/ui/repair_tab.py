@@ -103,13 +103,12 @@ def verify_before_repair(ui: 'AudioToolUI') -> None:
 
 def do_repair(ui: 'AudioToolUI', mode: str) -> None:
     """Repara archivos de audio."""
-    if ui.is_processing:
-        return
     if mode == "corrupt":
         files = ui.verify_state["corrupt"]
         if not files:
             return
     else:
         files = ui._get_selected_files()
-    ui.is_processing = True
+    
+    ui.status_label.configure(text="🔄 Reparando...", text_color="#FFD700")
     ui.process_async("repair", files, {})

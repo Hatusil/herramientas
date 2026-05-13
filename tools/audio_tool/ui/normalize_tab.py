@@ -66,11 +66,10 @@ def setup_tab(ui: 'AudioToolUI') -> None:
 
 def normalize(ui: 'AudioToolUI') -> None:
     """Normaliza el volumen del audio."""
-    if ui.is_processing:
-        return
     if not ui._check_files():
         return
-    ui.is_processing = True
+    
+    ui.status_label.configure(text="🔄 Normalizando...", text_color="#FFD700")
     options = {
         "target_lufs": int(ui.lufs_var.get()),
         "limit_clipping": ui.limit_var.get(),
