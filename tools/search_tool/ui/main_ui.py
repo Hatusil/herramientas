@@ -54,6 +54,8 @@ class SearchToolUI(SearchToolUIBase):
         """Initialize observability metrics."""
         self._search_counter = Counter("search_tool.searches", "Total searches")
         self._search_timer = Timer("search_tool.search_duration")
+        # Auto-build UI on init (self is the parent frame)
+        self.build_ui(self)
 
     def build_ui(self, parent_frame: ctk.CTkFrame) -> None:
         """Build the complete UI by instantiating all panels.
