@@ -237,14 +237,14 @@ Las siguientes máximas rigen el diseño y evolución del proyecto:
 
 | Métrica | Valor | Estado |
 |---------|-------|--------|
-| Líneas totales | 573 | ⚠️ Cerca de A0 (300 máx) |
-| helper functions | 64 líneas | ✅ Extraídas a sidebar_helpers.py |
+| Líneas totales | 549 | ⚠️ Cerca de A0 (300 máx) |
+| sidebar_helpers.py | 97 líneas | ✅ Funciones utilitarias |
+| sidebar_dialogs.py | 95 líneas | ✅ Diálogos extraídos |
 
 **Refactor completado:**
-- Funciones helper extraídas a `ui/sidebar_helpers.py`
-- `create_tool_callback()`, `make_circle_image()`, `find_logo_path()`
-
-**Pendiente:** Reducir aún más (573 → ~300)
+- `ui/sidebar_helpers.py`: create_tool_callback, make_circle_image, find_logo_path, create_tool_button, update_tool_buttons
+- `ui/sidebar_dialogs.py`: show_acerca_de, show_salir
+- _on_acerca_de() y _on_salir() simplificados a una línea
 
 ### core/constants.py
 
