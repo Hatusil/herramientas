@@ -211,7 +211,44 @@ Las siguientes máximas rigen el diseño y evolución del proyecto:
 
 ---
 
-## 7. Plugin System (Descubrimiento de Tools)
+## 7. Auditoría del Proyecto (Estado Actual)
+
+### ui/app.py - Ventana Principal
+
+| Métrica | Valor | Estado |
+|---------|-------|--------|
+| Líneas totales | 432 | ⚠️ Excede A0 (máx 300) |
+| Funciones >30 líneas | `_show_welcome_screen` (~100 líneas) | ⚠️ Refactorizar |
+| Funciones <30 líneas | `_center_window`, `_on_closing`, `refresh_theme` | ✅ OK |
+
+**Hallazgos:**
+- ✅ Usa PluginManager (separación de responsabilidades)
+- ✅ Grid layout correcto (sidebar + content + status)
+- ✅ Theme system centralizado en `core/constants.py`
+- ⚠️ Icons y descriptions hardcodeados en `_show_welcome_screen` (malo para extensibilidad)
+- ⚠️ Funciones largas violan máxima A0
+
+**Pendiente refactorizar:**
+1. Extraer `_show_welcome_screen` a módulo separado `ui/welcome_screen.py`
+2. Mover icons/descriptions a constantes o archivo de configuración
+3. Reducir líneas de `app.py` a <300
+
+### core/constants.py
+
+- ✅ Cumple máxima A1 (una responsabilidad: definir constantes)
+- ✅ Theme system bien separado en `core/theme.py`
+- ✅ Detección de SO para fonts (Segoe UI / DejaVu Sans)
+
+### Pendientes de Documentación
+
+- [ ] Agregar arquitectura de ui/app.py
+- [ ] Documentar Sidebar y StatusBar
+- [ ] Documentar sistema de temas (core/theme.py)
+- [ ] Documentar config (core/config.py)
+
+---
+
+## 8. Plugin System (Descubrimiento de Tools)
 
 ### Cómo funciona
 1. `core/plugin_manager.py` escanea directorio `tools/`
