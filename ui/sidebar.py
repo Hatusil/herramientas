@@ -26,33 +26,15 @@ class Sidebar(ctk.CTkFrame):
         # Usar pack todo
         self.pack_propagate(False)
         
-        # Logo (circular) - más pequeño
-        # Buscar en varias ubicaciones posibles
-        base_paths = [
-            Path(__file__).parent.parent,  # Desarrollo
-        ]
-        
-        # Agregar path del exe si existe
-        if hasattr(sys, '_MEIPASS'):
-            base_paths.insert(0, Path(sys._MEIPASS))
-        elif sys.executable:
-            base_paths.insert(0, Path(sys.executable).parent)
-        
+        # Logo (circular)
+        logo_path = find_logo_path()
         logo = None
-        for base in base_paths:
-            logo_path = base / "assets" / "logo.png"
-            if logo_path.exists():
-                try:
-                    logo_size = 50
-                    circle_img = make_circle_image(str(logo_path), size=logo_size)
-                    logo = ctk.CTkImage(
-                        light_image=circle_img,
-                        dark_image=circle_img,
-                        size=(logo_size, logo_size)
-                    )
-                except Exception as e:
-                    logger.warning(f"Error cargando logo: {e}")
-                break
+        if logo_path:
+            try:
+                circle_img = make_circle_image(logo_path, size=50)
+                logo = ctk.CTkImage(light_image=circle_img, dark_image=circle_img, size=(50, 50))
+            except Exception as e:
+                logger.warning(f"Error cargando logo: {e}")
         
         if logo:
             logo_label = ctk.CTkLabel(self, image=logo, text="")
