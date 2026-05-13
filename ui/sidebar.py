@@ -8,6 +8,7 @@ from core import constants
 from core.constants import font, FONT_SIZE_TITLE, FONT_SIZE_LARGE
 from core import config
 from ui.sidebar_helpers import create_tool_callback, make_circle_image, find_logo_path
+from ui.sidebar_helpers import create_tool_button, update_tool_buttons
 
 logger = logging.getLogger(__name__)
 
@@ -259,17 +260,15 @@ class Sidebar(ctk.CTkFrame):
             btn.destroy()
         self.tool_buttons.clear()
         
-        # Crear botones con estilo profesional
-        for i, tool in enumerate(tools):
+        # Crear botones de tools
+        for tool in tools:
             name = tool['name']
-            display_name = tool['display_name']
-            icon = tool['icon']
-            
+            callback = create_tool_callback(name, self.on_tool_select)
             btn = ctk.CTkButton(
                 self.scroll_frame,
-                text=f"{icon}  {display_name}",
+                text=f"{tool['icon']}  {tool['display_name']}",
                 anchor="w",
-                command=_create_tool_callback(name, self.on_tool_select),
+                command=callback,
                 height=50,
                 fg_color=constants.COLORS["bg_light"],
                 border_width=0,
@@ -300,19 +299,7 @@ class Sidebar(ctk.CTkFrame):
                 pass
         
         # Actualizar tool buttons
-        for name, btn in self.tool_buttons.items():
-            try:
-                selected_color = constants.COLORS["primary"]
-                normal_color = constants.COLORS["bg_light"]
-                if name == getattr(self, '_selected_tool', None):
-                    btn.configure(fg_color=selected_color, text_color="white")
-                else:
-                    btn.configure(
-                        fg_color=normal_color,
-                        text_color=constants.COLORS["text_secondary"]
-                    )
-            except Exception:
-                pass
+        update_tool_buttons(self.tool_buttons, getattr(self, '_selected_tool', None))
         
         # Actualizar control_frame (configuración)
         if hasattr(self, 'control_frame'):
