@@ -225,8 +225,8 @@ class App(ctk.CTk):
         for widget in self.content_frame.winfo_children():
             widget.destroy()
         
-        # Usar módulo separado (welcome_screen.py)
-        create_welcome_screen(self.content_frame, self._on_tool_selected)
+        # Usar módulo separado (welcome_screen.py) - pasar tools ya cargadas
+        create_welcome_screen(self.content_frame, tools, self._on_tool_selected)
     
     def _on_tool_selected(self, tool_name: str) -> None:
         """

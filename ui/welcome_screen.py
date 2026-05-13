@@ -6,12 +6,13 @@ import customtkinter as ctk
 from core.constants import font, COLORS, TOOL_ICONS, TOOL_DESCRIPTIONS
 
 
-def create_welcome_screen(parent_frame, on_tool_select) -> ctk.CTkFrame:
+def create_welcome_screen(parent_frame, tools: list, on_tool_select) -> ctk.CTkFrame:
     """
     Crea la pantalla de bienvenida.
     
     Args:
         parent_frame: Frame padre donde se creará la UI
+        tools: Lista de tools ya cargadas (del plugin_manager)
         on_tool_select: Callback (tool_name) -> None
     
     Returns:
@@ -22,7 +23,7 @@ def create_welcome_screen(parent_frame, on_tool_select) -> ctk.CTkFrame:
     
     _add_title(welcome_frame)
     _add_subtitle(welcome_frame)
-    _add_tool_grid(welcome_frame, on_tool_select)
+    _add_tool_grid(welcome_frame, tools, on_tool_select)
     
     return welcome_frame
 
@@ -47,16 +48,10 @@ def _add_subtitle(parent: ctk.CTkFrame) -> None:
     ).pack(pady=(0, 30))
 
 
-def _add_tool_grid(parent: ctk.CTkFrame, on_tool_select) -> None:
+def _add_tool_grid(parent: ctk.CTkFrame, tools: list, on_tool_select) -> None:
     """Agrega la grilla de herramientas (3 columnas)."""
     tools_frame = ctk.CTkFrame(parent, fg_color="transparent")
     tools_frame.pack(fill="both", expand=True, padx=20)
-    
-    # Obtener tools del plugin manager
-    from core.plugin_manager import PluginManager
-    pm = PluginManager()
-    pm.discover_tools()
-    tools = pm.get_tools_list()
     
     for i, tool in enumerate(tools):
         _add_tool_card(tools_frame, tool, i, on_tool_select)
