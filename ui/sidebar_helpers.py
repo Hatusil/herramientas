@@ -96,3 +96,45 @@ def update_tool_buttons(tool_buttons: Dict[str, ctk.CTkButton], selected_tool: O
                 btn.configure(fg_color=normal_color, text_color=constants.COLORS["text_secondary"])
         except Exception:
             pass
+
+
+def update_sidebar_theme(sidebar, scroll_frame, tool_buttons, selected_tool):
+    """Actualiza todos los colores del sidebar cuando cambia el tema."""
+    # Sidebar principal
+    if hasattr(sidebar, 'master'):
+        try:
+            sidebar.configure(fg_color=constants.COLORS.get("bg_medium", "#252525"))
+        except Exception:
+            pass
+    
+    # Scroll frame
+    if scroll_frame:
+        try:
+            scroll_frame.configure(fg_color="transparent")
+        except Exception:
+            pass
+    
+    # Tool buttons
+    update_tool_buttons(tool_buttons, selected_tool)
+    
+    # Control frame
+    if hasattr(sidebar, 'control_frame'):
+        sidebar.control_frame.configure(
+            fg_color=constants.COLORS.get("bg_medium", "#252525"),
+            border_color=constants.COLORS.get("border", "#404040")
+        )
+    
+    # Theme label
+    if hasattr(sidebar, '_theme_label'):
+        sidebar._theme_label.configure(
+            text=f"Modo: {'Claro' if constants.get_theme() == 'light' else 'Oscuro'}",
+            text_color=constants.COLORS.get("text_secondary", "#9ca3af")
+        )
+    
+    # Botón inicio
+    if hasattr(sidebar, 'inicio_btn'):
+        sidebar.inicio_btn.configure(
+            fg_color=constants.COLORS.get("bg_medium", "#252525"),
+            hover_color=constants.COLORS.get("primary", "#3b82f6"),
+            text_color=constants.COLORS.get("text_primary", "#e0e0e0")
+        )

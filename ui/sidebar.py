@@ -211,46 +211,10 @@ class Sidebar(ctk.CTkFrame):
     
     def update_theme(self) -> None:
         """Actualiza los colores del sidebar cuando cambia el tema."""
-        # Actualizar sidebar principal
-        if hasattr(self, 'master'):
-            try:
-                self.configure(fg_color=constants.COLORS.get("bg_medium", "#252525"))
-            except Exception:
-                pass
+        from ui.sidebar_helpers import update_sidebar_theme
+        update_sidebar_theme(self, self.scroll_frame, self.tool_buttons, getattr(self, '_selected_tool', None))
         
-        # Actualizar scroll frame
-        if hasattr(self, 'scroll_frame'):
-            try:
-                self.scroll_frame.configure(fg_color="transparent")
-            except Exception:
-                pass
-        
-        # Actualizar tool buttons
-        update_tool_buttons(self.tool_buttons, getattr(self, '_selected_tool', None))
-        
-        # Actualizar control_frame (configuración)
-        if hasattr(self, 'control_frame'):
-            self.control_frame.configure(
-                fg_color=constants.COLORS.get("bg_medium", "#252525"),
-                border_color=constants.COLORS.get("border", "#404040")
-            )
-        
-        # Actualizar label de configuración
-        if hasattr(self, '_theme_label'):
-            self._theme_label.configure(
-                text=f"Modo: {'Claro' if constants.get_theme() == 'light' else 'Oscuro'}",
-                text_color=constants.COLORS.get("text_secondary", "#9ca3af")
-            )
-        
-        # Actualizar botón de inicio
-        if hasattr(self, 'inicio_btn'):
-            self.inicio_btn.configure(
-                fg_color=constants.COLORS.get("bg_medium", "#252525"),
-                hover_color=constants.COLORS.get("primary", "#3b82f6"),
-                text_color=constants.COLORS.get("text_primary", "#e0e0e0")
-            )
-        
-        # Actualizar botón Acerca de
+        # Botón Acerca de
         for child in self.winfo_children():
             if isinstance(child, ctk.CTkButton) and child != self.inicio_btn:
                 try:
