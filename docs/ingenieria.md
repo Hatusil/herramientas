@@ -281,21 +281,112 @@ def mi_funcion_async(files, callback=None, **options):
 
 ---
 
-## 9. Herramientas por Documentar
+## 9. Herramientas
 
-- [ ] audio_tool
-- [ ] video_tool
-- [ ] image_tool
-- [ ] pdf_tool
-- [ ] text_tool
-- [ ] compress_tool
-- [ ] hash_tool
-- [ ] duplicate_tool
-- [ ] rename_tool
-- [ ] search_tool
-- [ ] scrubber
+### 9.1 Audio Tool
 
-Cada tool tendrá su sección con: propósito, arquitectura específica, casos de uso, notas técnicas.
+**Propósito**: Normalizar, convertir, limpiar y reparar archivos de audio.
+
+**Icono**: 🎵 (music)
+
+#### Arquitectura
+
+```
+tools/audio_tool/
+├── __init__.py          → AudioTool(BaseTool)
+├── processor.py         → Funciones sync + coordinación async
+├── ui.py                → Re-export backward compatibility
+├── ui/
+│   ├── __init__.py
+│   ├── main_ui.py       → AudioToolUI(BaseToolUI)
+│   ├── normalize_tab.py
+│   ├── clean_tab.py
+│   ├── edit_meta_tab.py
+│   ├── convert_tab.py
+│   ├── repair_tab.py
+│   ├── info_tab.py
+│   └── verify_tab.py
+└── processors/
+    ├── __init__.py
+    ├── normalize.py     → Normalización LUFS
+    ├── convert.py       → Conversión de formato
+    ├── metadata.py      → Limpieza/edición metadatos
+    ├── repair.py        → Reparación de archivos
+    └── audio_info.py    → Extracción de info
+```
+
+#### Herencia de BaseToolUI
+- **Heredados**: files, file_listbox, status_label, progress_bar, is_processing
+- **Override hooks**: No usa muchos, tabs definen su propia UI
+- **Custom propio**: `tab_normalize`, `tab_clean`, `tab_edit_meta`, `tab_convert`, `tab_repair`, `tab_info`, `tab_verify`
+
+#### Casos de Uso (Workflows)
+
+| Operación | Acción | Processor | Output |
+|-----------|--------|-----------|--------|
+| Normalizar | `normalize` | `processor.normalize_audio_async` | `_normalized.mp3` |
+| Convertir | `convert` | `processor.convert_audio_async` | archivo en nuevo formato |
+| Limpiar metadatos | `clean` | `processor.clean_audio_metadata_async` | `_cleaned.mp3 |
+| Editar metadatos | `edit_metadata` | `processor.edit_audio_metadata_async` | `_edited.mp3` |
+| Reparar | `repair` | `processor.repair_audio_async` | `_repaired.mp3` |
+| Ver info | `show_info` | `get_audio_info` | display en UI |
+| Verificar | `verify` | `verify_multiple_audio` | display en UI |
+
+#### Puntos de Conexión Clave
+
+```python
+# AudioTool.__init__ → build_ui
+self.ui = AudioToolUI(parent_frame, self._on_process)
+
+# AudioTool._on_process → procesador sync
+def _on_process(self, action, files, options):
+    if action == 'normalize':
+        return processor.normalize_audio(files, **options)
+    elif action == 'convert':
+        return processor.convert_audio(files, **options)
+    ...
+
+# AudioTool.process_async → processor async
+def process_async(self, files, options, callback):
+    action = options.get('action')
+    if action == 'normalize':
+        normalize_audio_async(files, callback=callback, **options)
+```
+
+#### Funciones Async Disponibles
+```python
+normalize_audio_async(files, callback=None, target_lufs=-16, limit_clipping=True, quality=192)
+convert_audio_async(files, output_format='mp3', quality=192, callback=None)
+clean_audio_metadata_async(files, callback=None)
+edit_audio_metadata_async(files, callback=None, **metadata)
+repair_audio_async(files, callback=None)
+```
+
+#### Skip Logic Implementada
+- **convert**: Si formato origen == formato destino, omite
+- **clean**: Si no hay metadatos para limpiar, omite
+- **normalize**: Siempre procesa (no hay forma de saber LUFS actual)
+
+#### Métricas (A12)
+- ❌ No implementadas aún
+- TODO: agregar Counter para cada operación, Timer para duración
+
+#### Notas Técnicas
+- Dependencias externas: `ffmpeg` (convert, normalize, repair), `mutagen` (metadata)
+- Los processors usan `pydub` para audio processing
+- Skip logic en convert: `if get_audio_format(f) == output_format: skip`
+
+---
+
+### 9.2 Video Tool
+
+*(Pendiente)*
+
+---
+
+### 9.3 Image Tool
+
+*(Pendiente)*
 
 ---
 
