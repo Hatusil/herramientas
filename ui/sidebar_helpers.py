@@ -191,3 +191,41 @@ def setup_scroll_binding(scroll_frame, on_wheel_callback) -> None:
         scroll_frame.bind("<Button-5>", on_wheel_callback)
     except Exception:
         pass
+
+
+def create_tool_buttons(scroll_frame, tools, on_tool_select):
+    """Crea botones de herramientas en el scroll frame."""
+    tool_buttons = {}
+    for tool in tools:
+        name = tool['name']
+        callback = create_tool_callback(name, on_tool_select)
+        btn = ctk.CTkButton(
+            scroll_frame,
+            text=f"{tool['icon']}  {tool['display_name']}",
+            anchor="w",
+            command=callback,
+            height=50,
+            fg_color=constants.COLORS["bg_light"],
+            border_width=0,
+            hover_color=constants.COLORS["primary_hover"],
+            text_color=constants.COLORS["text_secondary"],
+            font=ctk.CTkFont(size=constants.FONT_SIZE_LARGE)
+        )
+        btn.pack(fill="x", pady=4, padx=2)
+        tool_buttons[name] = btn
+    return tool_buttons
+
+
+def update_acerca_button(parent, exclude_btn):
+    """Actualiza botón Acerca de cuando cambia el tema."""
+    for child in parent.winfo_children():
+        if isinstance(child, ctk.CTkButton) and child != exclude_btn:
+            try:
+                child.configure(
+                    fg_color=constants.COLORS.get("bg_medium", "#252525"),
+                    text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
+                    border_color=constants.COLORS.get("border", "#404040"),
+                    hover_color=constants.COLORS.get("primary", "#3b82f6")
+                )
+            except Exception:
+                pass

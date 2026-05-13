@@ -9,6 +9,7 @@ from core.constants import font, FONT_SIZE_TITLE, FONT_SIZE_LARGE
 from core import config
 from ui.sidebar_helpers import create_tool_callback, make_circle_image, find_logo_path
 from ui.sidebar_helpers import create_tool_button, update_tool_buttons, highlight_tool
+from ui.sidebar_helpers import create_tool_buttons, update_acerca_button
 from ui.sidebar_dialogs import show_acerca_de, show_salir
 from ui.sidebar_setup import setup_logo, setup_title, setup_buttons
 
@@ -132,45 +133,16 @@ class Sidebar(ctk.CTkFrame):
             btn.destroy()
         self.tool_buttons.clear()
         
-        # Crear botones de tools
-        for tool in tools:
-            name = tool['name']
-            callback = create_tool_callback(name, self.on_tool_select)
-            btn = ctk.CTkButton(
-                self.scroll_frame,
-                text=f"{tool['icon']}  {tool['display_name']}",
-                anchor="w",
-                command=callback,
-                height=50,
-                fg_color=constants.COLORS["bg_light"],
-                border_width=0,
-                hover_color=constants.COLORS["primary_hover"],
-                text_color=constants.COLORS["text_secondary"],
-                font=ctk.CTkFont(size=constants.FONT_SIZE_LARGE)
-            )
-            btn.pack(fill="x", pady=4, padx=2)
-            self.tool_buttons[name] = btn
+        self.tool_buttons = create_tool_buttons(self.scroll_frame, tools, self.on_tool_select)
         
         if tools:
             self._highlight_tool(tools[0]['name'])
     
     def update_theme(self) -> None:
         """Actualiza los colores del sidebar cuando cambia el tema."""
-        from ui.sidebar_helpers import update_sidebar_theme
+        from ui.sidebar_helpers import update_sidebar_theme, update_acerca_button
         update_sidebar_theme(self, self.scroll_frame, self.tool_buttons, getattr(self, '_selected_tool', None))
-        
-        # Botón Acerca de
-        for child in self.winfo_children():
-            if isinstance(child, ctk.CTkButton) and child != self.inicio_btn:
-                try:
-                    child.configure(
-                        fg_color=constants.COLORS.get("bg_medium", "#252525"),
-                        text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
-                        border_color=constants.COLORS.get("border", "#404040"),
-                        hover_color=constants.COLORS.get("primary", "#3b82f6")
-                    )
-                except Exception:
-                    pass
+        update_acerca_button(self, self.inicio_btn)
     
     def _highlight_tool(self, tool_name: str = None) -> None:
         """Resalta el botón seleccionado."""
