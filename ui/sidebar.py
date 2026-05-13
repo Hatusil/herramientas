@@ -10,6 +10,7 @@ from core import config
 from ui.sidebar_helpers import create_tool_callback, make_circle_image, find_logo_path
 from ui.sidebar_helpers import create_tool_button, update_tool_buttons
 from ui.sidebar_dialogs import show_acerca_de, show_salir
+from ui.sidebar_setup import setup_logo, setup_title, setup_buttons
 
 logger = logging.getLogger(__name__)
 
@@ -26,78 +27,21 @@ class Sidebar(ctk.CTkFrame):
         # Usar pack todo
         self.pack_propagate(False)
         
-        # Logo (circular)
-        logo_path = find_logo_path()
-        logo = None
-        if logo_path:
-            try:
-                circle_img = make_circle_image(logo_path, size=50)
-                logo = ctk.CTkImage(light_image=circle_img, dark_image=circle_img, size=(50, 50))
-            except Exception as e:
-                logger.warning(f"Error cargando logo: {e}")
-        
-        if logo:
-            logo_label = ctk.CTkLabel(self, image=logo, text="")
+        # Logo y título
+        logo_label = setup_logo(self)
+        if logo_label:
             logo_label.pack(pady=(5, 0))
-            
-            # Title debajo del logo
-            title = ctk.CTkLabel(
-                self, 
-                text="Herramientas",
-                font=ctk.CTkFont(size=constants.FONT_SIZE_TITLE, weight="bold")
-            )
-            title.pack(pady=(0, 2))
+            setup_title(self)
         else:
-            # Sin logo, título al inicio
-            title = ctk.CTkLabel(
-                self, 
-                text="Herramientas",
-                font=ctk.CTkFont(size=constants.FONT_SIZE_TITLE, weight="bold")
-            )
-            title.pack(pady=(5, 2))
+            setup_title(self)
         
-        # Botón Inicio para volver a pantalla de bienvenida
-        self.inicio_btn = ctk.CTkButton(
-            self,
-            text="🏠 Inicio",
-            command=self._on_inicio,
-            fg_color=constants.COLORS.get("bg_medium", "#252525"),
-            hover_color=constants.COLORS.get("primary", "#3b82f6"),
-            text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
-            height=30
-        )
-        self.inicio_btn.pack(fill="x", padx=10, pady=(8, 5))
+        # Botones
+        setup_buttons(self, self._on_inicio, self._on_acerca_de)
         
-        
-        
-        # Scrollable frame para las tools - expande
-        self.scroll_frame = ctk.CTkScrollableFrame(
-            self, 
-            label_text="",
-            fg_color="transparent"
-        )
+        # Scrollable frame para tools
+        self.scroll_frame = ctk.CTkScrollableFrame(self, label_text="", fg_color="transparent")
         self.scroll_frame.pack(fill="both", expand=True, padx=2, pady=2)
-        
-        # Bindings para scroll
         self._setup_scroll_binding(self.scroll_frame)
-        
-        # Botón Acerca de - con mejor contraste
-        acerca_btn = ctk.CTkButton(
-            self,
-            text="ℹ️ Acerca de",
-            command=self._on_acerca_de,
-            fg_color=constants.COLORS.get("bg_medium", "#252525"),
-            text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
-            border_width=1,
-            border_color=constants.COLORS.get("border", "#404040"),
-            hover_color=constants.COLORS.get("primary", "#3b82f6"),
-            height=36,
-            font=font("small")
-        )
-        acerca_btn.pack(fill="x", padx=10, pady=(8, 0))
-        try:
-            from ui.tooltip import add_tooltip
-            add_tooltip(acerca_btn, "Informacion sobre la aplicacion", 400)
         except Exception as e:
             logger.warning(f"Error adding tooltip: {e}")
         
