@@ -8,11 +8,12 @@ import customtkinter as ctk
 from pathlib import Path
 
 from core import constants
-from core.constants import font
+from core.constants import font, TOOL_ICONS, TOOL_DESCRIPTIONS
 from core import config
 from core.plugin_manager import PluginManager
 from ui.sidebar import Sidebar
 from ui.status_bar import StatusBar
+from ui.welcome_screen import create_welcome_screen
 
 
 # Configurar logging
@@ -224,107 +225,8 @@ class App(ctk.CTk):
         for widget in self.content_frame.winfo_children():
             widget.destroy()
         
-        # Crear frame de bienvenida
-        welcome_frame = ctk.CTkFrame(
-            self.content_frame,
-            fg_color=constants.COLORS.get("bg_medium", "#252525")
-        )
-        welcome_frame.pack(fill="both", expand=True)
-        
-        # Título de bienvenida
-        title = ctk.CTkLabel(
-            welcome_frame,
-            text="🔧 Herramientas",
-            font=font("title", "bold"),
-            text_color=constants.COLORS.get("text_primary", "#e0e0e0")
-        )
-        title.pack(pady=(30, 10))
-        
-        subtitle = ctk.CTkLabel(
-            welcome_frame,
-            text="Seleccioná una herramienta para comenzar",
-            font=font("normal"),
-            text_color=constants.COLORS.get("text_secondary", "#9ca3af")
-        )
-        subtitle.pack(pady=(0, 30))
-        
-        # Grilla de herramientas
-        tools_frame = ctk.CTkFrame(welcome_frame, fg_color="transparent")
-        tools_frame.pack(fill="both", expand=True, padx=20)
-        
-        # Obtener iconos para cada tool
-        tool_icons = {
-            'text_tool': '📊',
-            'duplicate_tool': '📁',
-            'hash_tool': '#️⃣',
-            'compress_tool': '📦',
-            'audio_tool': '🎵',
-            'gif_tool': '🎞️',
-            'pdf_tool': '📄',
-            'video_tool': '🎬',
-            'rename_tool': '✏️',
-            'search_tool': '🔍',
-            'scrubber': '🧹'
-        }
-        
-        tool_descriptions = {
-            'text_tool': 'Análisis de texto, WordCloud, estadísticas',
-            'duplicate_tool': 'Encuentra y elimina archivos duplicados',
-            'hash_tool': 'Calcula hashes MD5/SHA para verificar archivos',
-            'compress_tool': 'Comprime archivos y carpetas',
-            'audio_tool': 'Procesa y convierte archivos de audio',
-            'gif_tool': 'Crea y edita imágenes GIF animadas',
-            'pdf_tool': 'Manipula documentos PDF',
-            'video_tool': 'Procesa y convierte archivos de video',
-            'rename_tool': 'Renombra archivos en lote',
-            'search_tool': 'Busca archivos por contenido',
-            'scrubber': 'Limpia metadatos de archivos'
-        }
-        
-        # Crear grid de botones (3 columnas)
-        for i, tool in enumerate(tools):
-            row = i // 3
-            col = i % 3
-            
-            tool_name = tool['name']
-            icon = tool_icons.get(tool_name, '🔧')
-            description = tool_descriptions.get(tool_name, '')
-            
-            # Card de tool
-            card = ctk.CTkFrame(
-                tools_frame,
-                fg_color=constants.COLORS.get("bg_light", "#2d2d2d"),
-                corner_radius=10
-            )
-            card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
-            
-            # Configurar grid
-            tools_frame.grid_columnconfigure(col, weight=1)
-            tools_frame.grid_rowconfigure(row, weight=1)
-            
-            # Botón con icono
-            btn = ctk.CTkButton(
-                card,
-                text=f"{icon} {tool.get('display_name', tool_name)}",
-                font=font("normal", "bold"),
-                fg_color=constants.COLORS.get("button_fg", "#3d3d3d"),
-                hover_color=constants.COLORS.get("button_hover", "#525252"),
-                text_color="white",
-                height=50,
-                command=lambda t=tool_name: self._on_tool_selected(t)
-            )
-            btn.pack(fill="x", padx=10, pady=(10, 5))
-            
-            # Descripción
-            if description:
-                desc_label = ctk.CTkLabel(
-                    card,
-                    text=description,
-                    font=font("xsmall"),
-                    text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
-                    wraplength=150
-                )
-                desc_label.pack(padx=10, pady=(0, 10))
+        # Usar módulo separado (welcome_screen.py)
+        create_welcome_screen(self.content_frame, self._on_tool_selected)
     
     def _on_tool_selected(self, tool_name: str) -> None:
         """

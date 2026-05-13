@@ -52,6 +52,38 @@ TOOL_STATUS_OK = "OK"
 TOOL_STATUS_ERROR = "ERROR"
 TOOL_STATUS_LOADING = "LOADING"
 
+# Tool Icons (para UI)
+TOOL_ICONS = {
+    'text_tool': '📊',
+    'duplicate_tool': '📁',
+    'hash_tool': '#️⃣',
+    'compress_tool': '📦',
+    'audio_tool': '🎵',
+    'gif_tool': '🎞️',
+    'pdf_tool': '📄',
+    'video_tool': '🎬',
+    'rename_tool': '✏️',
+    'search_tool': '🔍',
+    'scrubber': '🧹',
+    'image_tool': '🖼️',
+}
+
+# Tool Descriptions (para welcome screen)
+TOOL_DESCRIPTIONS = {
+    'text_tool': 'Análisis de texto, WordCloud, estadísticas',
+    'duplicate_tool': 'Encuentra y elimina archivos duplicados',
+    'hash_tool': 'Calcula hashes MD5/SHA para verificar archivos',
+    'compress_tool': 'Comprime archivos y carpetas',
+    'audio_tool': 'Procesa y convierte archivos de audio',
+    'gif_tool': 'Crea y edita imágenes GIF animadas',
+    'pdf_tool': 'Manipula documentos PDF',
+    'video_tool': 'Procesa y convierte archivos de video',
+    'rename_tool': 'Renombra archivos en lote',
+    'search_tool': 'Busca archivos por contenido',
+    'scrubber': 'Limpia metadatos de archivos',
+    'image_tool': 'Procesamiento digital de imágenes',
+}
+
 # Configuración de fuentes - optimizadas para mejor legibilidad
 # Cross-platform: Segoe UI en Windows, DejaVu Sans en Linux
 if platform.system() == "Windows":

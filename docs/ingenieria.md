@@ -217,21 +217,21 @@ Las siguientes máximas rigen el diseño y evolución del proyecto:
 
 | Métrica | Valor | Estado |
 |---------|-------|--------|
-| Líneas totales | 432 | ⚠️ Excede A0 (máx 300) |
-| Funciones >30 líneas | `_show_welcome_screen` (~100 líneas) | ⚠️ Refactorizar |
+| Líneas totales | 334 | ⚠️ Cercano a A0 (300 máx) |
+| Funciones >30 líneas | `_on_tool_selected` (36 líneas) | ⚠️ Revisar |
 | Funciones <30 líneas | `_center_window`, `_on_closing`, `refresh_theme` | ✅ OK |
 
 **Hallazgos:**
 - ✅ Usa PluginManager (separación de responsabilidades)
 - ✅ Grid layout correcto (sidebar + content + status)
 - ✅ Theme system centralizado en `core/constants.py`
-- ⚠️ Icons y descriptions hardcodeados en `_show_welcome_screen` (malo para extensibilidad)
-- ⚠️ Funciones largas violan máxima A0
+- ✅ Icons y descriptions en constantes (TOOL_ICONS, TOOL_DESCRIPTIONS)
+- ⚠️ `welcome_screen.py` extraído (refactor completo)
 
-**Pendiente refactorizar:**
-1. Extraer `_show_welcome_screen` a módulo separado `ui/welcome_screen.py`
-2. Mover icons/descriptions a constantes o archivo de configuración
-3. Reducir líneas de `app.py` a <300
+**Refactor completado:**
+1. ✅ `_show_welcome_screen` extraído a `ui/welcome_screen.py`
+2. ✅ Icons/descriptions movidos a `core/constants.py`
+3. ⚠️ app.py aún en 334 líneas (falta extraer `_on_tool_selected`?)
 
 ### core/constants.py
 
