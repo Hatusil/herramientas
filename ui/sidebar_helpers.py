@@ -150,3 +150,44 @@ def highlight_tool(tool_buttons: Dict[str, ctk.CTkButton], tool_name: str = None
             btn.configure(fg_color=selected_color, text_color="white")
         else:
             btn.configure(fg_color=normal_color, text_color=constants.COLORS["text_secondary"])
+
+
+def on_mousewheel(event, canvas) -> str:
+    """Maneja scroll con mouse wheel."""
+    if not canvas:
+        return "break"
+    
+    try:
+        direction = -1 if (event.delta < 0 or event.num == 4) else 1
+        for _ in range(3):
+            canvas.yview("scroll", direction, "units")
+    except Exception:
+        pass
+    return "break"
+
+
+def setup_scroll_binding(scroll_frame, on_wheel_callback) -> None:
+    """Configura bindings de scroll."""
+    canvas = getattr(scroll_frame, '_parent_canvas', None)
+    
+    if not canvas:
+        for child in scroll_frame.winfo_children():
+            if hasattr(child, 'yview'):
+                canvas = child
+                break
+    
+    if not canvas:
+        try:
+            scroll_frame.bind("<MouseWheel>", on_wheel_callback)
+            scroll_frame.bind("<Button-4>", on_wheel_callback)
+            scroll_frame.bind("<Button-5>", on_wheel_callback)
+        except Exception:
+            pass
+        return
+    
+    try:
+        scroll_frame.bind("<MouseWheel>", on_wheel_callback)
+        scroll_frame.bind("<Button-4>", on_wheel_callback)
+        scroll_frame.bind("<Button-5>", on_wheel_callback)
+    except Exception:
+        pass

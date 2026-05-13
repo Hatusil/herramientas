@@ -109,77 +109,22 @@ class Sidebar(ctk.CTkFrame):
         salir_btn.pack(fill="x", padx=12, pady=(8, 12))
     
     def _setup_scroll_binding(self, scroll_frame) -> None:
-        """Configura bindings de scroll con mouse wheel."""
-        # Intentar obtener el canvas interno de forma robusta
-        canvas = None
-        
-        # Método 1: attribute directo (CTkinter 4.x)
-        try:
-            canvas = getattr(scroll_frame, '_parent_canvas', None)
-        except Exception:
-            pass
-        
-        # Método 2: buscar en children (CTkinter 5.x compatibility)
-        if not canvas:
-            try:
-                for child in scroll_frame.winfo_children():
-                    if hasattr(child, 'yview'):
-                        canvas = child
-                        break
-            except Exception:
-                pass
-        
-        if not canvas:
-            # Fallback: crear un binding directo
-            try:
-                scroll_frame.bind("<MouseWheel>", self._on_mousewheel)
-                scroll_frame.bind("<Button-4>", self._on_mousewheel)
-                scroll_frame.bind("<Button-5>", self._on_mousewheel)
-            except Exception:
-                pass
-            return
-        
-        def on_wheel(event):
-            if hasattr(event, 'num'):  # Linux
-                direction = -1 if event.num == 4 else 1
-            else:  # Windows
-                direction = -1 if event.delta < 0 else 1
-            # Scroll más rápido (3 líneas)
-            for _ in range(3):
-                canvas.yview("scroll", direction, "units")
-            return "break"
-        
-        # Bind directo - funcionan en todo el sidebar
-        scroll_frame.bind("<MouseWheel>", on_wheel)
-        scroll_frame.bind("<Button-4>", on_wheel)
-        scroll_frame.bind("<Button-5>", on_wheel)
+        """Configura bindings de scroll."""
+        from ui.sidebar_helpers import setup_scroll_binding
+        setup_scroll_binding(scroll_frame, self._on_mousewheel)
     
     def _on_mousewheel(self, event) -> str:
-        """Maneja scroll con la rueda del mouse - fallback."""
-        try:
-            # Obtener canvas de forma robusta
-            canvas = None
-            
-            # Método 1: attribute directo
-            if hasattr(self.scroll_frame, '_parent_canvas'):
-                canvas = self.scroll_frame._parent_canvas
-            
-            # Método 2: buscar en children
-            if not canvas:
-                for child in self.scroll_frame.winfo_children():
-                    if hasattr(child, 'yview'):
-                        canvas = child
-                        break
-            
-            if canvas:
-                if hasattr(event, 'delta'):
-                    direction = -1 if event.delta < 0 else 1
-                else:
-                    direction = -1 if event.num == 4 else 1
-                canvas.yview("scroll", direction, "units")
-        except Exception:
-            pass
-        return "break"
+        """Maneja scroll con mouse wheel."""
+        from ui.sidebar_helpers import on_mousewheel
+        canvas = None
+        if hasattr(self.scroll_frame, '_parent_canvas'):
+            canvas = self.scroll_frame._parent_canvas
+        if not canvas:
+            for child in self.scroll_frame.winfo_children():
+                if hasattr(child, 'yview'):
+                    canvas = child
+                    break
+        return on_mousewheel(event, canvas)
     
     def set_tools(self, tools: List[Dict[str, Any]]) -> None:
         """Configura las herramientas a mostrar."""
