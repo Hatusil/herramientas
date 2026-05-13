@@ -231,7 +231,15 @@ Las siguientes máximas rigen el diseño y evolución del proyecto:
 **Refactor completado:**
 1. ✅ `_show_welcome_screen` extraído a `ui/welcome_screen.py`
 2. ✅ Icons/descriptions movidos a `core/constants.py`
-3. ⚠️ app.py aún en 334 líneas (falta extraer `_on_tool_selected`?)
+3. ⚠️ app.py aún en 334 líneas
+
+### ui/sidebar.py - Pendiente
+
+| Métrica | Valor | Estado |
+|---------|-------|--------|
+| Líneas totales | 624 | ⚠️ Excede A0 (300 máx) |
+
+**Pendiente:** Refactorizar sidebar.py (>600 líneas)
 
 ### core/constants.py
 

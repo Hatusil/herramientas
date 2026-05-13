@@ -2,65 +2,14 @@
 Sidebar: Panel lateral de navegación de herramientas.
 """
 import logging
-import sys
 import customtkinter as ctk
 from typing import List, Dict, Callable, Any
-from pathlib import Path
 from core import constants
 from core.constants import font, FONT_SIZE_TITLE, FONT_SIZE_LARGE
 from core import config
-
-# Check for PIL availability
-try:
-    from PIL import Image, ImageDraw
-    PIL_AVAILABLE = True
-except ImportError:
-    PIL_AVAILABLE = False
-    Image = None
-    ImageDraw = None
+from ui.sidebar_helpers import create_tool_callback, make_circle_image, find_logo_path
 
 logger = logging.getLogger(__name__)
-
-
-def _create_tool_callback(tool_name: str, callback: Callable[[str], None]) -> Callable[[], None]:
-    """
-    Crea un callback que captura el nombre de la herramienta.
-    
-    Args:
-        tool_name: Nombre de la herramienta
-        callback: Función a llamar con el nombre
-        
-    Returns:
-        Función sin argumentos que llama a callback con tool_name
-    """
-    return lambda: callback(tool_name)
-
-
-def make_circle_image(image_path: str, size: int = 80):
-    """
-    Convierte una imagen a círculo con fondo transparente.
-    
-    Args:
-        image_path: Ruta a la imagen
-        size: Tamaño final
-        
-    Returns:
-        Imagen en formato círculo
-    """
-    if not PIL_AVAILABLE or Image is None or ImageDraw is None:
-        raise ImportError("PIL (Pillow) is not available")
-    
-    img = Image.open(image_path).convert("RGBA")
-    img = img.resize((size, size), Image.Resampling.LANCZOS)
-    
-    mask = Image.new("L", (size, size), 0)
-    draw = ImageDraw.Draw(mask)
-    draw.ellipse((0, 0, size, size), fill=255)
-    
-    output = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    output.paste(img, (0, 0), mask)
-    
-    return output
 
 
 class Sidebar(ctk.CTkFrame):
