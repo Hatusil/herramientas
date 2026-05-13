@@ -64,6 +64,18 @@ def transcribe(ui: 'AudioToolUI') -> None:
     if not ui._check_files():
         return
 
+    # Check dependencias
+    try:
+        import torch
+        import transformers
+        import librosa
+    except ImportError:
+        ui.status_label.configure(
+            text="⚠️ Dependencias faltantes: pip install torch transformers librosa",
+            text_color="orange"
+        )
+        return
+
     ui.status_label.configure(text="🔄 Transcribiendo...", text_color="#FFD700")
     ui.process_async("transcribe", ui.files, {
         "model": ui.transcribe_model_var.get(),

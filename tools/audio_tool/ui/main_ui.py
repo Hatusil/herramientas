@@ -57,8 +57,8 @@ class AudioToolUI(BaseToolUI):
                 ],
                 "warnings": [
                     "⚠️ mp3→mp3 con calidad 192k se omite (ya en formato)",
-                    "⚠️ Transcribir requiere ~2GB RAM (modelo base)",
-                    "⚠️ Primera vez tarda en descargar modelo",
+                    "⚠️ Transcribir: pip install torch transformers librosa",
+                    "⚠️ Requiere ~2GB RAM (modelo base)",
                 ],
             },
         )
