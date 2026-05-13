@@ -29,10 +29,10 @@ class AudioToolUI(BaseToolUI):
             "",
             selector_type="file",
             tab_configs=[
-                {"name": "Normalizar"}, {"name": "Limpiar"},
-                {"name": "Editar Metadatos"}, {"name": "Convertir"},
-                {"name": "Reparar"}, {"name": "Info"}, {"name": "Verificar"},
-                {"name": "Transcribir"},
+                {"name": "Info"}, {"name": "Verificar"},
+                {"name": "Normalizar"}, {"name": "Convertir"},
+                {"name": "Limpiar"}, {"name": "Editar Metadatos"},
+                {"name": "Reparar"}, {"name": "Transcribir"},
             ],
             file_types=[
                 ("Audio files", "*.mp3 *.wav *.flac *.ogg *.m4a *.aac"),
@@ -45,7 +45,7 @@ class AudioToolUI(BaseToolUI):
                 "usage": [
                     "1. 📥 Agregar archivos (+)",
                     "2. ☑️ Seleccionar con Ctrl+click o botones 'Todos'/'Ninguno'",
-                    "3. 📑 Elegir operación (Normalizar/Limpiar/Convertir/Transcribir...)",
+                    "3. 📑 Flujo: Info → Normalizar → Convertir → Limpiar/Editar → Reparar",
                     "4. ⚙️ Configurar opciones (LUFS, calidad, modelo)",
                     "5. ▶️ Click en ejecutar (procesa solo los seleccionados)",
                 ],
