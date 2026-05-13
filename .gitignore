@@ -59,6 +59,7 @@ Desktop.ini
 ffmpeg-*-essentials_build/
 ffmpeg.zip
 vendor/ffmpeg/
+tools/ffmpeg/
 
 # --- Logs y backups ---
 *.log

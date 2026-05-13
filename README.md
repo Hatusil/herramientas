@@ -18,7 +18,7 @@ Aplicación de escritorio con múltiples herramientas para procesamiento de arch
 | ✏️ | **Renombrar** | Renombra en masa con prefijos, sufijos, números, mayúsculas |
 | 📦 | **Compresor** | ZIP, TAR.GZ - comprime y extrae |
 | 📊 | **Text Analyzer** | WordCloud, frecuencia, estadísticas, n-grams, trends, correlaciones |
-| 🎵 | **Audio** | Normaliza LUFS, limpia metadatos, convierte |
+| 🎵 | **Audio** | Normaliza, limpia metadatos, convierte, **transcribe** (OLMoASR) |
 | 🎬 | **Video** | Extrae audio, convierte, info |
 | 🖼️ | **Imagen** | PDI: 7 fases — filtros, geometría, bordes, morfología |
 | 🎞️ | **GIF** | Crea GIFs animados de imágenes |
