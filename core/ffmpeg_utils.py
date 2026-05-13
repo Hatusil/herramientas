@@ -6,6 +6,7 @@ import functools
 import logging
 import platform
 import subprocess
+import sys
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -14,33 +15,53 @@ logger = logging.getLogger(__name__)
 @functools.lru_cache(maxsize=1)
 def get_ffmpeg_path() -> str:
     """
-    Obtiene el path de ffmpeg (local o del sistema).
+    Obtiene el path de ffmpeg (local, bundle PyInstaller, o PATH).
     Cross-platform: Windows (.exe) vs Linux (no extension).
-    
+
     Returns:
         str: Ruta al ejecutable de ffmpeg
     """
     ext = ".exe" if platform.system() == "Windows" else ""
+
+    # 1. Buscar en bundle PyInstaller (_MEIPASS)
+    if hasattr(sys, '_MEIPASS'):
+        bundled = Path(sys._MEIPASS) / "ffmpeg" / f"ffmpeg{ext}"
+        if bundled.exists():
+            return str(bundled)
+
+    # 2. Buscar en tools/ffmpeg/bin (desarrollo)
     local_ffmpeg = Path(__file__).parent.parent / "tools" / "ffmpeg" / "bin" / f"ffmpeg{ext}"
     if local_ffmpeg.exists():
         return str(local_ffmpeg)
-    return "ffmpeg"  # Usar del PATH
+
+    # 3. Usar del PATH
+    return "ffmpeg"
 
 
 @functools.lru_cache(maxsize=1)
 def get_ffprobe_path() -> str:
     """
-    Obtiene el path de ffprobe (local o del sistema).
+    Obtiene el path de ffprobe (local, bundle PyInstaller, o PATH).
     Cross-platform: Windows (.exe) vs Linux (no extension).
-    
+
     Returns:
         str: Ruta al ejecutable de ffprobe
     """
     ext = ".exe" if platform.system() == "Windows" else ""
+
+    # 1. Buscar en bundle PyInstaller (_MEIPASS)
+    if hasattr(sys, '_MEIPASS'):
+        bundled = Path(sys._MEIPASS) / "ffmpeg" / f"ffprobe{ext}"
+        if bundled.exists():
+            return str(bundled)
+
+    # 2. Buscar en tools/ffmpeg/bin (desarrollo)
     local_ffprobe = Path(__file__).parent.parent / "tools" / "ffmpeg" / "bin" / f"ffprobe{ext}"
     if local_ffprobe.exists():
         return str(local_ffprobe)
-    return "ffprobe"  # Usar del PATH
+
+    # 3. Usar del PATH
+    return "ffprobe"
 
 
 @functools.lru_cache(maxsize=1)

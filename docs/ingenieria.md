@@ -318,7 +318,7 @@ tools/audio_tool/
 #### Herencia de BaseToolUI
 - **Heredados**: files, file_listbox, status_label, progress_bar, is_processing
 - **Override hooks**: No usa muchos, tabs definen su propia UI
-- **Custom propio**: `tab_normalize`, `tab_clean`, `tab_edit_meta`, `tab_convert`, `tab_repair`, `tab_info`, `tab_verify`
+- **Custom propio**: `tab_normalize`, `tab_clean`, `tab_edit_meta`, `tab_convert`, `tab_repair`, `tab_info`, `tab_verify`, `tab_transcribe`
 
 #### Casos de Uso (Workflows)
 
@@ -331,6 +331,7 @@ tools/audio_tool/
 | Reparar | `repair` | `processor.repair_audio_async` | `_repaired.mp3` |
 | Ver info | `show_info` | `get_audio_info` | display en UI |
 | Verificar | `verify` | `verify_multiple_audio` | display en UI |
+| **Transcribir** | `transcribe` | `transcribe_audio_async` | `_transcribed.txt` |
 
 #### Puntos de Conexión Clave
 
@@ -360,6 +361,7 @@ convert_audio_async(files, output_format='mp3', quality=192, callback=None)
 clean_audio_metadata_async(files, callback=None)
 edit_audio_metadata_async(files, callback=None, **metadata)
 repair_audio_async(files, callback=None)
+transcribe_audio_async(files, callback=None, model='base', format='txt')
 ```
 
 #### Skip Logic Implementada
@@ -373,6 +375,7 @@ repair_audio_async(files, callback=None)
 
 #### Notas Técnicas
 - Dependencias externas: `ffmpeg` (convert, normalize, repair), `mutagen` (metadata)
+- **Transcribir**: Usa `OLMoASR` (AI2) - rival de Whisper, modelos tiny/base/small
 - Los processors usan `pydub` para audio processing
 - Skip logic en convert: `if get_audio_format(f) == output_format: skip`
 

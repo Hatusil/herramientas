@@ -32,6 +32,7 @@ class AudioToolUI(BaseToolUI):
                 {"name": "Normalizar"}, {"name": "Limpiar"},
                 {"name": "Editar Metadatos"}, {"name": "Convertir"},
                 {"name": "Reparar"}, {"name": "Info"}, {"name": "Verificar"},
+                {"name": "Transcribir"},
             ],
             file_types=[
                 ("Audio files", "*.mp3 *.wav *.flac *.ogg *.m4a *.aac"),
@@ -39,26 +40,25 @@ class AudioToolUI(BaseToolUI):
                 ("Todos", "*.*"),
             ],
             help_config={
-                "description": "🎵 Normaliza, limpia metadatos y convierte archivos de audio",
+                "description": "🎵 Normaliza, limpia metadatos, convierte y transcribe audio",
                 "file_label": "Archivos de audio:",
                 "usage": [
                     "1. 📥 Agregar archivos (+)",
                     "2. ☑️ Seleccionar con Ctrl+click o botones 'Todos'/'Ninguno'",
-                    "3. 📑 Elegir operación (Normalizar/Limpiar/Convertir/Reparar/Info)",
-                    "4. ⚙️ Configurar opciones LUFS o calidad (192k default)",
+                    "3. 📑 Elegir operación (Normalizar/Limpiar/Convertir/Transcribir...)",
+                    "4. ⚙️ Configurar opciones (LUFS, calidad, modelo)",
                     "5. ▶️ Click en ejecutar (procesa solo los seleccionados)",
                 ],
                 "tips": [
                     "💡 LUFS -16 es el estándar para streaming",
                     "💡 192kbps da buen balance calidad/tamaño",
-                    "💡 Verificá archivos antes de repararlos",
+                    "💡 Transcribir usa OLMoASR (rival de Whisper)",
+                    "💡 Modelo 'tiny' es rápido, 'small' más preciso",
                 ],
                 "warnings": [
                     "⚠️ mp3→mp3 con calidad 192k se omite (ya en formato)",
-                    "⚠️ Cambiar calidad para forzar conversión",
-                    "⚠️ Normalización alta puede afectar calidad",
-                    "⚠️ Conversión siempre crea nuevo archivo",
-                    "⚠️ Reparar archivos severos puede dejar artefactos",
+                    "⚠️ Transcribir requiere ~2GB RAM (modelo base)",
+                    "⚠️ Primera vez tarda en descargar modelo",
                 ],
             },
         )
@@ -72,11 +72,13 @@ class AudioToolUI(BaseToolUI):
         self.tab_repair = r["tabs"]["Reparar"]
         self.tab_info = r["tabs"]["Info"]
         self.tab_verify = r["tabs"]["Verificar"]
+        self.tab_transcribe = r["tabs"]["Transcribir"]
 
         # Importar y ejecutar setup de cada tab
         from tools.audio_tool.ui import (
             normalize_tab, clean_tab, edit_meta_tab,
-            convert_tab, repair_tab, info_tab, verify_tab
+            convert_tab, repair_tab, info_tab, verify_tab,
+            transcribe_tab
         )
 
         self._setup_normalize_tab = lambda: normalize_tab.setup_tab(self)
@@ -86,6 +88,7 @@ class AudioToolUI(BaseToolUI):
         self._setup_repair_tab = lambda: repair_tab.setup_tab(self)
         self._setup_info_tab = lambda: info_tab.setup_tab(self)
         self._setup_verify_tab = lambda: verify_tab.setup_tab(self)
+        self._setup_transcribe_tab = lambda: transcribe_tab.setup_tab(self)
 
         self._setup_normalize_tab()
         self._setup_clean_tab()
@@ -94,12 +97,14 @@ class AudioToolUI(BaseToolUI):
         self._setup_repair_tab()
         self._setup_info_tab()
         self._setup_verify_tab()
+        self._setup_transcribe_tab()
 
 
 # Importar handlers de cada tab
 from tools.audio_tool.ui import (
     normalize_tab, clean_tab, edit_meta_tab,
-    convert_tab, repair_tab, info_tab, verify_tab
+    convert_tab, repair_tab, info_tab, verify_tab,
+    transcribe_tab
 )
 
 # Asignar métodos a la clase
@@ -112,4 +117,5 @@ AudioToolUI._do_repair = repair_tab.do_repair
 AudioToolUI._repair = repair_tab.do_repair
 AudioToolUI._show_info = info_tab.show_info
 AudioToolUI._verify_audio = verify_tab.verify_audio
+AudioToolUI._transcribe = transcribe_tab.transcribe
 AudioToolUI._verify = verify_tab.verify_audio

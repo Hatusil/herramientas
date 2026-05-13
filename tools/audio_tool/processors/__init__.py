@@ -5,5 +5,6 @@ from .metadata import (
     clean_audio_metadata, clean_audio_metadata_async,
     edit_audio_metadata, edit_audio_metadata_async
 )
-from .repair import repair_audio, repair_audio_async
+from .repair import repair_audio, repair_audio_async, verify_multiple_audio
 from .audio_info import get_audio_info, get_metadata
+from .transcribe import transcribe_audio, transcribe_audio_async

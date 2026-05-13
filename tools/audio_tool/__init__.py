@@ -89,6 +89,13 @@ class AudioTool(BaseTool):
                     composer=options.get('composer')
                 )
             
+            elif action == 'transcribe':
+                return processor.transcribe_audio(
+                    files[0] if files else "",
+                    model_size=options.get('model', 'base'),
+                    output_format=options.get('format', 'txt')
+                )
+            
             else:
                 return {
                     'success': False,
@@ -133,29 +140,49 @@ class AudioTool(BaseTool):
             callback: Función(result) a llamar al terminar
         """
         action = options.get('action', 'normalize')
-        
+        print(f"DEBUG process_async: action={action}, files={files}")
+
         # Usar función async del processor si existe
-        if action == 'normalize':
-            from tools.audio_tool.processor import normalize_audio_async
-            normalize_audio_async(files, callback, **options)
-        elif action == 'clean':
-            from tools.audio_tool.processor import clean_audio_metadata_async
-            clean_audio_metadata_async(files, callback)
-        elif action == 'convert':
-            from tools.audio_tool.processor import convert_audio_async
-            convert_audio_async(
-                files,
-                options.get('format', 'mp3'),
-                callback,
-                quality=options.get('quality', 192)
-            )
-        elif action == 'repair':
-            from tools.audio_tool.processor import repair_audio_async
-            repair_audio_async(files, callback)
-        elif action == 'edit_metadata':
-            from tools.audio_tool.processor import edit_audio_metadata_async
-            edit_audio_metadata_async(files, callback, **options)
-        else:
-            # Fallback a sync
-            result = self._on_process(action, files, options)
-            callback(result)
+        try:
+            print(f"DEBUG: callback={callback}, action={action}")
+            if action == 'normalize':
+                from tools.audio_tool.processor import normalize_audio_async
+                print("DEBUG: importing normalize_audio_async OK")
+                normalize_audio_async(files, callback=callback, **options)
+                print("DEBUG: normalize_audio_async called")
+            elif action == 'clean':
+                from tools.audio_tool.processor import clean_audio_metadata_async
+                clean_audio_metadata_async(files, callback=callback)
+            elif action == 'convert':
+                from tools.audio_tool.processor import convert_audio_async
+                print("DEBUG: importing convert_audio_async OK")
+                convert_audio_async(
+                    files,
+                    output_format=options.get('format', 'mp3'),
+                    callback=callback,
+                    quality=options.get('quality', 192)
+                )
+                print("DEBUG: convert_audio_async called")
+            elif action == 'repair':
+                from tools.audio_tool.processor import repair_audio_async
+                print("DEBUG: importing repair_audio_async OK")
+                repair_audio_async(files, callback=callback)
+                print("DEBUG: repair_audio_async called")
+            elif action == 'edit_metadata':
+                from tools.audio_tool.processor import edit_audio_metadata_async
+                edit_audio_metadata_async(files, callback=callback, **options)
+            elif action == 'transcribe':
+                from tools.audio_tool.processors.transcribe import transcribe_audio_async
+                transcribe_audio_async(
+                    files,
+                    callback=callback,
+                    model=options.get('model', 'base'),
+                    format=options.get('format', 'txt')
+                )
+            else:
+                # Fallback a sync
+                result = self._on_process(action, files, options)
+                callback(result)
+        except Exception as e:
+            logger.error(f"Error en process_async: {e}")
+            callback({'success': False, 'error': str(e)})

@@ -34,7 +34,7 @@ for lib in ['customtkinter', 'PIL', 'matplotlib', 'numpy', 'cv2']:
 # Datos del proyecto
 project_datas = [
     ('core', 'core'),
-    ('tools', 'tools'), 
+    ('tools', 'tools'),
     ('ui', 'ui'),
     ('assets', 'assets'),
     ('requirements.txt', '.'),
@@ -43,10 +43,27 @@ project_datas = [
 ]
 datas.extend(project_datas)
 
+# FFmpeg binaries - buscar en tools/ffmpeg/bin o en el PATH del sistema
+import glob
+import sys
+ffmpeg_bin = os.path.join(os.getcwd(), 'tools', 'ffmpeg', 'bin')
+binaries = []
+
+if os.path.exists(ffmpeg_bin):
+    # Incluir todos los executables de ffmpeg
+    for exe in ['ffmpeg.exe', 'ffprobe.exe']:
+        exe_path = os.path.join(ffmpeg_bin, exe)
+        if os.path.exists(exe_path):
+            binaries.append((exe_path, 'ffmpeg'))
+            print(f"[*] Incluyendo {exe} en el bundle")
+else:
+    print(f"[!] FFmpeg no encontrado en {ffmpeg_bin}")
+    print(f"[!] El ejecutable buscara ffmpeg en el PATH del sistema")
+
 a = Analysis(
     ['ui\\app.py'],
     pathex=[],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],

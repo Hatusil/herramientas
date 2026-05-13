@@ -22,7 +22,7 @@ def setup_tab(ui: 'AudioToolUI') -> None:
 
     ctk.CTkLabel(frame, text="Informaci\u00f3n del archivo de audio:", font=font("normal", "bold")).pack(pady=10)
 
-    ui.info_text = ctk.CTkTextbox(frame, width=500, height=300, wrap="word", fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
+    ui.info_text = ctk.CTkTextbox(frame, width=500, height=210, wrap="word", fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
     ui.info_text.pack(padx=10, pady=10)
     ui.info_text.configure(state="disabled")
 

@@ -5,5 +5,6 @@ from tools.audio_tool.processors import (
     clean_audio_metadata, clean_audio_metadata_async,
     edit_audio_metadata, edit_audio_metadata_async,
     repair_audio, repair_audio_async,
-    get_audio_info, get_metadata
+    get_audio_info, get_metadata,
+    verify_multiple_audio
 )
