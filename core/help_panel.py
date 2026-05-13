@@ -2,6 +2,7 @@
 HelpPanel: Componente reutilizable para mostrar ayuda/descripción en las herramientas.
 Muestra la ayuda como un popup flotante (CTkToplevel) que no desplaza el contenido.
 """
+import tkinter as tk
 import customtkinter as ctk
 from pathlib import Path
 
@@ -56,15 +57,17 @@ class HelpPopup:
         )
         main_frame.pack(fill="both", expand=True, padx=0, pady=0)
 
-        # Textbox para contenido — scroll contenido en el popup, no propaga
-        textbox = ctk.CTkTextbox(
+        # Textbox para contenido — usa tk.Text porque CTkTextbox no soporta tags
+        textbox = tk.Text(
             main_frame,
-            height=380,
+            height=20,
             font=font("small"),
-            fg_color=constants.COLORS.get("bg_dark", "#1a1a1a"),
-            text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
-            border_width=0,
+            bg=constants.COLORS.get("bg_dark", "#1a1a1a"),
+            fg=constants.COLORS.get("text_primary", "#e0e0e0"),
+            borderwidth=0,
             state="disabled",
+            wrap="word",
+            highlightthickness=0,
         )
         textbox.pack(fill="both", expand=True, padx=15, pady=15)
         textbox.tag_configure("desc", foreground=constants.COLORS.get("text_primary", "#e0e0e0"), justify="left")
