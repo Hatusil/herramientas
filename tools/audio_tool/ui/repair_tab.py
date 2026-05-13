@@ -72,7 +72,8 @@ def verify_before_repair(ui: 'AudioToolUI') -> None:
 
         ui.verify_state = {"ok": [r["file"] for r in ok_files], "corrupt": [r["file"] for r in corrupt_files]}
 
-        ui.repair_verify_text.insert("1.0", f"\U0001F4CA VERIFICACI\u00d3N:\n{'\u2500' * 35}\n")
+        divider = "\u2500" * 35
+        ui.repair_verify_text.insert("1.0", f"\U0001F4CA VERIFICACIÓN:\n{divider}\n")
 
         if ok_files:
             ui.repair_verify_text.insert(tk.END, f"\u2705 OK ({len(ok_files)}):\n")
@@ -85,7 +86,7 @@ def verify_before_repair(ui: 'AudioToolUI') -> None:
             for r in corrupt_files:
                 ui.repair_verify_text.insert(tk.END, f"  \u2717 {r['name']}\n")
 
-        ui.repair_verify_text.insert(tk.END, f"\n{'\u2500' * 35}\nTotal: {result['total']} | OK: {result['ok']} | corruptos: {result['corrupt']}")
+        ui.repair_verify_text.insert(tk.END, f"\n{divider}\nTotal: {result['total']} | OK: {result['ok']} | corruptos: {result['corrupt']}")
         ui.repair_verify_text.configure(state="disabled")
 
         if len(corrupt_files) > 0:

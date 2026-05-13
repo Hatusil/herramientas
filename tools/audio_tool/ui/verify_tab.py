@@ -65,7 +65,8 @@ def verify_audio(ui: 'AudioToolUI') -> None:
             for r in corrupt_files:
                 ui.verify_text.insert(tk.END, f"  \u2717 {r['name']} - {r['message']}\n")
 
-        ui.verify_text.insert(tk.END, f"\n{'\u2500' * 35}\n")
+        divider = "\u2500" * 35
+        ui.verify_text.insert(tk.END, f"\n{divider}\n")
         ui.verify_text.insert(tk.END, f"Total: {result['total']} | OK: {result['ok']} | Corruptos: {result['corrupt']}")
         ui.verify_text.configure(state="disabled")
 

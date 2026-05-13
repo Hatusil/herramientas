@@ -2,7 +2,7 @@
 SearchTool: Plugin para búsqueda avanzada de archivos.
 """
 from core.base_tool import BaseTool
-from tools.search_tool.ui import SearchToolUI
+from tools.search_tool.ui.main_ui import SearchToolUI
 
 
 class SearchTool(BaseTool):

@@ -255,6 +255,7 @@ class VideoToolUI(BaseToolUI):
 
         all_info = []
         errors = []
+        divider = "\u2500" * 35
 
         for video_path in selected:
             result = get_video_info(video_path)
@@ -274,7 +275,7 @@ class VideoToolUI(BaseToolUI):
                 res = result["video_resolution"] or "N/A"
 
                 info = f"""\U0001F4F9 {result['file_name']}
-{'\u2500' * 35}
+{divider}
   \U0001F4E6 Formato:     {fmt}
   \U0001F4BE Tama\u00f1o:      {result['file_size'] / 1024 / 1024:.2f} MB
   \u23f1\ufe0f Duraci\u00f3n:    {result['duration']:.1f}s

@@ -41,6 +41,7 @@ def show_info(ui: 'AudioToolUI') -> None:
 
     all_info = []
     errors = []
+    divider = "\u2500" * 35
 
     for file_path in selected:
         try:
@@ -48,7 +49,7 @@ def show_info(ui: 'AudioToolUI') -> None:
             info = get_audio_info(file_path)
             if info.get("success"):
                 audio_info = f"""\U0001F4C4 {info.get('file_name', 'N/A')}
-{'\u2500' * 35}
+{divider}
   \U0001F4BE Tama\u00f1o:      {info.get('file_size', 0) / 1024 / 1024:.2f} MB
   \u23f1\ufe0f Duraci\u00f3n:    {info.get('duration', 0):.1f} seg
   \U0001F4E6 Formato:    {info.get('format', 'N/A')}
