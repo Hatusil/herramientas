@@ -233,13 +233,18 @@ Las siguientes máximas rigen el diseño y evolución del proyecto:
 2. ✅ Icons/descriptions movidos a `core/constants.py`
 3. ⚠️ app.py aún en 334 líneas
 
-### ui/sidebar.py - Pendiente
+### ui/sidebar.py - Refactorizado ✅
 
 | Métrica | Valor | Estado |
 |---------|-------|--------|
-| Líneas totales | 624 | ⚠️ Excede A0 (300 máx) |
+| Líneas totales | 573 | ⚠️ Cerca de A0 (300 máx) |
+| helper functions | 64 líneas | ✅ Extraídas a sidebar_helpers.py |
 
-**Pendiente:** Refactorizar sidebar.py (>600 líneas)
+**Refactor completado:**
+- Funciones helper extraídas a `ui/sidebar_helpers.py`
+- `create_tool_callback()`, `make_circle_image()`, `find_logo_path()`
+
+**Pendiente:** Reducir aún más (573 → ~300)
 
 ### core/constants.py
 
