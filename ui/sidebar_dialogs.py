@@ -15,14 +15,14 @@ def show_acerca_de(parent) -> None:
     
     dialog = ctk.CTkToplevel(parent)
     dialog.title("Acerca de")
-    dialog.geometry("450x620")
+    dialog.geometry("480x700")
     
     dialog.transient(parent)
     parent.update_idletasks()
     
     screen_w = dialog.winfo_screenwidth()
     screen_h = dialog.winfo_screenheight()
-    dialog_w, dialog_h = 450, 620
+    dialog_w, dialog_h = 480, 700
     x = (screen_w - dialog_w) // 2
     y = (screen_h - dialog_h) // 2
     dialog.geometry(f"+{x}+{y}")
@@ -54,36 +54,44 @@ def show_acerca_de(parent) -> None:
                 pass
             break
     
-    # Título
+    # Título y versión
     ctk.CTkLabel(main, text="Herramientas", font=font("title", "bold"), text_color=fg).pack(pady=(0, 2))
-    ctk.CTkLabel(main, text="Version 1.0.0", font=font("small"), text_color=fg_secondary).pack(pady=(0, 15))
+    ctk.CTkLabel(main, text="Versión 1.0.0", font=font("small"), text_color=fg_secondary).pack(pady=(0, 15))
 
     # Descripción
-    desc = (
-        "Aplicación de escritorio con múltiples herramientas\n"
-        "de productividad para procesamiento de archivos.\n\n"
-        "Construido con Python y CustomTkinter."
-    )
-    ctk.CTkLabel(main, text=desc, font=font("small"), text_color=fg, justify="center").pack(pady=10)
+    ctk.CTkLabel(main, text="Aplicación de escritorio con múltiples herramientas\nde productividad para procesamiento de archivos.",
+                 font=font("small"), text_color=fg, justify="center").pack(pady=(0, 5))
+    ctk.CTkLabel(main, text="Construido con Python y CustomTkinter.",
+                 font=font("xsmall"), text_color=fg_secondary).pack(pady=(0, 15))
+
+    # Separator
+    ctk.CTkFrame(main, height=1, fg_color=constants.COLORS.get("border")).pack(fill="x", pady=10)
 
     # Filosofía
-    frase = "Soy un desarrollador de software y analista de datos que busca\nsubordinar la técnica y las ciencias a la Verdad y la Sabiduría,\npara no ser esclavo de la máquina."
+    ctk.CTkLabel(main, text="📜 Filosofía",
+                 font=font("small", "bold"), text_color=primary).pack(pady=(5, 5))
+    frase = "«Soy un desarrollador de software y analista de datos que busca\nsubordinar la técnica y las ciencias a la Verdad y la Sabiduría,\npara no ser esclavo de la máquina.»"
     ctk.CTkLabel(main, text=frase, font=font("xsmall"), text_color=fg_secondary,
-                 justify="center").pack(pady=(15, 5))
+                 justify="center").pack(pady=(5, 15))
+
+    # Separator
+    ctk.CTkFrame(main, height=1, fg_color=constants.COLORS.get("border")).pack(fill="x", pady=5)
 
     # Contacto
-    ctk.CTkLabel(main, text="Desarrollado por: Hatusil (Ewoc Logic)",
-                 font=font("small"), text_color=fg_secondary).pack(pady=(15, 0))
+    ctk.CTkLabel(main, text="📬 Contacto",
+                 font=font("small", "bold"), text_color=primary).pack(pady=(5, 5))
+    ctk.CTkLabel(main, text="Hatusil (Ewoc Logic)",
+                 font=font("small"), text_color=fg).pack(pady=(2, 0))
     ctk.CTkLabel(main, text="hatusil@proton.me",
                  font=font("small"), text_color=fg_secondary).pack(pady=(2, 0))
     ctk.CTkLabel(main, text="github.com/Hatusil",
                  font=font("small"), text_color=primary).pack(pady=(2, 0))
     ctk.CTkLabel(main, text="☕ buymeacoffee.com/hatusil",
-                 font=font("small"), text_color=fg_secondary).pack(pady=(2, 10))
+                 font=font("small"), text_color=fg_secondary).pack(pady=(2, 15))
 
     # Cerrar
     ctk.CTkButton(main, text="Cerrar", command=dialog.destroy,
-                  fg_color=primary, width=150).pack(pady=20)
+                  fg_color=primary, width=150).pack(pady=(10, 20))
 
 
 def show_salir(parent) -> None:
