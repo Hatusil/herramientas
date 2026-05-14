@@ -119,9 +119,11 @@ def convert_audio(files: List[str], output_format: str, **options) -> Dict[str, 
 
                 if result.returncode == 0 and Path(output_file).exists():
                     output_files.append(str(output_file))
-                    logger.info(f"Convertido: {input_file.name} -> {output_file.name}")
+                    file_name = input_file.name if hasattr(input_file, 'name') else str(input_file)
+                    logger.info(f"Convertido: {file_name}")
                 else:
-                    errors.append(f"Error: {input_file.name}")
+                    file_name = input_file.name if hasattr(input_file, 'name') else str(input_file)
+                    errors.append(f"Error: {file_name}")
 
             except Exception as e:
                 errors.append(f"Excepción: {str(e)}")
