@@ -33,7 +33,7 @@ class AudioTool(BaseTool):
         self.ui = AudioToolUI(parent_frame, self._on_process)
         self.ui.pack(fill="both", expand=True)
     
-    def _on_process(self, action: str, files: List[str], options: Dict[str, Any]) -> Dict[str, Any]:
+    def _on_process(self, action: str, files: list, options: dict) -> dict:
         """
         Maneja el procesamiento de archivos.
         
@@ -113,7 +113,7 @@ class AudioTool(BaseTool):
                 'error': str(e)
             }
     
-    def process(self, files: List[str], options: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, files: list, options: dict) -> dict:
         """
         Procesa los archivos.
         
@@ -130,7 +130,7 @@ class AudioTool(BaseTool):
     # =============================================================================
     # ASYNC PROCESSING - No bloquea UI
     # =============================================================================
-    def process_async(self, files: List[str], options: Dict[str, Any], callback) -> None:
+    def process_async(self, files: list, options: dict, callback) -> None:
         """
         Procesa archivos en background con callback.
         

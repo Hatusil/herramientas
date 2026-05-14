@@ -29,7 +29,23 @@ class SearchTool(BaseTool):
     
     def process(self, files: list, options: dict) -> dict:
         """Ejecuta la búsqueda."""
-        if not files and 'folder' in options:
-            from tools.search_tool.processor import search_all
-            return search_all(options['folder'], options)
-        return {'success': False, 'error': 'No hay carpeta seleccionada'}
+        from tools.search_tool import processor
+        action = options.get('action', 'search')
+
+        if action == 'search':
+            folder = options.get('folder', files[0] if files else None)
+            if not folder:
+                return {'success': False, 'error': 'No hay carpeta seleccionada'}
+            return processor.search_all(folder, options)
+        elif action == 'find_duplicates':
+            folder = options.get('folder', files[0] if files else None)
+            if not folder:
+                return {'success': False, 'error': 'No hay carpeta seleccionada'}
+            return processor.find_duplicates_by_name(folder, options.get('min_size', 0))
+        elif action == 'list':
+            folder = options.get('folder', files[0] if files else None)
+            if not folder:
+                return {'success': False, 'error': 'No hay carpeta seleccionada'}
+            return processor.list_files(folder, options.get('pattern', '*'))
+        else:
+            return {'success': False, 'error': f'Unknown action: {action}'}

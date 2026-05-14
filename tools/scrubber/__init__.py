@@ -32,7 +32,7 @@ class ScrubberTool(BaseTool):
         self.ui = ScrubberToolUI(parent_frame, self._on_process)
         self.ui.pack(fill="both", expand=True)
     
-    def _on_process(self, action: str, files: List[str], options: Dict[str, Any]) -> Dict[str, Any]:
+    def _on_process(self, action: str, files: list, options: dict) -> dict:
         """
         Maneja el procesamiento de archivos.
         """
@@ -68,7 +68,7 @@ class ScrubberTool(BaseTool):
                 'error': str(e)
             }
     
-    def process(self, files: List[str], options: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, files: list, options: dict) -> dict:
         """Procesa archivos."""
         action = options.get('action', 'clean_image')
         return self._on_process(action, files, options)

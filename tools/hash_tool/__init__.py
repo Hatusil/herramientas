@@ -31,10 +31,10 @@ class HashTool(BaseTool):
         self.ui = HashToolUI(parent_frame, self._on_process)
         self.ui.pack(fill="both", expand=True)
     
-    def _on_process(self, action: str, files: List[str], options: Dict[str, Any]) -> Dict[str, Any]:
+    def _on_process(self, action: str, files: list, options: dict) -> dict:
         return self.process(files, options)
-    
-    def process(self, files: List[str], options: Dict[str, Any]) -> Dict[str, Any]:
+
+    def process(self, files: list, options: dict) -> dict:
         action = options.get('action', 'calculate')
         
         if action == 'calculate':
