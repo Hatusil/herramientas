@@ -64,7 +64,12 @@ def show_acerca_de(parent) -> None:
         "de productividad para procesamiento de archivos.\n\n"
         "Construido con Python y CustomTkinter."
     )
-    ctk.CTkLabel(main, text=desc, font=font("small"), text_color=fg, justify="center").pack(pady=10)
+ctk.CTkLabel(main, text=desc, font=font("small"), text_color=fg, justify="center").pack(pady=10)
+
+    # Filosofía
+    frase = "Soy un desarrollador de software y analista de datos que busca\nsubordinar la técnica y las ciencias a la Verdad y la Sabiduría,\npara no ser esclavo de la máquina."
+    ctk.CTkLabel(main, text=frase, font=font("xsmall"), text_color=fg_secondary,
+                 justify="center").pack(pady=(15, 5))
 
     # Contacto
     ctk.CTkLabel(main, text="Desarrollado por: Hatusil (Ewoc Logic)",
