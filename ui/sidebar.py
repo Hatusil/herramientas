@@ -184,56 +184,6 @@ class Sidebar(ctk.CTkFrame):
         """Muestra diálogo Acerca de."""
         show_acerca_de(self)
         
-        # Fecha de última actualización
-        ahora = datetime.datetime.now()
-        meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
-                  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
-        ctk.CTkLabel(
-            main,
-            text=f"Última actualización: {meses[ahora.month-1]} {ahora.year}",
-            font=font("xsmall"),
-            text_color=constants.COLORS.get("text_secondary", "#9ca3af")
-        ).pack(pady=(5, 0))
-        
-        # Copyright
-        ctk.CTkLabel(
-            main,
-            text=f"© {datetime.datetime.now().year} - Todos los derechos reservados",
-            font=font("small")
-        ).pack(pady=(5, 0))
-        
-        # Separator
-        sep = ctk.CTkFrame(main, height=1, fg_color="gray")
-        sep.pack(fill="x", pady=12)
-        
-        # Herramientas título
-        ctk.CTkLabel(
-            main,
-            text="Herramientas incluidas:",
-            font=font("small", "bold")
-        ).pack(pady=(5, 5))
-        
-        # Lista de tools
-        tools_list = """Audio • Comprimir • Duplicados • GIF • Hash • Imagen
-PDF • Renombrar • Scrubber • Search • Text Analyzer • Video"""
-        
-        ctk.CTkLabel(
-            main,
-            text=tools_list,
-            font=font("small")
-        ).pack(pady=5)
-        
-        # Separator
-        sep2 = ctk.CTkFrame(main, height=1, fg_color="gray")
-        sep2.pack(fill="x", pady=12)
-        
-        # Gracias
-        ctk.CTkLabel(
-            main,
-            text="¡Gracias por usar esta herramienta!",
-            text_color=constants.COLORS.get("success", "#22c55e")
-        ).pack(pady=5)
-        
         # Botón cerrar
         ctk.CTkButton(
             main,
