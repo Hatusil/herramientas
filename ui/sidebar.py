@@ -43,8 +43,6 @@ class Sidebar(ctk.CTkFrame):
         self.scroll_frame = ctk.CTkScrollableFrame(self, label_text="", fg_color="transparent")
         self.scroll_frame.pack(fill="both", expand=True, padx=2, pady=2)
         self._setup_scroll_binding(self.scroll_frame)
-        except Exception as e:
-            logger.warning(f"Error adding tooltip: {e}")
         
         # Botón de control (Salir + Theme Switch)
         self.control_frame = ctk.CTkFrame(
@@ -185,7 +183,6 @@ class Sidebar(ctk.CTkFrame):
     def _on_acerca_de(self) -> None:
         """Muestra diálogo Acerca de."""
         show_acerca_de(self)
-        ).pack(pady=5)
         
         # Info contacto
         ctk.CTkLabel(

@@ -2,7 +2,7 @@
 Setup functions para Sidebar.
 Cumple máxima A1 (una responsabilidad).
 """
-import ctk
+import customtkinter as ctk
 from core import constants
 from core.constants import font, FONT_SIZE_TITLE
 from ui.sidebar_helpers import find_logo_path, make_circle_image
