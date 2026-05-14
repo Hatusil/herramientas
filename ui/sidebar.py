@@ -183,12 +183,3 @@ class Sidebar(ctk.CTkFrame):
     def _on_acerca_de(self) -> None:
         """Muestra diálogo Acerca de."""
         show_acerca_de(self)
-        
-        # Botón cerrar
-        ctk.CTkButton(
-            main,
-            text="Cerrar",
-            command=dialog.destroy,
-            width=120,
-            height=32
-        ).pack(pady=10)
