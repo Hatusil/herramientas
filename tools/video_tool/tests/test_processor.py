@@ -5,9 +5,10 @@ import pytest
 import os
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from processor import convert_video
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from tools.video_tool.processor import convert_video
 
 
 class TestVideoConvertSkipLogic:
@@ -44,3 +45,105 @@ class TestVideoConvertSkipLogic:
 
         # Will fail due to no ffmpeg, but skip logic should NOT trigger
         assert 'skipped' not in result or len(result.get('skipped', [])) == 0
+
+
+class TestProcessDispatch:
+    """Tests for action dispatch in VideoTool.process()."""
+    
+    def test_action_audio_dispatch(self, tmp_path):
+        """Test that 'audio' action dispatches to extract_audio."""
+        from tools.video_tool import VideoTool
+        import tools.video_tool.processor as proc
+        
+        tool = VideoTool()
+        
+        test_file = tmp_path / "test.mp4"
+        test_file.write_bytes(b"fake video")
+        
+        with patch.object(proc, 'extract_audio', return_value={'success': True, 'output_files': []}) as mock_audio:
+            result = tool.process([str(test_file)], {'action': 'audio'})
+            
+            assert mock_audio.called
+            assert result['success'] is True
+    
+    def test_action_audio_requires_file(self):
+        """Test that 'audio' without files returns error."""
+        from tools.video_tool import VideoTool
+        
+        tool = VideoTool()
+        result = tool.process([], {'action': 'audio'})
+        
+        assert result['success'] is False
+        assert 'error' in result
+    
+    def test_action_convert_dispatch(self, tmp_path):
+        """Test that 'convert' action dispatches to convert_video."""
+        from tools.video_tool import VideoTool
+        import tools.video_tool.processor as proc
+        
+        tool = VideoTool()
+        
+        test_file = tmp_path / "test.mp4"
+        test_file.write_bytes(b"fake video")
+        
+        with patch.object(proc, 'convert_video', return_value={'success': True, 'output_files': []}) as mock_convert:
+            result = tool.process([str(test_file)], {'action': 'convert', 'output_format': 'avi'})
+            
+            assert mock_convert.called
+            assert result['success'] is True
+    
+    def test_action_info_dispatch(self, tmp_path):
+        """Test that 'info' action dispatches to get_video_info."""
+        from tools.video_tool import VideoTool
+        import tools.video_tool.processor as proc
+        
+        tool = VideoTool()
+        
+        test_file = tmp_path / "test.mp4"
+        test_file.write_bytes(b"fake video")
+        
+        with patch.object(proc, 'get_video_info', return_value={'success': True}) as mock_info:
+            result = tool.process([str(test_file)], {'action': 'info'})
+            
+            assert mock_info.called
+            assert result['success'] is True
+    
+    def test_action_info_requires_file(self):
+        """Test that 'info' without files returns error."""
+        from tools.video_tool import VideoTool
+        
+        tool = VideoTool()
+        result = tool.process([], {'action': 'info'})
+        
+        assert result['success'] is False
+        assert 'error' in result
+    
+    def test_unknown_action_error(self, tmp_path):
+        """Test that unknown action returns proper error."""
+        from tools.video_tool import VideoTool
+        
+        tool = VideoTool()
+        
+        test_file = tmp_path / "test.mp4"
+        test_file.write_bytes(b"fake video")
+        
+        result = tool.process([str(test_file)], {'action': 'invalid_action'})
+        
+        assert result['success'] is False
+        assert result['error'] == 'Unknown action: invalid_action'
+    
+    def test_default_action_is_convert(self, tmp_path):
+        """Test that default action is 'convert'."""
+        from tools.video_tool import VideoTool
+        import tools.video_tool.processor as proc
+        
+        tool = VideoTool()
+        
+        test_file = tmp_path / "test.mp4"
+        test_file.write_bytes(b"fake video")
+        
+        with patch.object(proc, 'convert_video', return_value={'success': True, 'output_files': []}) as mock_convert:
+            result = tool.process([str(test_file)], {})  # No action specified
+            
+            assert mock_convert.called
+            assert result['success'] is True

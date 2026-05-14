@@ -5,6 +5,7 @@ import os
 import tempfile
 import pytest
 from pathlib import Path
+from unittest.mock import patch
 import sys
 from PIL import Image
 
@@ -234,3 +235,91 @@ class TestGifRoundTrips:
         extract_result = extract_frames(gif_path)
         assert extract_result['success'] is True
         assert len(extract_result['output_files']) == 5
+
+
+class TestProcessDispatch:
+    """Tests for action dispatch in GifTool.process()."""
+    
+    def test_action_create_dispatch(self, temp_dir):
+        """Test that 'create' action dispatches to create_gif."""
+        from tools.gif_tool import GifTool
+        import tools.gif_tool.processor as proc
+        
+        tool = GifTool()
+        
+        images = create_test_images(temp_dir, count=2)
+        
+        with patch.object(proc, 'create_gif', return_value={'success': True, 'output_files': []}) as mock_create:
+            result = tool.process(images, {'action': 'create'})
+            
+            assert mock_create.called
+            assert result['success'] is True
+    
+    def test_action_extract_dispatch(self, temp_dir):
+        """Test that 'extract' action dispatches to extract_frames."""
+        from tools.gif_tool import GifTool
+        import tools.gif_tool.processor as proc
+        
+        tool = GifTool()
+        
+        # Create a dummy gif file
+        gif_path = os.path.join(temp_dir, 'test.gif')
+        create_test_image(gif_path, color=(255, 0, 0))
+        
+        with patch.object(proc, 'extract_frames', return_value={'success': True, 'output_files': []}) as mock_extract:
+            result = tool.process([gif_path], {'action': 'extract'})
+            
+            assert mock_extract.called
+            assert result['success'] is True
+    
+    def test_action_info_dispatch(self, temp_dir):
+        """Test that 'info' action dispatches to get_gif_info."""
+        from tools.gif_tool import GifTool
+        import tools.gif_tool.processor as proc
+        
+        tool = GifTool()
+        
+        # Create a dummy gif file
+        gif_path = os.path.join(temp_dir, 'test.gif')
+        create_test_image(gif_path, color=(255, 0, 0))
+        
+        with patch.object(proc, 'get_gif_info', return_value={'success': True, 'frames': 1}) as mock_info:
+            result = tool.process([gif_path], {'action': 'info'})
+            
+            assert mock_info.called
+            assert result['success'] is True
+    
+    def test_action_extract_requires_file(self):
+        """Test that 'extract' without files returns error."""
+        from tools.gif_tool import GifTool
+        
+        tool = GifTool()
+        result = tool.process([], {'action': 'extract'})
+        
+        assert result['success'] is False
+        assert 'error' in result
+    
+    def test_unknown_action_error(self):
+        """Test that unknown action returns proper error."""
+        from tools.gif_tool import GifTool
+        
+        tool = GifTool()
+        result = tool.process(['/fake/file.png'], {'action': 'invalid_action'})
+        
+        assert result['success'] is False
+        assert result['error'] == 'Unknown action: invalid_action'
+    
+    def test_default_action_is_create(self, temp_dir):
+        """Test that default action is 'create'."""
+        from tools.gif_tool import GifTool
+        import tools.gif_tool.processor as proc
+        
+        tool = GifTool()
+        
+        images = create_test_images(temp_dir, count=2)
+        
+        with patch.object(proc, 'create_gif', return_value={'success': True, 'output_files': []}) as mock_create:
+            result = tool.process(images, {})  # No action specified
+            
+            assert mock_create.called
+            assert result['success'] is True

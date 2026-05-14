@@ -29,14 +29,21 @@ class DuplicateTool(BaseTool):
         return self.process(files, options)
     
     def process(self, files: list, options: dict) -> dict:
+        import os
         from tools.duplicate_tool import processor
         action = options.get('action', 'hash')
         
-        if action == 'hash':
-            folder = options.get('folder', files[0] if files else '')
-            return processor.find_duplicates_by_hash(folder, options.get('extensions'))
+        # Use folder_path from options, fallback to files[0] if it's a valid directory
+        folder_path = options.get('folder_path')
+        if not folder_path and files:
+            folder_path = files[0] if os.path.isdir(files[0]) else None
+        
+        if not folder_path:
+            return {'success': False, 'error': 'No folder path provided'}
+        
+        if action in ('hash', 'async'):
+            return processor.find_duplicates_async(folder_path, options.get('extensions'))
         elif action == 'size':
-            folder = options.get('folder', files[0] if files else '')
-            return processor.find_duplicates_by_size(folder)
+            return processor.find_duplicates_by_size(folder_path)
         else:
             return {'success': False, 'error': f'Unknown action: {action}'}

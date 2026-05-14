@@ -1,9 +1,13 @@
 """
 Tests for processor.py - duplicate detection functions.
 """
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import tempfile
 import pytest
-from pathlib import Path
+from unittest.mock import patch
 from processor import find_duplicates_by_hash, find_duplicates_by_size
 
 
@@ -174,3 +178,97 @@ class TestFindDuplicatesBySize:
         
         assert result['success'] is True
         assert result['count'] == 0
+
+
+class TestProcessDispatch:
+    """Tests for action dispatch in DuplicateTool.process()."""
+    
+    def test_action_hash_dispatch(self):
+        """Test that 'hash' action dispatches to find_duplicates_async."""
+        from tools.duplicate_tool import DuplicateTool
+        import tools.duplicate_tool.processor as proc
+        
+        tool = DuplicateTool()
+        
+        with patch.object(proc, 'find_duplicates_async', return_value={'success': True, 'count': 0}) as mock_hash:
+            result = tool.process(['/fake/folder'], {'action': 'hash', 'folder_path': '/fake/folder'})
+            
+            assert mock_hash.called
+            assert result['success'] is True
+    
+    def test_action_async_dispatch(self):
+        """Test that 'async' action dispatches to find_duplicates_async."""
+        from tools.duplicate_tool import DuplicateTool
+        import tools.duplicate_tool.processor as proc
+        
+        tool = DuplicateTool()
+        
+        with patch.object(proc, 'find_duplicates_async', return_value={'success': True, 'count': 0}) as mock_async:
+            result = tool.process(['/fake/folder'], {'action': 'async', 'folder_path': '/fake/folder'})
+            
+            assert mock_async.called
+            assert result['success'] is True
+    
+    def test_action_size_dispatch(self):
+        """Test that 'size' action dispatches to find_duplicates_by_size."""
+        from tools.duplicate_tool import DuplicateTool
+        import tools.duplicate_tool.processor as proc
+        
+        tool = DuplicateTool()
+        
+        with patch.object(proc, 'find_duplicates_by_size', return_value={'success': True, 'count': 0}) as mock_size:
+            result = tool.process(['/fake/folder'], {'action': 'size', 'folder_path': '/fake/folder'})
+            
+            assert mock_size.called
+            assert result['success'] is True
+    
+    def test_folder_path_fallback(self):
+        """Test that folder_path falls back to files[0] if it's a directory."""
+        from tools.duplicate_tool import DuplicateTool
+        import tools.duplicate_tool.processor as proc
+        import tempfile
+        import os
+        
+        tool = DuplicateTool()
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(proc, 'find_duplicates_async', return_value={'success': True, 'count': 0}) as mock_hash:
+                result = tool.process([tmpdir], {})  # No folder_path, uses files[0]
+                
+                assert mock_hash.called
+                # Verify it was called with the directory path
+                args, kwargs = mock_hash.call_args
+                assert args[0] == tmpdir
+    
+    def test_folder_path_required(self):
+        """Test that missing folder_path returns error."""
+        from tools.duplicate_tool import DuplicateTool
+        
+        tool = DuplicateTool()
+        result = tool.process(['/fake/file.txt'], {})  # Not a directory
+        
+        assert result['success'] is False
+        assert 'error' in result
+    
+    def test_unknown_action_error(self):
+        """Test that unknown action returns proper error."""
+        from tools.duplicate_tool import DuplicateTool
+        
+        tool = DuplicateTool()
+        result = tool.process(['/fake/folder'], {'action': 'invalid_action', 'folder_path': '/fake/folder'})
+        
+        assert result['success'] is False
+        assert result['error'] == 'Unknown action: invalid_action'
+    
+    def test_default_action_is_hash(self):
+        """Test that default action is 'hash'."""
+        from tools.duplicate_tool import DuplicateTool
+        import tools.duplicate_tool.processor as proc
+        
+        tool = DuplicateTool()
+        
+        with patch.object(proc, 'find_duplicates_async', return_value={'success': True, 'count': 0}) as mock_hash:
+            result = tool.process(['/fake/folder'], {'folder_path': '/fake/folder'})
+            
+            assert mock_hash.called
+            assert result['success'] is True

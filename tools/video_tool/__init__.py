@@ -29,7 +29,7 @@ class VideoTool(BaseTool):
     
     def process(self, files: list, options: dict) -> dict:
         from tools.video_tool import processor
-        action = options.get('action', 'audio')
+        action = options.get('action', 'convert')
         
         if action == 'audio':
             if not files:

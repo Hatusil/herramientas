@@ -7,6 +7,7 @@ import tarfile
 import tempfile
 import pytest
 from pathlib import Path
+from unittest.mock import patch
 import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -372,3 +373,110 @@ class TestCompressSkipLogic:
         assert result['success'] is True
         assert 'skipped' in result
         assert len(result['skipped']) == 1
+
+
+class TestProcessDispatch:
+    """Tests for action dispatch in CompressTool.process()."""
+    
+    def test_action_zip_dispatch(self, temp_dir):
+        """Test that 'zip' action dispatches to compress_to_zip."""
+        from tools.compress_tool import CompressTool
+        import tools.compress_tool.processor as proc
+        
+        tool = CompressTool()
+        
+        # Create test file
+        test_file = os.path.join(temp_dir, 'test.txt')
+        with open(test_file, 'w') as f:
+            f.write('content')
+        
+        with patch.object(proc, 'compress_to_zip', return_value={'success': True, 'output_files': []}) as mock_zip:
+            result = tool.process([test_file], {'action': 'zip'})
+            
+            assert mock_zip.called
+            assert result['success'] is True
+    
+    def test_action_tar_dispatch(self, temp_dir):
+        """Test that 'tar' action dispatches to compress_to_tar."""
+        from tools.compress_tool import CompressTool
+        import tools.compress_tool.processor as proc
+        
+        tool = CompressTool()
+        
+        test_file = os.path.join(temp_dir, 'test.txt')
+        with open(test_file, 'w') as f:
+            f.write('content')
+        
+        with patch.object(proc, 'compress_to_tar', return_value={'success': True, 'output_files': []}) as mock_tar:
+            result = tool.process([test_file], {'action': 'tar'})
+            
+            assert mock_tar.called
+            assert result['success'] is True
+    
+    def test_action_unzip_dispatch(self, temp_dir):
+        """Test that 'unzip' action dispatches to decompress_zip."""
+        from tools.compress_tool import CompressTool
+        import tools.compress_tool.processor as proc
+        
+        tool = CompressTool()
+        
+        # Create a dummy zip file path (won't actually be read due to mock)
+        zip_path = os.path.join(temp_dir, 'test.zip')
+        
+        with patch.object(proc, 'decompress_zip', return_value={'success': True, 'output_files': []}) as mock_unzip:
+            result = tool.process([zip_path], {'action': 'unzip'})
+            
+            assert mock_unzip.called
+            assert result['success'] is True
+    
+    def test_action_unzip_requires_file(self):
+        """Test that 'unzip' without files returns error."""
+        from tools.compress_tool import CompressTool
+        
+        tool = CompressTool()
+        result = tool.process([], {'action': 'unzip'})
+        
+        assert result['success'] is False
+        assert 'error' in result
+    
+    def test_action_list_dispatch(self, temp_dir):
+        """Test that 'list' action dispatches to list_zip_contents."""
+        from tools.compress_tool import CompressTool
+        import tools.compress_tool.processor as proc
+        
+        tool = CompressTool()
+        
+        zip_path = os.path.join(temp_dir, 'test.zip')
+        
+        with patch.object(proc, 'list_zip_contents', return_value={'success': True, 'files': [], 'count': 0}) as mock_list:
+            result = tool.process([zip_path], {'action': 'list'})
+            
+            assert mock_list.called
+            assert result['success'] is True
+    
+    def test_unknown_action_error(self):
+        """Test that unknown action returns proper error."""
+        from tools.compress_tool import CompressTool
+        
+        tool = CompressTool()
+        result = tool.process(['/fake/file.txt'], {'action': 'invalid_action'})
+        
+        assert result['success'] is False
+        assert result['error'] == 'Unknown action: invalid_action'
+    
+    def test_default_action_is_zip(self, temp_dir):
+        """Test that default action is 'zip'."""
+        from tools.compress_tool import CompressTool
+        import tools.compress_tool.processor as proc
+        
+        tool = CompressTool()
+        
+        test_file = os.path.join(temp_dir, 'test.txt')
+        with open(test_file, 'w') as f:
+            f.write('content')
+        
+        with patch.object(proc, 'compress_to_zip', return_value={'success': True, 'output_files': []}) as mock_zip:
+            result = tool.process([test_file], {})  # No action specified
+            
+            assert mock_zip.called
+            assert result['success'] is True
