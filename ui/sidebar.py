@@ -140,7 +140,7 @@ class Sidebar(ctk.CTkFrame):
         """Actualiza los colores del sidebar cuando cambia el tema."""
         from ui.sidebar_helpers import update_sidebar_theme, update_acerca_button
         update_sidebar_theme(self, self.scroll_frame, self.tool_buttons, getattr(self, '_selected_tool', None))
-        update_acerca_button(self, self.inicio_btn)
+        update_acerca_button(self, None)
     
     def _highlight_tool(self, tool_name: str = None) -> None:
         """Resalta el botón seleccionado."""
