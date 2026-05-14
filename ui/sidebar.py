@@ -184,32 +184,6 @@ class Sidebar(ctk.CTkFrame):
         """Muestra diálogo Acerca de."""
         show_acerca_de(self)
         
-        # Info contacto
-        ctk.CTkLabel(
-            main,
-            text="Desarrollado por: Hatusil (Ewoc Logic)",
-            font=font("small", "bold")
-        ).pack(pady=(10, 0))
-        
-        ctk.CTkLabel(
-            main,
-            text="hatusil@proton.me",
-            text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
-            font=font("xsmall")
-        ).pack(pady=(2, 0))
-        
-        ctk.CTkLabel(
-            main,
-            text="github.com/Hatusil",
-            text_color=constants.COLORS.get("primary", "#3b82f6")
-        ).pack(pady=(2, 0))
-        
-        ctk.CTkLabel(
-            main,
-            text="☕ buymeacoffee.com/hatusil",
-            text_color=constants.COLORS.get("warning", "#f59e0b")
-        ).pack(pady=(2, 10))
-        
         # Fecha de última actualización
         ahora = datetime.datetime.now()
         meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
