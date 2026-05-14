@@ -128,7 +128,8 @@ class App(ctk.CTk):
             # Recargar pantalla de bienvenida - limpiar todo antes
             for widget in self.content_frame.winfo_children():
                 widget.destroy()
-            self.content_frame.configure(fg_color=constants.COLORS["bg_medium"])
+            self.content_frame.configure(fg_color=constants.COLORS.get("bg_medium"))
+            self.update()
             tools = self.plugin_manager.get_tools_list()
             self._show_welcome_screen(tools)
     
