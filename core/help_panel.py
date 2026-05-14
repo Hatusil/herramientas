@@ -50,10 +50,19 @@ class HelpPopup:
         # Bloquear interacción con la ventana padre
         self.window.grab_set()
         
+        # Get current theme colors
+        theme = constants.CURRENT_THEME if hasattr(constants, 'CURRENT_THEME') else 'dark'
+        theme_colors = constants.COLORS.get(theme, constants.COLORS.get('dark', {}))
+
+        bg_color = theme_colors.get("bg_dark", "#1a1a1a" if theme == "dark" else "#f5f5f5")
+        text_color = theme_colors.get("text_primary", "#e0e0e0" if theme == "dark" else "#1a1a1a")
+        text_secondary = theme_colors.get("text_secondary", "#9ca3af" if theme == "dark" else "#666666")
+        primary = theme_colors.get("primary", "#3b82f6")
+
         # Frame principal
         main_frame = ctk.CTkFrame(
             self.window,
-            fg_color=constants.COLORS.get("bg_dark", "#1a1a1a")
+            fg_color=bg_color
         )
         main_frame.pack(fill="both", expand=True, padx=0, pady=0)
 
@@ -62,19 +71,19 @@ class HelpPopup:
             main_frame,
             height=20,
             font=font("small"),
-            bg=constants.COLORS.get("bg_dark", "#1a1a1a"),
-            fg=constants.COLORS.get("text_primary", "#e0e0e0"),
+            bg=bg_color,
+            fg=text_color,
             borderwidth=0,
             state="disabled",
             wrap="word",
             highlightthickness=0,
         )
         textbox.pack(fill="both", expand=True, padx=15, pady=15)
-        textbox.tag_configure("desc", foreground=constants.COLORS.get("text_primary", "#e0e0e0"), justify="left")
-        textbox.tag_configure("section", foreground=constants.COLORS.get("primary", "#3b82f6"), justify="left")
-        textbox.tag_configure("body", foreground=constants.COLORS.get("text_secondary", "#9ca3af"), justify="left")
-        textbox.tag_configure("tip", foreground=constants.COLORS.get("success", "#22c55e"), justify="left")
-        textbox.tag_configure("warn", foreground=constants.COLORS.get("warning", "#f59e0b"), justify="left")
+        textbox.tag_configure("desc", foreground=text_color, justify="left")
+        textbox.tag_configure("section", foreground=primary, justify="left")
+        textbox.tag_configure("body", foreground=text_secondary, justify="left")
+        textbox.tag_configure("tip", foreground=theme_colors.get("success", "#22c55e"), justify="left")
+        textbox.tag_configure("warn", foreground=theme_colors.get("warning", "#f59e0b"), justify="left")
 
         def tb_insert(tag, text):
             textbox.insert("end", text + "\n", tag)

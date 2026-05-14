@@ -63,6 +63,33 @@ class SearchToolUI(SearchToolUIBase):
         Args:
             parent_frame: The frame to contain this UI.
         """
+        # Add title and help button
+        from core.help_panel import add_help
+        from core.constants import font
+
+        title_label = ctk.CTkLabel(
+            parent_frame,
+            text="🔍 Búsqueda Avanzada",
+            font=font("header", "bold")
+        )
+        title_label.pack(pady=(0, 10))
+
+        add_help(
+            parent_frame,
+            title="Ayuda - Búsqueda Avanzada",
+            description="🔍 Buscar archivos por nombre, fecha y contenido",
+            usage=[
+                "1. Seleccionar carpeta a buscar",
+                "2. Elegir tipo de búsqueda (nombre, contenido, fecha)",
+                "3. Ingresar texto de búsqueda",
+                "4. Click en 'Buscar'",
+            ],
+            tips=[
+                "💡 Usar * para buscar todos los archivos",
+                "💡 La búsqueda por contenido es más lenta",
+            ],
+        ).pack(fill="x", padx=10, pady=5)
+
         # Create folder selector panel
         self.folder_selector = FolderSelector(ui=self, parent_frame=parent_frame)
 
