@@ -29,8 +29,16 @@ def show_acerca_de(parent) -> None:
     
     dialog.after(100, lambda: dialog.grab_set())
     dialog.bind("<Escape>", lambda e: dialog.destroy())
-    
-    main = ctk.CTkFrame(dialog, fg_color="transparent")
+
+    # Colores del tema
+    bg = constants.COLORS.get("bg_dark")
+    fg = constants.COLORS.get("text_primary")
+    fg_secondary = constants.COLORS.get("text_secondary")
+    primary = constants.COLORS.get("primary")
+
+    dialog.configure(fg_color=bg)
+
+    main = ctk.CTkFrame(dialog, fg_color=bg)
     main.pack(fill="both", expand=True, padx=25, pady=25)
     
     # Logo
@@ -83,14 +91,33 @@ def show_salir(parent) -> None:
     dialog.title("Salir")
     dialog.geometry("300x150")
     dialog.transient(parent)
-    
+    parent.update_idletasks()
+
+    # Centrar en pantalla
+    screen_w = dialog.winfo_screenwidth()
+    screen_h = dialog.winfo_screenheight()
+    dialog_w, dialog_h = 300, 150
+    x = (screen_w - dialog_w) // 2
+    y = (screen_h - dialog_h) // 2
+    dialog.geometry(f"+{x}+{y}")
+
+    # Bloquear padre
+    dialog.after(100, lambda: dialog.grab_set())
+    dialog.bind("<Escape>", lambda e: dialog.destroy())
+
+    bg = constants.COLORS.get("bg_dark")
+    fg = constants.COLORS.get("text_primary")
+    primary = constants.COLORS.get("primary")
+
+    dialog.configure(fg_color=bg)
+
     ctk.CTkLabel(dialog, text="¿Querés salir de la aplicación?",
-                 font=font("normal")).pack(pady=20)
-    
+                 font=font("normal"), text_color=fg).pack(pady=20)
+
     btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
     btn_frame.pack(pady=10)
-    
+
     ctk.CTkButton(btn_frame, text="Sí", command=parent.quit,
-                  fg_color="red", width=80).pack(side="left", padx=5)
+                  fg_color=constants.COLORS.get("error"), width=80).pack(side="left", padx=5)
     ctk.CTkButton(btn_frame, text="No", command=dialog.destroy,
-                  width=80).pack(side="left", padx=5)
+                  fg_color=primary, width=80).pack(side="left", padx=5)

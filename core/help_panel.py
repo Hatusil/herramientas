@@ -50,9 +50,6 @@ class HelpPopup:
         # Bloquear interacción con la ventana padre
         self.window.grab_set()
         
-        # Bloquear interacción con la ventana padre
-        self.window.grab_set()
-        
         # Get current theme colors (COLORS is already the current theme dict)
         bg_color = constants.COLORS.get("bg_dark")
         text_color = constants.COLORS.get("text_primary")
