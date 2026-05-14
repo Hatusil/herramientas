@@ -125,7 +125,10 @@ class App(ctk.CTk):
             if tool:
                 self._on_tool_selected(self.current_tool)
         else:
-            # Recargar pantalla de bienvenida
+            # Recargar pantalla de bienvenida - limpiar todo antes
+            for widget in self.content_frame.winfo_children():
+                widget.destroy()
+            self.content_frame.configure(fg_color=constants.COLORS["bg_medium"])
             tools = self.plugin_manager.get_tools_list()
             self._show_welcome_screen(tools)
     
