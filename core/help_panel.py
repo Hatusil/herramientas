@@ -114,8 +114,8 @@ class HelpPopup:
             text="Cerrar",
             command=self.close,
             width=100,
-            fg_color=theme_colors.get("primary"),
-            hover_color=theme_colors.get("primary_hover"),
+            fg_color=constants.COLORS.get("primary"),
+            hover_color=constants.COLORS.get("primary_hover"),
         )
         close_btn.pack(pady=(15, 20))
 
