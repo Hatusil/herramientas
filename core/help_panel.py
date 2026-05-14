@@ -54,10 +54,10 @@ class HelpPopup:
         theme = constants.CURRENT_THEME
         theme_colors = constants.COLORS.get(theme, {})
 
-        bg_color = theme_colors.get("bg_dark", "#1a1a1a")
-        text_color = theme_colors.get("text_primary", "#e0e0e0")
-        text_secondary = theme_colors.get("text_secondary", "#9ca3af")
-        primary = theme_colors.get("primary", "#3b82f6")
+        bg_color = theme_colors.get("bg_dark")
+        text_color = theme_colors.get("text_primary")
+        text_secondary = theme_colors.get("text_secondary")
+        primary = theme_colors.get("primary")
 
         # Frame principal con scrollbar
         main_frame = ctk.CTkFrame(self.window, fg_color="transparent")
@@ -101,11 +101,11 @@ class HelpPopup:
                 textbox.insert("end", f"  • {warn}\n", "warn")
 
         # Configure tags
-        textbox.tag_config("desc", text_color=text_color)
-        textbox.tag_config("section", text_color=primary)
-        textbox.tag_config("body", text_color=text_secondary)
-        textbox.tag_config("tip", text_color=theme_colors.get("success", "#22c55e"))
-        textbox.tag_config("warn", text_color=theme_colors.get("warning", "#f59e0b"))
+        textbox.tag_config("desc", foreground=text_color)
+        textbox.tag_config("section", foreground=primary)
+        textbox.tag_config("body", foreground=text_secondary)
+        textbox.tag_config("tip", foreground=theme_colors.get("success"))
+        textbox.tag_config("warn", foreground=theme_colors.get("warning"))
 
         textbox.configure(state="disabled")
 
@@ -115,8 +115,8 @@ class HelpPopup:
             text="Cerrar",
             command=self.close,
             width=100,
-            fg_color=constants.COLORS.get("primary", "#3b82f6"),
-            hover_color=constants.COLORS.get("primary_hover", "#2563eb"),
+            fg_color=theme_colors.get("primary"),
+            hover_color=theme_colors.get("primary_hover"),
         )
         close_btn.pack(pady=(15, 20))
 
