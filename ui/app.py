@@ -100,17 +100,14 @@ class App(ctk.CTk):
             import sys
             sys.exit(0)
     
-    def refresh_theme(self) -> None:
+def refresh_theme(self) -> None:
         """Actualiza todos los widgets cuando cambia el tema."""
         # Actualizar ventana principal
-        self.configure(fg_color=constants.COLORS["bg_dark"])
+        self.configure(fg_color=constants.COLORS.get("bg_dark"))
 
         # Actualizar content frame
         if self.content_frame:
-            self.content_frame.configure(fg_color=constants.COLORS["bg_medium"])
-
-        # NO recorrer recursivamente — rompe estilos específicos de widgets hijos
-        # Solo actualizar sidebar (maneja sus propios estilos internamente)
+            self.content_frame.configure(fg_color=constants.COLORS.get("bg_medium"))
 
         # Actualizar sidebar
         if self.sidebar:
@@ -119,16 +116,16 @@ class App(ctk.CTk):
             if hasattr(self.sidebar, 'update_theme'):
                 self.sidebar.update_theme()
 
-        # Recargar pantalla actual si hay una tool activa
+        # Recargar pantalla actual para que los widgets usen los nuevos colores
         if self.current_tool:
             tool = self.plugin_manager.get_tools().get(self.current_tool)
             if tool:
                 self._on_tool_selected(self.current_tool)
         else:
-            # Recargar pantalla de bienvenida - limpiar todo antes
+            # Recargar pantalla de bienvenida - limpiar y recrear
             for widget in self.content_frame.winfo_children():
                 widget.destroy()
-            self.content_frame.configure(fg_color=constants.COLORS["bg_medium"])
+            self.content_frame.configure(fg_color=constants.COLORS.get("bg_medium"))
             tools = self.plugin_manager.get_tools_list()
             self._show_welcome_screen(tools)
     
