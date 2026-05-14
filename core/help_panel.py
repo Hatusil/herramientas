@@ -51,60 +51,63 @@ class HelpPopup:
         self.window.grab_set()
         
         # Get current theme colors
-        theme = constants.CURRENT_THEME if hasattr(constants, 'CURRENT_THEME') else 'dark'
-        theme_colors = constants.COLORS.get(theme, constants.COLORS.get('dark', {}))
+        theme = constants.CURRENT_THEME
+        theme_colors = constants.COLORS.get(theme, {})
 
-        bg_color = theme_colors.get("bg_dark", "#1a1a1a" if theme == "dark" else "#f5f5f5")
-        text_color = theme_colors.get("text_primary", "#e0e0e0" if theme == "dark" else "#1a1a1a")
-        text_secondary = theme_colors.get("text_secondary", "#9ca3af" if theme == "dark" else "#666666")
+        bg_color = theme_colors.get("bg_dark", "#1a1a1a")
+        text_color = theme_colors.get("text_primary", "#e0e0e0")
+        text_secondary = theme_colors.get("text_secondary", "#9ca3af")
         primary = theme_colors.get("primary", "#3b82f6")
 
-        # Frame principal
-        main_frame = ctk.CTkFrame(
-            self.window,
-            fg_color=bg_color
-        )
-        main_frame.pack(fill="both", expand=True, padx=0, pady=0)
+        # Frame principal con scrollbar
+        main_frame = ctk.CTkFrame(self.window, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Textbox para contenido — usa tk.Text porque CTkTextbox no soporta tags
-        textbox = tk.Text(
+        # Scrollbar
+        scrollbar = ctk.CTkScrollbar(main_frame)
+        scrollbar.pack(side="right", fill="y")
+
+        # Textbox
+        textbox = ctk.CTkTextbox(
             main_frame,
-            height=20,
             font=font("small"),
-            bg=bg_color,
-            fg=text_color,
-            borderwidth=0,
-            state="disabled",
+            text_color=text_color,
+            fg_color=bg_color,
+            border_width=0,
             wrap="word",
-            highlightthickness=0,
         )
-        textbox.pack(fill="both", expand=True, padx=15, pady=15)
-        textbox.tag_configure("desc", foreground=text_color, justify="left")
-        textbox.tag_configure("section", foreground=primary, justify="left")
-        textbox.tag_configure("body", foreground=text_secondary, justify="left")
-        textbox.tag_configure("tip", foreground=theme_colors.get("success", "#22c55e"), justify="left")
-        textbox.tag_configure("warn", foreground=theme_colors.get("warning", "#f59e0b"), justify="left")
+        textbox.pack(side="left", fill="both", expand=True)
+        textbox.configure(state="normal")
 
-        def tb_insert(tag, text):
-            textbox.insert("end", text + "\n", tag)
-
+        # Insert content with colors
         if description:
-            tb_insert("desc", description)
+            textbox.insert("end", description + "\n\n", ("desc",))
 
         if self._usage:
-            tb_insert("section", "📌 Uso:")
+            textbox.insert("end", "📌 Uso:\n", ("section",))
             for item in self._usage:
-                tb_insert("body", f"• {item}")
+                textbox.insert("end", f"  • {item}\n", ("body",))
+            textbox.insert("end", "\n")
 
         if self._tips:
-            tb_insert("section", "💡 Tips:")
+            textbox.insert("end", "💡 Tips:\n", ("section",))
             for tip in self._tips:
-                tb_insert("tip", f"• {tip}")
+                textbox.insert("end", f"  • {tip}\n", ("tip",))
+            textbox.insert("end", "\n")
 
         if self._warnings:
-            tb_insert("section", "⚠️ Advertencias:")
+            textbox.insert("end", "⚠️ Advertencias:\n", ("section",))
             for warn in self._warnings:
-                tb_insert("warn", f"• {warn}")
+                textbox.insert("end", f"  • {warn}\n", ("warn",))
+
+        # Configure tags
+        textbox.tag_config("desc", text_color=text_color, font=font("small"))
+        textbox.tag_config("section", text_color=primary, font=font("small", "bold"))
+        textbox.tag_config("body", text_color=text_secondary)
+        textbox.tag_config("tip", text_color=theme_colors.get("success", "#22c55e"))
+        textbox.tag_config("warn", text_color=theme_colors.get("warning", "#f59e0b"))
+
+        textbox.configure(state="disabled")
 
         # Botón cerrar
         close_btn = ctk.CTkButton(
