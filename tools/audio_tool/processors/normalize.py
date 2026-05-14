@@ -39,6 +39,7 @@ def normalize_audio(files: List[str], **options) -> Dict[str, Any]:
 
         output_files = []
         errors = []
+        skipped = []
 
         for file_path in files:
             input_file = Path(file_path)
@@ -47,8 +48,13 @@ def normalize_audio(files: List[str], **options) -> Dict[str, Any]:
                 errors.append(f"No encontrado: {input_file.name}")
                 continue
 
-            if input_file.suffix.lower() not in ['.mp3', '.wav', '.flac', '.ogg', '.m4a', '.aac']:
-                errors.append(f"Formato no soportado: {input_file.suffix}")
+                if input_file.suffix.lower() not in ['.mp3', '.wav', '.flac', '.ogg', '.m4a', '.aac']:
+                    errors.append(f"Formato no soportado: {input_file.suffix}")
+                    continue
+
+            # Skip already normalized files
+            if input_file.stem.endswith('_normalized'):
+                skipped.append(input_file.name)
                 continue
 
             output_file = get_output_path(file_path, '_normalized')
@@ -111,10 +117,12 @@ def normalize_audio(files: List[str], **options) -> Dict[str, Any]:
 
         success = len(output_files) > 0
 
+        skipped_msg = f", omitidos {len(skipped)}" if skipped else ""
         return {
             'success': success,
-            'message': f"Normalizados {len(output_files)}/{len(files)} archivos",
+            'message': f"Normalizados {len(output_files)}/{len(files)} archivos{skipped_msg}",
             'output_files': output_files,
+            'skipped_files': skipped,
             'error': '; '.join(errors) if errors else None
         }
 
