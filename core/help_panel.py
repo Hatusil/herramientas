@@ -81,28 +81,28 @@ class HelpPopup:
 
         # Insert content with colors
         if description:
-            textbox.insert("end", description + "\n\n", ("desc",))
+            textbox.insert("end", description + "\n\n", "desc")
 
         if self._usage:
-            textbox.insert("end", "📌 Uso:\n", ("section",))
+            textbox.insert("end", "📌 Uso:\n", "section")
             for item in self._usage:
-                textbox.insert("end", f"  • {item}\n", ("body",))
+                textbox.insert("end", f"  • {item}\n", "body")
             textbox.insert("end", "\n")
 
         if self._tips:
-            textbox.insert("end", "💡 Tips:\n", ("section",))
+            textbox.insert("end", "💡 Tips:\n", "section")
             for tip in self._tips:
-                textbox.insert("end", f"  • {tip}\n", ("tip",))
+                textbox.insert("end", f"  • {tip}\n", "tip")
             textbox.insert("end", "\n")
 
         if self._warnings:
-            textbox.insert("end", "⚠️ Advertencias:\n", ("section",))
+            textbox.insert("end", "⚠️ Advertencias:\n", "section")
             for warn in self._warnings:
-                textbox.insert("end", f"  • {warn}\n", ("warn",))
+                textbox.insert("end", f"  • {warn}\n", "warn")
 
         # Configure tags
-        textbox.tag_config("desc", text_color=text_color, font=font("small"))
-        textbox.tag_config("section", text_color=primary, font=font("small", "bold"))
+        textbox.tag_config("desc", text_color=text_color)
+        textbox.tag_config("section", text_color=primary)
         textbox.tag_config("body", text_color=text_secondary)
         textbox.tag_config("tip", text_color=theme_colors.get("success", "#22c55e"))
         textbox.tag_config("warn", text_color=theme_colors.get("warning", "#f59e0b"))
