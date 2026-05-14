@@ -55,34 +55,30 @@ def show_acerca_de(parent) -> None:
             break
     
     # Título
-    ctk.CTkLabel(main, text="Herramientas", font=font("title", "bold")).pack(pady=(0, 2))
-    ctk.CTkLabel(main, text="Version 1.0.0", font=font("small"), text_color="gray").pack(pady=(0, 15))
-    
+    ctk.CTkLabel(main, text="Herramientas", font=font("title", "bold"), text_color=fg).pack(pady=(0, 2))
+    ctk.CTkLabel(main, text="Version 1.0.0", font=font("small"), text_color=fg_secondary).pack(pady=(0, 15))
+
     # Descripción
     desc = (
         "Aplicación de escritorio con múltiples herramientas\n"
         "de productividad para procesamiento de archivos.\n\n"
         "Construido con Python y CustomTkinter."
     )
-    ctk.CTkLabel(main, text=desc, font=font("small"), justify="center").pack(pady=10)
-    
-    # Características
-    features = [
-        "🎵 Procesamiento de Audio",
-        "🎬 Conversión de Video",
-        "📄 Manipulación de PDF",
-        "📊 Análisis de Texto",
-        "🔍 Búsqueda de Archivos",
-    ]
-    for f in features:
-        ctk.CTkLabel(main, text=f, font=font("small"), text_color="gray").pack(pady=2)
-    
-    # Tech stack
-    ctk.CTkLabel(main, text="Stack: Python 3.11, CustomTkinter, PyInstaller",
-                 font=font("xsmall"), text_color="gray").pack(pady=(20, 0))
-    
+    ctk.CTkLabel(main, text=desc, font=font("small"), text_color=fg, justify="center").pack(pady=10)
+
+    # Contacto
+    ctk.CTkLabel(main, text="Desarrollado por: Hatusil (Ewoc Logic)",
+                 font=font("small"), text_color=fg_secondary).pack(pady=(15, 0))
+    ctk.CTkLabel(main, text="hatusil@proton.me",
+                 font=font("small"), text_color=fg_secondary).pack(pady=(2, 0))
+    ctk.CTkLabel(main, text="github.com/Hatusil",
+                 font=font("small"), text_color=primary).pack(pady=(2, 0))
+    ctk.CTkLabel(main, text="☕ buymeacoffee.com/hatusil",
+                 font=font("small"), text_color=fg_secondary).pack(pady=(2, 10))
+
     # Cerrar
-    ctk.CTkButton(main, text="Cerrar", command=dialog.destroy, width=150).pack(pady=20)
+    ctk.CTkButton(main, text="Cerrar", command=dialog.destroy,
+                  fg_color=primary, width=150).pack(pady=20)
 
 
 def show_salir(parent) -> None:
