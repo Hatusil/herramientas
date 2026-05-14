@@ -6,7 +6,6 @@ from typing import List, Dict, Any
 
 from core.base_tool import BaseTool
 from tools.scrubber import processor
-from tools.scrubber.ui import ScrubberToolUI
 
 
 logger = logging.getLogger(__name__)
@@ -16,7 +15,7 @@ class ScrubberTool(BaseTool):
     """Herramienta para limpiar metadatos de archivos."""
     
     def __init__(self):
-        self.ui = ScrubberToolUI
+        self.ui = None
     
     def get_name(self) -> str:
         return "Scrubber"
@@ -29,13 +28,15 @@ class ScrubberTool(BaseTool):
     
     def build_ui(self, parent_frame) -> None:
         """Construye la UI de la herramienta."""
+        from tools.scrubber.ui import ScrubberToolUI
         self.ui = ScrubberToolUI(parent_frame, self._on_process)
         self.ui.pack(fill="both", expand=True)
     
-    def _on_process(self, action: str, file_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
+    def _on_process(self, action: str, files: List[str], options: Dict[str, Any]) -> Dict[str, Any]:
         """
         Maneja el procesamiento de archivos.
         """
+        file_path = files[0] if files else ''
         try:
             if action == 'clean_image':
                 return processor.clean_image_metadata(file_path, options)
@@ -47,7 +48,6 @@ class ScrubberTool(BaseTool):
                 return processor.clean_xlsx(file_path)
             
             elif action == 'clean_pdf':
-                # Usar el processor de PDF tool
                 from core.utils import clean_metadata
                 return clean_metadata([file_path])
             
@@ -71,4 +71,4 @@ class ScrubberTool(BaseTool):
     def process(self, files: List[str], options: Dict[str, Any]) -> Dict[str, Any]:
         """Procesa archivos."""
         action = options.get('action', 'clean_image')
-        return self._on_process(action, files[0] if files else '', options)
+        return self._on_process(action, files, options)

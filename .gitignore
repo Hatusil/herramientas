@@ -73,6 +73,7 @@ backups-config/
 .coverage
 .pytest_cache/
 coverage.xml
+tests_local/
 
 # --- OS específico ---
 # Windows

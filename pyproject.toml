@@ -49,13 +49,11 @@ dependencies = [
     "piexif",
     # Text analysis
     "wordcloud",
+    # Testing
+    "pytest>=7.0",
 ]
 
 [project.optional-dependencies]
-# Para desarrollo
-dev = [
-    "pytest>=7.0",
-]
 
 # Herramientas específicas
 pdf = ["pypdf>=4.0", "reportlab"]

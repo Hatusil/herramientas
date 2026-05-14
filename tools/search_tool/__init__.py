@@ -2,14 +2,13 @@
 SearchTool: Plugin para búsqueda avanzada de archivos.
 """
 from core.base_tool import BaseTool
-from tools.search_tool.ui.main_ui import SearchToolUI
 
 
 class SearchTool(BaseTool):
     """Herramienta de búsqueda avanzada."""
     
     def __init__(self):
-        self.ui = SearchToolUI
+        self.ui = None
     
     def get_name(self) -> str:
         return "Search"
@@ -21,6 +20,7 @@ class SearchTool(BaseTool):
         return "Búsqueda avanzada por nombre, fecha y contenido"
     
     def build_ui(self, parent_frame) -> None:
+        from tools.search_tool.ui.main_ui import SearchToolUI
         self.ui = SearchToolUI(parent_frame, self._on_process)
         self.ui.pack(fill="both", expand=True)
     
