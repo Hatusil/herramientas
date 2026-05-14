@@ -50,14 +50,13 @@ class HelpPopup:
         # Bloquear interacción con la ventana padre
         self.window.grab_set()
         
-        # Get current theme colors
-        theme = constants.CURRENT_THEME
-        theme_colors = constants.COLORS.get(theme, {})
-
-        bg_color = theme_colors.get("bg_dark")
-        text_color = theme_colors.get("text_primary")
-        text_secondary = theme_colors.get("text_secondary")
-        primary = theme_colors.get("primary")
+        # Get current theme colors (COLORS is already the current theme dict)
+        bg_color = constants.COLORS.get("bg_dark")
+        text_color = constants.COLORS.get("text_primary")
+        text_secondary = constants.COLORS.get("text_secondary")
+        primary = constants.COLORS.get("primary")
+        success = constants.COLORS.get("success")
+        warning = constants.COLORS.get("warning")
 
         # Frame principal con scrollbar
         main_frame = ctk.CTkFrame(self.window, fg_color="transparent")
@@ -104,8 +103,8 @@ class HelpPopup:
         textbox.tag_config("desc", foreground=text_color)
         textbox.tag_config("section", foreground=primary)
         textbox.tag_config("body", foreground=text_secondary)
-        textbox.tag_config("tip", foreground=theme_colors.get("success"))
-        textbox.tag_config("warn", foreground=theme_colors.get("warning"))
+        textbox.tag_config("tip", foreground=success)
+        textbox.tag_config("warn", foreground=warning)
 
         textbox.configure(state="disabled")
 
