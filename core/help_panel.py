@@ -46,6 +46,9 @@ class HelpPopup:
         y = (screen_h - win_h) // 2
         
         self.window.geometry(f"+{x}+{y}")
+
+        # Bloquear interacción con la ventana padre
+        self.window.grab_set()
         
         # Bloquear interacción con la ventana padre
         self.window.grab_set()
@@ -58,15 +61,11 @@ class HelpPopup:
         success = constants.COLORS.get("success")
         warning = constants.COLORS.get("warning")
 
-        # Frame principal con scrollbar
+        # Frame principal
         main_frame = ctk.CTkFrame(self.window, fg_color="transparent")
         main_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Scrollbar
-        scrollbar = ctk.CTkScrollbar(main_frame)
-        scrollbar.pack(side="right", fill="y")
-
-        # Textbox
+        # CTkTextbox tiene scrollbar interno
         textbox = ctk.CTkTextbox(
             main_frame,
             font=font("small"),
@@ -74,8 +73,10 @@ class HelpPopup:
             fg_color=bg_color,
             border_width=0,
             wrap="word",
+            scrollbar_button_color=constants.COLORS.get("primary"),
+            scrollbar_button_hover_color=constants.COLORS.get("primary_hover"),
         )
-        textbox.pack(side="left", fill="both", expand=True)
+        textbox.pack(fill="both", expand=True)
         textbox.configure(state="normal")
 
         # Insert content with colors
