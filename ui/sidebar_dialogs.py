@@ -5,7 +5,7 @@ Cumple máxima A1 (una responsabilidad).
 import sys
 import customtkinter as ctk
 from pathlib import Path
-from core.constants import font
+from core.constants import font, COLORS
 from ui.theme_factory import (
     create_frame, create_label, create_primary_button, create_danger_button
 )
@@ -29,7 +29,7 @@ def show_acerca_de(parent) -> None:
     y = (screen_h - dialog_h) // 2
     dialog.geometry(f"+{x}+{y}")
     
-    dialog.after(100, lambda: dialog.grab_set())
+    dialog.after(100, lambda: [dialog.grab_set(), dialog.focus_set()])
     dialog.bind("<Escape>", lambda e: dialog.destroy())
 
     from core.constants import COLORS
@@ -68,7 +68,7 @@ def show_acerca_de(parent) -> None:
     ).pack(pady=(0, 15))
 
     # Separator
-    ctk.CTkFrame(main, height=1, fg_color="border").pack(fill="x", pady=10)
+    ctk.CTkFrame(main, height=1, fg_color=COLORS.get("border")).pack(fill="x", pady=10)
 
     # Filosofía
     create_label(main, text="📜 Filosofía", font=font("small", "bold"), text_color="primary").pack(pady=(5, 5))
@@ -76,7 +76,7 @@ def show_acerca_de(parent) -> None:
     create_label(main, text=frase, font=font("xsmall"), text_color="secondary", justify="center").pack(pady=(5, 15))
 
     # Separator
-    ctk.CTkFrame(main, height=1, fg_color="border").pack(fill="x", pady=5)
+    ctk.CTkFrame(main, height=1, fg_color=COLORS.get("border")).pack(fill="x", pady=5)
 
     # Contacto
     create_label(main, text="📬 Contacto", font=font("small", "bold"), text_color="primary").pack(pady=(5, 5))
@@ -105,8 +105,8 @@ def show_salir(parent) -> None:
     y = (screen_h - dialog_h) // 2
     dialog.geometry(f"+{x}+{y}")
 
-    # Bloquear padre
-    dialog.after(100, lambda: dialog.grab_set())
+    # Bloquear padre y enfocar
+    dialog.after(100, lambda: [dialog.grab_set(), dialog.focus_set()])
     dialog.bind("<Escape>", lambda e: dialog.destroy())
 
     from core.constants import COLORS

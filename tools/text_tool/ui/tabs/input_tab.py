@@ -152,3 +152,7 @@ class InputTab(BaseTab):
         if text:
             self._state.set_text(text)
             self._callbacks.on_analyze()
+
+    def get_frame(self) -> ctk.CTkFrame:
+        """Return the main frame for this tab (BaseTab abstract method)."""
+        return self._frame
