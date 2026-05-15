@@ -29,8 +29,8 @@ class HelpPopup:
         # Crear ventana Toplevel
         self.window = ctk.CTkToplevel(parent)
         self.window.title(title)
-        self.window.geometry("500x450")
-        self.window.resizable(False, False)
+        self.window.geometry("500x600")  # Made taller
+        self.window.resizable(True, True)  # Allow resize for scrolling
         
         # Centrar en la pantalla (no relativo al padre)
         self.window.transient(parent)
@@ -80,16 +80,20 @@ class HelpPopup:
         textbox.configure(state="normal")
         
         # Fix scroll: evitar que el scroll se propague a la ventana padre
+        # Solo permitir scroll si el mouse está sobre el textbox
         def _on_scroll(event):
-            # Solo hacer scroll si el mouse está sobre el textbox
-            x, y = event.x, event.y
-            if textbox.winfo_containing(x, y) == textbox:
-                return None  # Allow scroll
-            return "break"  # Block scroll propagation
+            try:
+                # Verificar si el mouse está sobre el textbox
+                x, y = event.x_root - textbox.winfo_rootx(), event.y_root - textbox.winfo_rooty()
+                if 0 <= x <= textbox.winfo_width() and 0 <= y <= textbox.winfo_height():
+                    return None  # Allow scroll en el textbox
+            except:
+                pass
+            return "break"  # Block scroll propagation a ventanas padres
         
-        textbox.bind("<MouseWheel>", _on_scroll)
-        textbox.bind("<Button-4>", _on_scroll)
-        textbox.bind("<Button-5>", _on_scroll)
+        # Bind solo para evitar propagación, el textbox maneja su propio scroll
+        for event in ["<MouseWheel>", "<Button-4>", "<Button-5>"]:
+            self.window.bind(event, _on_scroll)
 
         # Insert content with colors
         if description:
