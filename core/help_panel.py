@@ -47,8 +47,10 @@ class HelpPopup:
         
         self.window.geometry(f"+{x}+{y}")
 
-        # Bloquear interacción con la ventana padre y enfocar
-        self.window.after(100, lambda: [self.window.grab_set(), self.window.focus_set()])
+        # Bloquear interacción con la ventana padre completamente
+        # Usar grab_set_global() para capturar TODOS los eventos, no solo los del padre
+        self.window.grab_set()
+        self.window.focus_set()
         
         # Bind Escape para cerrar
         self.window.bind("<Escape>", lambda e: self.window.destroy())
@@ -79,21 +81,8 @@ class HelpPopup:
         textbox.pack(fill="both", expand=True)
         textbox.configure(state="normal")
         
-        # Fix scroll: evitar que el scroll se propague a la ventana padre
-        # Solo permitir scroll si el mouse está sobre el textbox
-        def _on_scroll(event):
-            try:
-                # Verificar si el mouse está sobre el textbox
-                x, y = event.x_root - textbox.winfo_rootx(), event.y_root - textbox.winfo_rooty()
-                if 0 <= x <= textbox.winfo_width() and 0 <= y <= textbox.winfo_height():
-                    return None  # Allow scroll en el textbox
-            except:
-                pass
-            return "break"  # Block scroll propagation a ventanas padres
-        
-        # Bind solo para evitar propagación, el textbox maneja su propio scroll
-        for event in ["<MouseWheel>", "<Button-4>", "<Button-5>"]:
-            self.window.bind(event, _on_scroll)
+        # Ensure textbox can receive focus for internal scrolling
+        textbox.focus_set()
 
         # Insert content with colors
         if description:
