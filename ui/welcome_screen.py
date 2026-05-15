@@ -3,7 +3,8 @@ Welcome Screen - Pantalla de bienvenida con grilla de herramientas.
 Cumple máxima A1 (una responsabilidad) y A0 (<30 líneas por función).
 """
 import customtkinter as ctk
-from core.constants import font, COLORS, TOOL_ICONS, TOOL_DESCRIPTIONS
+from core.constants import font, TOOL_ICONS, TOOL_DESCRIPTIONS
+from ui.theme_factory import create_frame, create_card, create_label, create_button
 
 
 def create_welcome_screen(parent_frame, tools: list, on_tool_select) -> ctk.CTkFrame:
@@ -18,9 +19,7 @@ def create_welcome_screen(parent_frame, tools: list, on_tool_select) -> ctk.CTkF
     Returns:
         CTkFrame con la pantalla de bienvenida
     """
-    # Importar COLORS dentro de la función para obtener colores actuales
-    from core.constants import COLORS
-    welcome_frame = ctk.CTkFrame(parent_frame, fg_color=COLORS.get("bg_medium"))
+    welcome_frame = create_frame(parent_frame)
     welcome_frame.pack(fill="both", expand=True)
 
     _add_title(welcome_frame)
@@ -32,28 +31,26 @@ def create_welcome_screen(parent_frame, tools: list, on_tool_select) -> ctk.CTkF
 
 def _add_title(parent: ctk.CTkFrame) -> None:
     """Agrega el título de bienvenida."""
-    from core.constants import COLORS
-    ctk.CTkLabel(
+    create_label(
         parent,
         text="🔧 Herramientas",
-        font=font("title", "bold"),
-        text_color=COLORS.get("text_primary")
+        font=font("title", "bold")
     ).pack(pady=(30, 10))
 
 
 def _add_subtitle(parent: ctk.CTkFrame) -> None:
     """Agrega el subtítulo."""
-    from core.constants import COLORS
-    ctk.CTkLabel(
+    create_label(
         parent,
         text="Seleccioná una herramienta para comenzar",
         font=font("normal"),
-        text_color=COLORS.get("text_secondary")
+        text_color="secondary"
     ).pack(pady=(0, 30))
 
 
 def _add_tool_grid(parent: ctk.CTkFrame, tools: list, on_tool_select) -> None:
     """Agrega la grilla de herramientas (3 columnas)."""
+    from core.constants import COLORS
     tools_frame = ctk.CTkFrame(parent, fg_color="transparent")
     tools_frame.pack(fill="both", expand=True, padx=20)
     
@@ -76,31 +73,24 @@ def _add_tool_card(parent: ctk.CTkFrame, tool: dict, index: int, on_select) -> N
     description = TOOL_DESCRIPTIONS.get(tool_name, '')
 
     # Card
-    card = ctk.CTkFrame(
-        parent,
-        fg_color=COLORS.get("bg_light"),
-        corner_radius=10
-    )
+    card = create_card(parent)
     card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
 
     # Botón
-    ctk.CTkButton(
+    create_button(
         card,
         text=f"{icon} {tool.get('display_name', tool_name)}",
+        command=lambda t=tool_name: on_select(t),
         font=font("normal", "bold"),
-        fg_color=COLORS.get("button_fg"),
-        hover_color=COLORS.get("button_hover"),
-        text_color="white",
-        height=50,
-        command=lambda t=tool_name: on_select(t)
+        height=50
     ).pack(fill="x", padx=10, pady=(10, 5))
 
     # Descripción
     if description:
-        ctk.CTkLabel(
+        create_label(
             card,
             text=description,
             font=font("xsmall"),
-            text_color=COLORS.get("text_secondary"),
+            text_color="secondary",
             wraplength=150
         ).pack(padx=10, pady=(0, 10))

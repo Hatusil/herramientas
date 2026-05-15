@@ -25,7 +25,7 @@ class TextAnalyzerTool(BaseTool):
         self.ui.pack(fill="both", expand=True)
     
     def _on_process(self, action: str, files: list, options: dict) -> dict:
-        return {'success': True, 'message': 'UI handles directly'}
+        return self.process(files, options)
     
     def process(self, files: list, options: dict) -> dict:
         from tools.text_tool import processor

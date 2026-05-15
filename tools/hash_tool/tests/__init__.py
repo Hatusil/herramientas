@@ -1,0 +1,1 @@
+"""Tests package for hash_tool."""

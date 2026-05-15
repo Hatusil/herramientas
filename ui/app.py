@@ -14,6 +14,7 @@ from core.plugin_manager import PluginManager
 from ui.sidebar import Sidebar
 from ui.status_bar import StatusBar
 from ui.welcome_screen import create_welcome_screen
+from ui.scroll_utils import setup_scrollable_frame
 
 
 # Configurar logging
@@ -158,42 +159,11 @@ class App(ctk.CTk):
         self._setup_scroll()
     
     def _setup_scroll(self) -> None:
-        """Configura scroll con mouse wheel."""
-        # Binding directo al widget
-        try:
-            self.content_frame.bind("<MouseWheel>", self._on_wheel)
-            self.content_frame.bind("<Button-4>", self._on_wheel)
-            self.content_frame.bind("<Button-5>", self._on_wheel)
-        except Exception:
-            pass
+        """Configura scroll con mouse wheel de forma independiente."""
+        setup_scrollable_frame(self.content_frame)
     
     def _on_wheel(self, event) -> str:
-        """Maneja scroll con la rueda del mouse."""
-        try:
-            # Intentar obtener canvas de forma robusta para CTkinter 4.x y 5.x
-            canvas = None
-            
-            # Método 1: try attribute directo (CTkinter 4.x)
-            canvas = getattr(self.content_frame, '_parent_canvas', None)
-            
-            # Método 2: buscar en children (CTkinter 5.x compatibility)
-            if not canvas:
-                for child in self.content_frame.winfo_children():
-                    # Buscar canvas con scrollbar
-                    if hasattr(child, 'yview'):
-                        canvas = child
-                        break
-            
-            if canvas:
-                if hasattr(event, 'delta'):
-                    direction = -1 if event.delta < 0 else 1
-                else:
-                    direction = -1 if event.num == 4 else 1
-                # Scroll más rápido (3 líneas)
-                for _ in range(3):
-                    canvas.yview("scroll", direction, "units")
-        except Exception:
-            pass
+        """Handler legacy - ya no se usa, reemplazado por scroll_utils."""
         return "break"
     
     def _setup_status_bar(self) -> None:

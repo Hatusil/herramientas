@@ -110,8 +110,10 @@ def set_theme(theme: str) -> None:
     if theme not in ("dark", "light"):
         theme = "dark"
     
-    # Actualizar COLORS con la paleta del tema
-    COLORS = THEMES[theme].copy()
+    # Actualizar COLORS IN-PLACE (no crear nuevo dict)
+    # Esto asegura que todos los módulos que ya importaron COLORS vean el cambio
+    COLORS.clear()
+    COLORS.update(THEMES[theme])
     CURRENT_THEME = theme
     APPEARANCE_MODE = theme
     

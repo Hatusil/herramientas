@@ -10,6 +10,15 @@ from typing import List, Dict, Any
 from core.utils import validate_input_file, validate_file_size
 from core.file_utils import get_output_path
 
+# Importar excepciones personalizadas
+from core.exceptions import (
+    FileNotFoundError,
+    UnsupportedFormatError,
+    ProcessingError,
+    TimeoutError,
+    ValidationError,
+)
+
 # Métricas
 from core.metrics import Counter, Timer, increment
 
@@ -105,7 +114,7 @@ def _calculate_hash_internal(file_path: str, algorithm: str) -> Dict[str, Any]:
             
         except Exception as e:
             increment('hash_errors')
-            return {'success': False, 'error': str(e)}
+            raise ProcessingError(f"Error calculando hash: {e}") from e
 
 
 def calculate_all_hashes(file_path: str) -> Dict[str, Any]:
@@ -113,7 +122,7 @@ def calculate_all_hashes(file_path: str) -> Dict[str, Any]:
     Calcula todos los hashes de un archivo.
     """
     if not os.path.exists(file_path):
-        return {'success': False, 'error': 'Archivo no encontrado'}
+        raise FileNotFoundError(f"Archivo no encontrado: {file_path}")
     
     try:
         hashes = {}

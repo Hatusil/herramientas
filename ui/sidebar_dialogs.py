@@ -5,8 +5,10 @@ Cumple máxima A1 (una responsabilidad).
 import sys
 import customtkinter as ctk
 from pathlib import Path
-from core import constants
 from core.constants import font
+from ui.theme_factory import (
+    create_frame, create_label, create_primary_button, create_danger_button
+)
 
 
 def show_acerca_de(parent) -> None:
@@ -30,15 +32,10 @@ def show_acerca_de(parent) -> None:
     dialog.after(100, lambda: dialog.grab_set())
     dialog.bind("<Escape>", lambda e: dialog.destroy())
 
-    # Colores del tema
-    bg = constants.COLORS.get("bg_dark")
-    fg = constants.COLORS.get("text_primary")
-    fg_secondary = constants.COLORS.get("text_secondary")
-    primary = constants.COLORS.get("primary")
+    from core.constants import COLORS
+    dialog.configure(fg_color=COLORS.get("bg_dark"))
 
-    dialog.configure(fg_color=bg)
-
-    main = ctk.CTkFrame(dialog, fg_color=bg)
+    main = create_frame(dialog)
     main.pack(fill="both", expand=True, padx=25, pady=25)
     
     # Logo
@@ -55,43 +52,41 @@ def show_acerca_de(parent) -> None:
             break
     
     # Título y versión
-    ctk.CTkLabel(main, text="Herramientas", font=font("title", "bold"), text_color=fg).pack(pady=(0, 2))
-    ctk.CTkLabel(main, text="Versión 1.0.0", font=font("small"), text_color=fg_secondary).pack(pady=(0, 15))
+    create_label(main, text="Herramientas", font=font("title", "bold")).pack(pady=(0, 2))
+    create_label(main, text="Versión 1.0.0", font=font("small"), text_color="secondary").pack(pady=(0, 15))
 
     # Descripción
-    ctk.CTkLabel(main, text="Aplicación de escritorio con múltiples herramientas\nde productividad para procesamiento de archivos.",
-                 font=font("small"), text_color=fg, justify="center").pack(pady=(0, 5))
-    ctk.CTkLabel(main, text="Construido con Python y CustomTkinter.",
-                 font=font("xsmall"), text_color=fg_secondary).pack(pady=(0, 15))
+    create_label(
+        main,
+        text="Aplicación de escritorio con múltiples herramientas\nde productividad para procesamiento de archivos.",
+        font=font("small"), justify="center"
+    ).pack(pady=(0, 5))
+    create_label(
+        main,
+        text="Construido con Python y CustomTkinter.",
+        font=font("xsmall"), text_color="secondary"
+    ).pack(pady=(0, 15))
 
     # Separator
-    ctk.CTkFrame(main, height=1, fg_color=constants.COLORS.get("border")).pack(fill="x", pady=10)
+    ctk.CTkFrame(main, height=1, fg_color="border").pack(fill="x", pady=10)
 
     # Filosofía
-    ctk.CTkLabel(main, text="📜 Filosofía",
-                 font=font("small", "bold"), text_color=primary).pack(pady=(5, 5))
+    create_label(main, text="📜 Filosofía", font=font("small", "bold"), text_color="primary").pack(pady=(5, 5))
     frase = "«Soy un desarrollador de software y analista de datos que busca\nsubordinar la técnica y las ciencias a la Verdad y la Sabiduría,\npara no ser esclavo de la máquina.»"
-    ctk.CTkLabel(main, text=frase, font=font("xsmall"), text_color=fg_secondary,
-                 justify="center").pack(pady=(5, 15))
+    create_label(main, text=frase, font=font("xsmall"), text_color="secondary", justify="center").pack(pady=(5, 15))
 
     # Separator
-    ctk.CTkFrame(main, height=1, fg_color=constants.COLORS.get("border")).pack(fill="x", pady=5)
+    ctk.CTkFrame(main, height=1, fg_color="border").pack(fill="x", pady=5)
 
     # Contacto
-    ctk.CTkLabel(main, text="📬 Contacto",
-                 font=font("small", "bold"), text_color=primary).pack(pady=(5, 5))
-    ctk.CTkLabel(main, text="Hatusil (Ewoc Logic)",
-                 font=font("small"), text_color=fg).pack(pady=(2, 0))
-    ctk.CTkLabel(main, text="hatusil@proton.me",
-                 font=font("small"), text_color=fg_secondary).pack(pady=(2, 0))
-    ctk.CTkLabel(main, text="github.com/Hatusil",
-                 font=font("small"), text_color=primary).pack(pady=(2, 0))
-    ctk.CTkLabel(main, text="☕ buymeacoffee.com/hatusil",
-                 font=font("small"), text_color=fg_secondary).pack(pady=(2, 15))
+    create_label(main, text="📬 Contacto", font=font("small", "bold"), text_color="primary").pack(pady=(5, 5))
+    create_label(main, text="Hatusil (Ewoc Logic)", font=font("small")).pack(pady=(2, 0))
+    create_label(main, text="hatusil@proton.me", font=font("small"), text_color="secondary").pack(pady=(2, 0))
+    create_label(main, text="github.com/Hatusil", font=font("small"), text_color="primary").pack(pady=(2, 0))
+    create_label(main, text="☕ buymeacoffee.com/hatusil", font=font("small"), text_color="secondary").pack(pady=(2, 15))
 
     # Cerrar
-    ctk.CTkButton(main, text="Cerrar", command=dialog.destroy,
-                  fg_color=primary, width=150).pack(pady=(10, 20))
+    create_primary_button(main, text="Cerrar", command=dialog.destroy, width=150).pack(pady=(10, 20))
 
 
 def show_salir(parent) -> None:
@@ -114,19 +109,14 @@ def show_salir(parent) -> None:
     dialog.after(100, lambda: dialog.grab_set())
     dialog.bind("<Escape>", lambda e: dialog.destroy())
 
-    bg = constants.COLORS.get("bg_dark")
-    fg = constants.COLORS.get("text_primary")
-    primary = constants.COLORS.get("primary")
+    from core.constants import COLORS
+    dialog.configure(fg_color=COLORS.get("bg_dark"))
 
-    dialog.configure(fg_color=bg)
-
-    ctk.CTkLabel(dialog, text="¿Querés salir de la aplicación?",
-                 font=font("normal"), text_color=fg).pack(pady=20)
+    create_label(dialog, text="¿Querés salir de la aplicación?", font=font("normal")).pack(pady=20)
 
     btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
     btn_frame.pack(pady=10)
 
-    ctk.CTkButton(btn_frame, text="Sí", command=parent.quit,
-                  fg_color=constants.COLORS.get("error"), width=80).pack(side="left", padx=5)
-    ctk.CTkButton(btn_frame, text="No", command=dialog.destroy,
-                  fg_color=primary, width=80).pack(side="left", padx=5)
+    # parent es Sidebar, parent.master es la App (que sí tiene quit)
+    create_danger_button(btn_frame, text="Sí", command=parent.master.quit, width=80).pack(side="left", padx=5)
+    create_primary_button(btn_frame, text="No", command=dialog.destroy, width=80).pack(side="left", padx=5)

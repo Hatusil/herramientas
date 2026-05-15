@@ -6,6 +6,7 @@ import customtkinter as ctk
 from core import constants
 from core.constants import font, FONT_SIZE_TITLE
 from ui.sidebar_helpers import find_logo_path, make_circle_image
+from ui.theme_factory import create_secondary_label, create_tool_button, create_bordered_button
 
 
 def setup_logo(parent) -> ctk.CTkLabel:
@@ -34,30 +35,21 @@ def setup_title(parent) -> None:
 def setup_buttons(parent, on_inicio, on_acerca_de) -> None:
     """Configura botones de Inicio y Acerca de."""
     # Botón Inicio
-    ctk.CTkButton(
+    create_tool_button(
         parent,
         text="🏠 Inicio",
         command=on_inicio,
-        fg_color=constants.COLORS.get("bg_medium", "#252525"),
-        hover_color=constants.COLORS.get("primary", "#3b82f6"),
-        text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
         height=30
     ).pack(fill="x", padx=10, pady=(8, 5))
     
     # Botón Acerca de
-    btn = ctk.CTkButton(
+    create_bordered_button(
         parent,
         text="ℹ️ Acerca de",
         command=on_acerca_de,
-        fg_color=constants.COLORS.get("bg_medium", "#252525"),
-        text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
-        border_width=1,
-        border_color=constants.COLORS.get("border", "#404040"),
-        hover_color=constants.COLORS.get("primary", "#3b82f6"),
         height=36,
         font=font("small")
-    )
-    btn.pack(fill="x", padx=10, pady=(8, 0))
+    ).pack(fill="x", padx=10, pady=(8, 0))
 
 
 def setup_theme_switch(parent, on_toggle, current_theme) -> ctk.CTkSwitch:
@@ -78,10 +70,9 @@ def setup_theme_switch(parent, on_toggle, current_theme) -> ctk.CTkSwitch:
 
 def setup_theme_label(parent, current_theme) -> ctk.CTkLabel:
     """Configura la etiqueta del tema actual."""
-    label = ctk.CTkLabel(
+    label = create_secondary_label(
         parent,
         text=f"Modo: {'Claro' if current_theme == 'light' else 'Oscuro'}",
-        text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
         font=font("xsmall")
     )
     label.pack(padx=12, pady=(0, 5))

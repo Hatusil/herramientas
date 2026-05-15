@@ -12,6 +12,10 @@ from ui.sidebar_helpers import create_tool_button, update_tool_buttons, highligh
 from ui.sidebar_helpers import create_tool_buttons, update_acerca_button
 from ui.sidebar_dialogs import show_acerca_de, show_salir
 from ui.sidebar_setup import setup_logo, setup_title, setup_buttons
+from ui.theme_factory import (
+    create_danger_button, create_secondary_label, create_control_frame,
+    create_divider, create_switch
+)
 
 logger = logging.getLogger(__name__)
 
@@ -45,63 +49,45 @@ class Sidebar(ctk.CTkFrame):
         self._setup_scroll_binding(self.scroll_frame)
         
         # Botón de control (Salir + Theme Switch)
-        self.control_frame = ctk.CTkFrame(
-            self,
-            fg_color=constants.COLORS.get("bg_medium", "#252525"),
-            border_color=constants.COLORS.get("border", "#404040"),
-            border_width=1
-        )
+        self.control_frame = create_control_frame(self)
         self.control_frame.pack(fill="x", padx=10, pady=10)
         
         # Título de sección
-        config_label = ctk.CTkLabel(
+        config_label = create_secondary_label(
             self.control_frame,
             text="CONFIGURACIÓN",
-            text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
             font=font("xsmall", "bold")
         )
         config_label.pack(fill="x", padx=12, pady=(10, 8))
         
         # Switch para cambio de tema
         self._theme_var = ctk.StringVar(value=constants.get_theme())
-        self.theme_switch = ctk.CTkSwitch(
+        self.theme_switch = create_switch(
             self.control_frame,
-            text="",
             command=self._on_toggle_theme,
             onvalue="light",
             offvalue="dark",
-            variable=self._theme_var,
-            text_color=constants.COLORS.get("text_primary", "#e0e0e0"),
-            fg_color=constants.COLORS.get("bg_hover", "#3d3d3d"),
-            progress_color=constants.COLORS.get("primary", "#3b82f6")
+            variable=self._theme_var
         )
         self.theme_switch.pack(fill="x", padx=12, pady=(0, 8))
         
         # Label que muestra el estado actual
-        self._theme_label = ctk.CTkLabel(
+        self._theme_label = create_secondary_label(
             self.control_frame,
             text=f"Modo: {'Claro' if constants.get_theme() == 'light' else 'Oscuro'}",
-            text_color=constants.COLORS.get("text_secondary", "#9ca3af"),
             font=font("xsmall")
         )
         self._theme_label.pack(fill="x", padx=12, pady=(0, 8))
         
         # Divisor
-        divisor = ctk.CTkFrame(
-            self.control_frame,
-            height=1,
-            fg_color=constants.COLORS.get("border", "#404040")
-        )
+        divisor = create_divider(self.control_frame)
         divisor.pack(fill="x", padx=12, pady=8)
         
         # Botón Salir
-        salir_btn = ctk.CTkButton(
+        salir_btn = create_danger_button(
             self.control_frame,
             text="Salir de la Aplicación",
             command=self._on_salir,
-            fg_color=constants.COLORS.get("error", "#ef4444"),
-            hover_color="#b91c1c",
-            text_color="white",
             height=36,
             font=font("small", "bold")
         )

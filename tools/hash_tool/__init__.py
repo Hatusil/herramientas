@@ -5,6 +5,13 @@ import logging
 from typing import List, Dict, Any
 
 from core.base_tool import BaseTool
+from core.exceptions import (
+    FileNotFoundError,
+    UnsupportedFormatError,
+    ProcessingError,
+    TimeoutError,
+    ValidationError,
+)
 from tools.hash_tool import processor
 
 
@@ -37,21 +44,37 @@ class HashTool(BaseTool):
     def process(self, files: list, options: dict) -> dict:
         action = options.get('action', 'calculate')
         
-        if action == 'calculate':
-            if not files:
-                return {'success': False, 'error': 'No hay archivo'}
-            return processor.calculate_hash(
-                files[0], options.get('algorithm', 'sha256'), options.get('timeout', 30))
-        elif action == 'all':
-            if not files:
-                return {'success': False, 'error': 'No hay archivo'}
-            return processor.calculate_all_hashes(files[0])
-        elif action == 'verify':
-            if not files:
-                return {'success': False, 'error': 'No hay archivo'}
-            return processor.verify_hash(
-                files[0], options.get('expected_hash', ''), options.get('algorithm', 'sha256'))
-        elif action == 'list':
-            return processor.calculate_file_hash_list(files, options.get('algorithm', 'sha256'))
-        else:
-            return {'success': False, 'error': f'Unknown action: {action}'}
+        try:
+            if action == 'calculate':
+                if not files:
+                    return {'success': False, 'error': 'No hay archivo'}
+                return processor.calculate_hash(
+                    files[0], options.get('algorithm', 'sha256'), options.get('timeout', 30))
+            elif action == 'all':
+                if not files:
+                    return {'success': False, 'error': 'No hay archivo'}
+                return processor.calculate_all_hashes(files[0])
+            elif action == 'verify':
+                if not files:
+                    return {'success': False, 'error': 'No hay archivo'}
+                return processor.verify_hash(
+                    files[0], options.get('expected_hash', ''), options.get('algorithm', 'sha256'))
+            elif action == 'list':
+                return processor.calculate_file_hash_list(files, options.get('algorithm', 'sha256'))
+            else:
+                return {'success': False, 'error': f'Unknown action: {action}'}
+        except FileNotFoundError as e:
+            logger.error(f"Archivo no encontrado: {e}")
+            return {'success': False, 'error': str(e)}
+        except (UnsupportedFormatError, ValidationError) as e:
+            logger.error(f"Error de validación: {e}")
+            return {'success': False, 'error': str(e)}
+        except TimeoutError as e:
+            logger.error(f"Timeout: {e}")
+            return {'success': False, 'error': str(e)}
+        except ProcessingError as e:
+            logger.error(f"Error de procesamiento: {e}")
+            return {'success': False, 'error': str(e)}
+        except Exception as e:
+            logger.error(f"Error inesperado: {e}")
+            return {'success': False, 'error': f'Error inesperado: {e}'}

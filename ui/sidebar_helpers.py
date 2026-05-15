@@ -166,31 +166,14 @@ def on_mousewheel(event, canvas) -> str:
     return "break"
 
 
-def setup_scroll_binding(scroll_frame, on_wheel_callback) -> None:
-    """Configura bindings de scroll."""
-    canvas = getattr(scroll_frame, '_parent_canvas', None)
+def setup_scroll_binding(scroll_frame, on_wheel_callback=None) -> None:
+    """Configura bindings de scroll de forma independiente.
     
-    if not canvas:
-        for child in scroll_frame.winfo_children():
-            if hasattr(child, 'yview'):
-                canvas = child
-                break
-    
-    if not canvas:
-        try:
-            scroll_frame.bind("<MouseWheel>", on_wheel_callback)
-            scroll_frame.bind("<Button-4>", on_wheel_callback)
-            scroll_frame.bind("<Button-5>", on_wheel_callback)
-        except Exception:
-            pass
-        return
-    
-    try:
-        scroll_frame.bind("<MouseWheel>", on_wheel_callback)
-        scroll_frame.bind("<Button-4>", on_wheel_callback)
-        scroll_frame.bind("<Button-5>", on_wheel_callback)
-    except Exception:
-        pass
+    El scroll solo funciona si el mouse está sobre el widget.
+    Usa ui.scroll_utils para la implementación.
+    """
+    from ui.scroll_utils import setup_scrollable_frame
+    setup_scrollable_frame(scroll_frame, on_wheel_callback)
 
 
 def create_tool_buttons(scroll_frame, tools, on_tool_select):
