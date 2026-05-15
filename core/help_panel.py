@@ -29,8 +29,8 @@ class HelpPopup:
         # Crear ventana Toplevel
         self.window = ctk.CTkToplevel(parent)
         self.window.title(title)
-        self.window.geometry("500x600")  # Made taller
-        self.window.resizable(True, True)  # Allow resize for scrolling
+        self.window.geometry("500x450")
+        self.window.resizable(False, False)
         
         # Centrar en la pantalla (no relativo al padre)
         self.window.transient(parent)
@@ -47,10 +47,8 @@ class HelpPopup:
         
         self.window.geometry(f"+{x}+{y}")
 
-        # Bloquear interacción con la ventana padre completamente
-        # Usar grab_set_global() para capturar TODOS los eventos, no solo los del padre
-        self.window.grab_set()
-        self.window.focus_set()
+        # Bloquear interacción con la ventana padre y enfocar
+        self.window.after(100, lambda: [self.window.grab_set(), self.window.focus_set()])
         
         # Bind Escape para cerrar
         self.window.bind("<Escape>", lambda e: self.window.destroy())
@@ -80,9 +78,6 @@ class HelpPopup:
         )
         textbox.pack(fill="both", expand=True)
         textbox.configure(state="normal")
-        
-        # Ensure textbox can receive focus for internal scrolling
-        textbox.focus_set()
 
         # Insert content with colors
         if description:
