@@ -53,6 +53,14 @@ class HelpPopup:
         # Bind Escape para cerrar
         self.window.bind("<Escape>", lambda e: self.window.destroy())
         
+        # Bloquear scroll propagation a la app de atrás
+        # Mientras el popup está abierto, el scroll debe quedarse en el popup o bloquearse
+        def _block_scroll(event):
+            return "break"
+        
+        for event in ["<MouseWheel>", "<Button-4>", "<Button-5>"]:
+            self.window.bind(event, _block_scroll)
+        
         # Get current theme colors (COLORS is already the current theme dict)
         bg_color = constants.COLORS.get("bg_dark")
         text_color = constants.COLORS.get("text_primary")
