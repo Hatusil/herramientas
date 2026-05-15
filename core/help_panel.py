@@ -47,8 +47,11 @@ class HelpPopup:
         
         self.window.geometry(f"+{x}+{y}")
 
-        # Bloquear interacción con la ventana padre
-        self.window.grab_set()
+        # Bloquear interacción con la ventana padre y enfocar
+        self.window.after(100, lambda: [self.window.grab_set(), self.window.focus_set()])
+        
+        # Bind Escape para cerrar
+        self.window.bind("<Escape>", lambda e: self.window.destroy())
         
         # Get current theme colors (COLORS is already the current theme dict)
         bg_color = constants.COLORS.get("bg_dark")
@@ -75,6 +78,18 @@ class HelpPopup:
         )
         textbox.pack(fill="both", expand=True)
         textbox.configure(state="normal")
+        
+        # Fix scroll: evitar que el scroll se propague a la ventana padre
+        def _on_scroll(event):
+            # Solo hacer scroll si el mouse está sobre el textbox
+            x, y = event.x, event.y
+            if textbox.winfo_containing(x, y) == textbox:
+                return None  # Allow scroll
+            return "break"  # Block scroll propagation
+        
+        textbox.bind("<MouseWheel>", _on_scroll)
+        textbox.bind("<Button-4>", _on_scroll)
+        textbox.bind("<Button-5>", _on_scroll)
 
         # Insert content with colors
         if description:
