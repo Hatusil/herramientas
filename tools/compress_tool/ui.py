@@ -97,11 +97,10 @@ class CompressToolUI(BaseToolUI):
             return
         fmt = self.format_var.get()
         level = int(self.level_var.get())
-        from tools.compress_tool import processor
-        if fmt == "zip":
-            result = processor.compress_to_zip(self.files, level=level)
-        else:
-            result = processor.compress_to_tar(self.files, compression=fmt)
+        
+        # Usar on_process para mantener flujo correcto: UI -> tool -> processor
+        result = self.on_process(fmt, self.files, {'level': level})
+        
         if result["success"]:
             self.status_label.configure(text=result["message"], text_color="green")
         else:
@@ -131,22 +130,25 @@ class CompressToolUI(BaseToolUI):
         )
         if not file_path:
             return
-        from tools.compress_tool import processor
+        
         ext = Path(file_path).suffix.lower()
-        if ext == ".zip":
-            result = processor.decompress_zip(file_path)
-        else:
-            result = processor.decompress_tar(file_path)
+        action = 'unzip' if ext == '.zip' else 'untar'
+        
+        # Usar on_process: pasar archivo en options (patrón diferente a compress)
+        result = self.on_process(action, [file_path], options={})
+        
         if result["success"]:
             self.status_label.configure(text=result["message"], text_color="green")
             if ext == ".zip":
-                info = processor.list_zip_contents(file_path)
-                if info["success"]:
+                # También mostrar contenido
+                list_result = self.on_process('list', [file_path], options={})
+                if list_result["success"]:
                     self.extract_info.delete("1.0", tk.END)
-                    self.extract_info.insert("1.0", f"Contenido ({info['count']} archivos):\n\n")
-                    for f in info["files"][:20]:
+                    self.extract_info.insert("1.0", f"Contenido ({list_result.get('count', 0)} archivos):\n\n")
+                    for f in list_result.get("files", [])[:20]:
                         self.extract_info.insert(tk.END, f"  \U0001F4C4 {f}\n")
-                    if len(info["files"]) > 20:
-                        self.extract_info.insert(tk.END, f"\n... y {len(info['files']) - 20} m\u00e1s")
+                    count = list_result.get("count", 0)
+                    if count > 20:
+                        self.extract_info.insert(tk.END, f"\n... y {count - 20} m\u00e1s")
         else:
             self.status_label.configure(text=result.get("error", "Error"), text_color="red")

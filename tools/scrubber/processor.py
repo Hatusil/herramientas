@@ -150,7 +150,7 @@ def clean_image_metadata(file_path: str, options: Dict[str, Any] = None) -> Dict
                 # Leer imagen y guardar sin EXIF o con EXIF limpiado
                 from PIL import Image
                 with Image.open(file_path) as img:
-                    output_path = get_output_path(file_path, '_clean')
+                    output_path = get_output_path(file_path, '_clean', _exists_ok=False)
                     img.save(output_path, "jpeg", exif=exif_bytes, quality=95)
                 
                 increment('scrubber_operations_total')
@@ -166,7 +166,7 @@ def clean_image_metadata(file_path: str, options: Dict[str, Any] = None) -> Dict
                 # Fallback: guardar sin EXIF
                 from PIL import Image
                 with Image.open(file_path) as img:
-                    output_path = get_output_path(file_path, '_clean')
+                    output_path = get_output_path(file_path, '_clean', _exists_ok=False)
                     data = list(img.getdata())
                     img_no_exif = Image.new(img.mode, img.size)
                     img_no_exif.putdata(data)
@@ -264,7 +264,7 @@ def clean_docx(file_path: str) -> Dict[str, Any]:
             core_props.comments = ''
             
             # Guardar
-            output_path = get_output_path(file_path, '_clean')
+            output_path = get_output_path(file_path, '_clean', _exists_ok=False)
             doc.save(output_path)
             
             increment('scrubber_operations_total')
@@ -354,7 +354,7 @@ def clean_xlsx(file_path: str) -> Dict[str, Any]:
             props.lastModifiedBy = ''
             
             # Guardar
-            output_path = get_output_path(file_path, '_clean')
+            output_path = get_output_path(file_path, '_clean', _exists_ok=False)
             wb.save(output_path)
             
             increment('scrubber_operations_total')

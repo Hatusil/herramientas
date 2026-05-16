@@ -285,7 +285,7 @@ def add_text_annotation(files: List[str], text: str, page: int = 0,
                 
                 writer.add_page(page_obj)
             
-            output_path = get_output_path(file_path, '_annotated')
+            output_path = get_output_path(file_path, '_annotated', _exists_ok=False)
             with open(output_path, 'wb') as f:
                 writer.write(f)
             
@@ -485,7 +485,7 @@ def add_page_numbers(files: List[str], **options) -> Dict[str, Any]:
                 
                 writer.add_page(page)
             
-            output_path = get_output_path(file_path, '_numbered')
+            output_path = get_output_path(file_path, '_numbered', _exists_ok=False)
             with open(output_path, 'wb') as f:
                 writer.write(f)
             
@@ -625,7 +625,7 @@ def compress_pdf(files: List[str], level: str = 'medium') -> Dict[str, Any]:
             for page in reader.pages:
                 writer.add_page(page)
             
-            output_path = get_output_path(file_path, '_compressed')
+            output_path = get_output_path(file_path, '_compressed', _exists_ok=False)
             with open(output_path, 'wb') as f:
                 writer.write(f)
             

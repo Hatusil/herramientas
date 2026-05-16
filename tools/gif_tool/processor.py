@@ -83,7 +83,7 @@ def create_gif(image_paths: List[str], output_path: str = None, duration: int = 
             
             # Determinar output usando get_output_path (máxima C2: Consistency)
             if output_path is None:
-                output_path = get_output_path(image_paths[0], '_animated')
+                output_path = get_output_path(image_paths[0], '_animated', _exists_ok=False)
             
             # Guardar como GIF
             resized[0].save(

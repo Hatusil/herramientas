@@ -25,7 +25,7 @@ class CompressTool(BaseTool):
         self.ui.pack(fill="both", expand=True)
     
     def _on_process(self, action: str, files: list, options: dict) -> dict:
-        return self.process(files, options)
+        return self.process(files, {**options, 'action': action})
     
     def process(self, files: list, options: dict) -> dict:
         from tools.compress_tool import processor

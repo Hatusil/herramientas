@@ -7,13 +7,15 @@ from pathlib import Path
 from typing import Optional
 
 
-def get_output_path(input_path: str, suffix: str) -> str:
+def get_output_path(input_path: str, suffix: str, _exists_ok: bool = True) -> str:
     """
     Genera ruta de salida con sufijo manteniendo la extensión original.
+    Cumple con máxima A8 (idempotencia): evita sobrescribir archivos existentes.
     
     Args:
         input_path: Ruta del archivo de entrada
         suffix: Sufijo a agregar (ej: '_output')
+        _exists_ok: Si True (default), permite sobrescribir. Si False, evita colisión.
         
     Returns:
         str: Ruta con el sufijo agregado
@@ -22,17 +24,27 @@ def get_output_path(input_path: str, suffix: str) -> str:
     parent = p.parent
     stem = p.stem
     ext = p.suffix
-    return str(parent / f"{stem}{suffix}{ext}")
+    output = parent / f"{stem}{suffix}{ext}"
+    
+    if not _exists_ok and output.exists():
+        counter = 1
+        while output.exists():
+            output = parent / f"{stem}{suffix}_{counter}{ext}"
+            counter += 1
+    
+    return str(output)
 
 
-def get_output_path_format(input_path: str, suffix: str, new_ext: str) -> str:
+def get_output_path_format(input_path: str, suffix: str, new_ext: str, _exists_ok: bool = True) -> str:
     """
     Genera ruta de salida con nuevo formato/extensión.
+    Cumple con máxima A8 (idempotencia): evita sobrescribir archivos existentes.
     
     Args:
         input_path: Ruta del archivo de entrada
         suffix: Sufijo a agregar
         new_ext: Nueva extensión (incluir el punto: '.mp3')
+        _exists_ok: Si True (default), permite sobrescribir. Si False, evita colisión.
         
     Returns:
         str: Ruta con el nuevo formato
@@ -40,7 +52,15 @@ def get_output_path_format(input_path: str, suffix: str, new_ext: str) -> str:
     p = Path(input_path)
     parent = p.parent
     stem = p.stem
-    return str(parent / f"{stem}{suffix}{new_ext}")
+    output = parent / f"{stem}{suffix}{new_ext}"
+    
+    if not _exists_ok and output.exists():
+        counter = 1
+        while output.exists():
+            output = parent / f"{stem}{suffix}_{counter}{new_ext}"
+            counter += 1
+    
+    return str(output)
 
 
 def ensure_directory(path: str) -> Path:
