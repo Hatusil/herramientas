@@ -186,13 +186,12 @@ class InputTab(BaseTab):
             print(f"[DEBUG] Text loaded: {len(text)} chars")
             self._callbacks.on_status(f"Texto cargado: {len(text)} caracteres", COLORS.get("success", "green"))
             self._callbacks.request_analysis("run_specific", {"type": "stats", "params": {}})
-        else:
-            self._callbacks.on_status("⚠️ No hay texto para analizar", COLORS.get("warning", "orange"))
         elif input_type in ("files", "url"):
             # Show message if no text was loaded
-            if self._load_btn:
-                msg = "No se pudieron cargar los archivos" if input_type == "files" else "No se pudieron cargar las URLs"
-                self._load_btn.configure(text=f"⚠️ {msg}")
+            msg = "No se pudieron cargar los archivos" if input_type == "files" else "No se pudieron cargar las URLs"
+            self._callbacks.on_status(f"⚠️ {msg}", COLORS.get("warning", "orange"))
+        else:
+            self._callbacks.on_status("⚠️ No hay texto para analizar", COLORS.get("warning", "orange"))
 
     def get_frame(self) -> ctk.CTkFrame:
         """Return the main frame for this tab (BaseTab abstract method)."""
