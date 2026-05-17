@@ -15,6 +15,10 @@ class FileSelectorMixin:
     
     def _setup_file_selector(self) -> None:
         """Construye el selector de archivos con lista y botones."""
+        # Check if this should be skipped (for tools with custom UI)
+        if getattr(self, '_skip_file_selector', False):
+            return
+            
         frame = ctk.CTkFrame(self)
         frame.pack(fill="x", pady=(0, 10), padx=10)
         

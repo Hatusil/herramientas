@@ -31,10 +31,12 @@ class TextAnalyzerUI(BaseToolUI):
     """Main UI orchestrator - creates state, callbacks, tabs, handles threading."""
 
     _add_folder_custom = True  # Skip global file selector
+    _skip_file_selector = True  # Skip the file selector entirely
 
     def _setup_ui(self) -> None:
         """Override: text_tool construye UI desde cero."""
-        pass
+        # Don't call parent _setup_ui - we build our own in _build_ui()
+        logger.debug("TextAnalyzerUI._setup_ui called - skipping file selector")
 
     def __init__(self, master: Any, on_process: Callable, **kwargs) -> None:
         from tools.text_tool.ui.state import TextAnalyzerState
