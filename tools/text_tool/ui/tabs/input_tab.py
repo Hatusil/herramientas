@@ -183,7 +183,7 @@ class InputTab(BaseTab):
         
         if text:
             self._state.update_text(text)
-            self._callbacks.request_analysis("run_specific", "stats")
+            self._callbacks.request_analysis("run_specific", {"type": "stats", "params": {}})
         elif input_type in ("files", "url"):
             # Show message if no text was loaded
             if self._load_btn:
