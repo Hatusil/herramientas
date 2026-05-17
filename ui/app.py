@@ -104,9 +104,12 @@ class App(ctk.CTk):
         # Actualizar ventana principal
         self.configure(fg_color=constants.COLORS.get("bg_dark"))
 
-        # Actualizar content frame
+        # Actualizar content frame (protegido contra widgets destruidos)
         if self.content_frame:
-            self.content_frame.configure(fg_color=constants.COLORS.get("bg_medium"))
+            try:
+                self.content_frame.configure(fg_color=constants.COLORS.get("bg_medium"))
+            except Exception as e:
+                logger.warning(f"Error refreshing content frame theme: {e}")
 
         # NO recorrer recursivamente — rompe estilos específicos de widgets hijos
         # Solo actualizar sidebar (maneja sus propios estilos internamente)

@@ -130,22 +130,36 @@ def bind_scrollable(scroll_frame, canvas=None, on_wheel_callback=None):
         logger.warning(f"No se encontró canvas para scroll_frame: {scroll_frame}")
         return None
     
+    # Verificar que el widget aún existe (no fue destruido)
+    try:
+        scroll_frame.winfo_exists()
+    except Exception:
+        logger.warning(f"Scroll frame ya no existe, skip bindings")
+        return None
+    
     # Crear handler
     handler = create_scroll_handler(scroll_frame, canvas)
     
-    # Bindear eventos de scroll
-    scroll_frame.bind("<MouseWheel>", handler)
-    scroll_frame.bind("<Button-4>", handler)
-    scroll_frame.bind("<Button-5>", handler)
+    # Bindear eventos de scroll (protegido)
+    try:
+        scroll_frame.bind("<MouseWheel>", handler)
+        scroll_frame.bind("<Button-4>", handler)
+        scroll_frame.bind("<Button-5>", handler)
+    except Exception as e:
+        logger.warning(f"Error binding scroll events: {e}")
+        return None
     
-    # Si hay callback adicional, ejecutarlo también
+    # Si hay callback adicional, ejecutarlo también (protegido)
     if on_wheel_callback:
         def combined_handler(event):
             handler(event)
             on_wheel_callback(event)
-        scroll_frame.bind("<MouseWheel>", combined_handler)
-        scroll_frame.bind("<Button-4>", combined_handler)
-        scroll_frame.bind("<Button-5>", combined_handler)
+        try:
+            scroll_frame.bind("<MouseWheel>", combined_handler)
+            scroll_frame.bind("<Button-4>", combined_handler)
+            scroll_frame.bind("<Button-5>", combined_handler)
+        except Exception as e:
+            logger.warning(f"Error binding combined scroll events: {e}")
     
     return handler
 
@@ -172,9 +186,12 @@ def unbind_scrollable(scroll_frame):
     Args:
         scroll_frame: Widget con bindings
     """
-    scroll_frame.unbind("<MouseWheel>")
-    scroll_frame.unbind("<Button-4>")
-    scroll_frame.unbind("<Button-5>")
+    try:
+        scroll_frame.unbind("<MouseWheel>")
+        scroll_frame.unbind("<Button-4>")
+        scroll_frame.unbind("<Button-5>")
+    except Exception:
+        pass  # Widget ya destruido
 
 
 # Alias para compatibilidad
