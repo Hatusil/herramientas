@@ -1,12 +1,4 @@
-"""
-Main UI orchestrator for Text Analyzer.
-
-Arquitectura (SRP - máxima R0: clases <300 líneas):
-- threading_utils.py: Threading y progress
-- keyboard_shortcuts.py: Keyboard shortcuts
-- constants.py: Configuración de tabs e iconos
-- state.py, callbacks.py, tabs.py: otros módulos existentes
-"""
+"""Main UI orchestrator for Text Analyzer."""
 from __future__ import annotations
 
 import logging
@@ -36,10 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class TextAnalyzerUI(BaseToolUI):
-    """Main UI orchestrator for Text Analyzer.
-
-    Creates state, callbacks, all tabs, handles threading and keyboard shortcuts.
-    """
+    """Main UI orchestrator - creates state, callbacks, tabs, handles threading."""
 
     _add_folder_custom = True  # Skip global file selector
 
@@ -51,6 +40,7 @@ class TextAnalyzerUI(BaseToolUI):
         from tools.text_tool.ui.state import TextAnalyzerState
         from tools.text_tool.ui.callbacks import AppCallbacks
         from tools.text_tool.ui.tabs import TAB_REGISTRY
+        from tools.text_tool.ui.analysis import run_all_analysis, run_stats, run_frequency
 
         super().__init__(master, on_process, **kwargs)
 
@@ -79,7 +69,7 @@ class TextAnalyzerUI(BaseToolUI):
     # === Callbacks ===
 
     def _on_status(self, message: str, color: str = "gray") -> None:
-        """Update status label (ignores during batch analysis)."""
+        """Update status label."""
         if self.status_label and not getattr(self, '_is_batch_analysis', False):
             self.status_label.configure(text=message, text_color=color)
 
@@ -167,13 +157,12 @@ class TextAnalyzerUI(BaseToolUI):
         except Exception as e:
             logger.error(f"Tab change error: {e}")
 
-    # === Threading (delegado a threading_utils.py) ===
+    # === Threading ===
 
     def run_in_thread(self, target, callback, *args, **kwargs):
         return run_in_thread(self, target, callback, *args, **kwargs)
 
     def _stop_progress(self):
-        """Hide progress bar."""
         if self.progress_bar:
             self.progress_bar.stop()
             self.progress_bar.pack_forget()
@@ -193,21 +182,7 @@ class TextAnalyzerUI(BaseToolUI):
 
         def worker() -> None:
             try:
-                from tools.text_tool.processor import (
-                    analyze_stats, analyze_frequency, analyze_ngrams, analyze_trends
-                )
-                analyses = [
-                    ("stats", lambda: analyze_stats(text)),
-                    ("frequency", lambda: analyze_frequency(text)),
-                    ("ngrams", lambda: analyze_ngrams(text, n=2)),
-                    ("trends", lambda: analyze_trends(text))
-                ]
-                results = {}
-                for name, fn in analyses:
-                    try:
-                        results[name] = fn()
-                    except Exception as e:
-                        results[name] = {"error": str(e)}
+                results = run_all_analysis(text)
                 self.after(0, lambda: self._on_analysis_complete(results))
             except Exception as e:
                 self._is_batch_analysis = False
@@ -247,10 +222,9 @@ class TextAnalyzerUI(BaseToolUI):
 
     def _run_stats(self) -> None:
         """Run statistics analysis."""
-        from tools.text_tool.processor import analyze_stats
         text = self.state.cleaned_content or self.state.text_content
         if text:
-            self.executor.submit(lambda: self._on_stats_complete(analyze_stats(text)))
+            self.executor.submit(lambda: self._on_stats_complete(run_stats(text)))
 
     def _on_stats_complete(self, result: Dict[str, Any]) -> None:
         """Handle stats completion."""
@@ -260,11 +234,10 @@ class TextAnalyzerUI(BaseToolUI):
 
     def _run_frequency(self, params: Dict[str, Any]) -> None:
         """Run frequency analysis."""
-        from tools.text_tool.processor import analyze_frequency
         text = self.state.cleaned_content or self.state.text_content
         if text:
             self.executor.submit(
-                lambda: self._on_freq_complete(analyze_frequency(text, n=params.get("top_n", 50)))
+                lambda: self._on_freq_complete(run_frequency(text, params.get("top_n", 50)))
             )
 
     def _on_freq_complete(self, result: Dict[str, Any]) -> None:
@@ -272,7 +245,7 @@ class TextAnalyzerUI(BaseToolUI):
         self._on_text_changed()
         self._on_status("Frecuencias actualizadas", "green")
 
-    # === Keyboard Shortcuts (delegado a keyboard_shortcuts.py) ===
+    # === Keyboard ===
 
     def _setup_shortcuts(self) -> None:
         """Bind global keyboard shortcuts."""

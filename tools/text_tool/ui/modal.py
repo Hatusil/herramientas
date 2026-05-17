@@ -4,25 +4,15 @@ from typing import Callable
 
 import customtkinter as ctk
 import tkinter as tk
-from tkinter import filedialog
 
 from core.constants import COLORS
+from tools.text_tool.ui.modal_export import export_png, export_pdf
 
 logger = logging.getLogger(__name__)
 
 
 class ChartModal(ctk.CTkToplevel):
-    """Modal for expanded chart view with export capabilities.
-
-    Displays an image with zoom (scroll), pan (drag), and export (PNG/PDF).
-    Uses callbacks instead of direct attribute access for better decoupling.
-
-    Args:
-        parent: Parent widget (CTkTabview or CTkFrame)
-        image_data: PNG image bytes
-        title: Title for the modal window
-        on_status: Callback function(message, color) for status updates
-    """
+    """Modal for expanded chart view with zoom, pan, and export (PNG/PDF)."""
 
     def __init__(
         self,
@@ -72,7 +62,7 @@ class ChartModal(ctk.CTkToplevel):
     # -------------------------------------------------------------------------
 
     def _on_scroll(self, event) -> str:
-        """Handle scroll events - zoom only (Linux + Windows)."""
+        """Handle scroll events for zoom."""
         try:
             from PIL import Image, ImageTk
 
@@ -117,12 +107,12 @@ class ChartModal(ctk.CTkToplevel):
     # -------------------------------------------------------------------------
 
     def _on_drag_start(self, event) -> None:
-        """Start drag for panning."""
+        """Start drag."""
         self._drag_start_x = event.x
         self._drag_start_y = event.y
 
     def _on_drag_motion(self, event) -> None:
-        """Pan the canvas during drag - smooth movement."""
+        """Pan canvas during drag."""
         if hasattr(self, '_drag_start_x'):
             dx = event.x - self._drag_start_x
             dy = event.y - self._drag_start_y
@@ -141,7 +131,7 @@ class ChartModal(ctk.CTkToplevel):
     # -------------------------------------------------------------------------
 
     def _center_window(self) -> None:
-        """Center the modal on screen."""
+        """Center modal on screen."""
         self.update_idletasks()
 
         screen_width = self.winfo_screenwidth()
@@ -231,16 +221,13 @@ class ChartModal(ctk.CTkToplevel):
         self._setup_export_buttons()
 
     def _display_image(self) -> None:
-        """Display the image on canvas."""
+        """Display image on canvas."""
         try:
             from PIL import Image, ImageTk
             from io import BytesIO
 
             if not isinstance(self.image_data, (bytes, bytearray)):
-                raise ValueError(
-                    f"image_data debe ser bytes, recibido: {type(self.image_data)}"
-                )
-
+                raise ValueError(f"image_data debe ser bytes, recibido: {type(self.image_data)}")
             if len(self.image_data) == 0:
                 raise ValueError("image_data está vacío")
 
@@ -262,9 +249,7 @@ class ChartModal(ctk.CTkToplevel):
             if img.mode != 'RGBA':
                 img = img.convert('RGBA')
 
-            img_display = img.resize(
-                (display_width, display_height), Image.Resampling.LANCZOS
-            )
+            img_display = img.resize((display_width, display_height), Image.Resampling.LANCZOS)
 
             self.photo_img = ImageTk.PhotoImage(img_display)
             self.canvas.create_image(0, 0, anchor="nw", image=self.photo_img)
@@ -325,76 +310,8 @@ class ChartModal(ctk.CTkToplevel):
 
     def _export_png(self) -> None:
         """Export chart as PNG (300 DPI)."""
-        try:
-            from datetime import datetime
-            from PIL import Image
-            from io import BytesIO
-
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            default_name = f"{self.title_text.lower().replace(' ', '_')}_{timestamp}"
-
-            filename = filedialog.asksaveasfilename(
-                title="Guardar imagen PNG",
-                defaultextension=".png",
-                filetypes=[("PNG", "*.png"), ("All files", "*.*")],
-                initialfile=f"{default_name}.png"
-            )
-
-            if not filename:
-                return
-
-            if hasattr(self, 'full_image'):
-                img = self.full_image
-            else:
-                img = Image.open(BytesIO(self.image_data))
-
-            img.save(filename, "PNG", dpi=(300, 300))
-            self.on_status(f"✅ PNG guardado: {filename}", "green")
-
-        except Exception as e:
-            logger.error(f"Error exporting PNG: {e}")
-            self.on_status(f"❌ Error al guardar PNG: {e}", "red")
+        export_png(self.image_data, getattr(self, 'full_image', None), self.title_text, self.on_status)
 
     def _export_pdf(self) -> None:
         """Export chart as PDF (vector)."""
-        try:
-            from datetime import datetime
-            from PIL import Image
-            import matplotlib.pyplot as plt
-            from matplotlib.backends.backend_pdf import PdfPages
-            import numpy as np
-            from io import BytesIO
-
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            default_name = f"{self.title_text.lower().replace(' ', '_')}_{timestamp}"
-
-            filename = filedialog.asksaveasfilename(
-                title="Guardar como PDF",
-                defaultextension=".pdf",
-                filetypes=[("PDF", "*.pdf"), ("All files", "*.*")],
-                initialfile=f"{default_name}.pdf"
-            )
-
-            if not filename:
-                return
-
-            if hasattr(self, 'full_image'):
-                img = self.full_image
-            else:
-                img = Image.open(BytesIO(self.image_data))
-
-            img_array = np.array(img)
-
-            with PdfPages(filename) as pdf:
-                fig = plt.figure(figsize=(10, 8))
-                plt.imshow(img_array, aspect='auto')
-                plt.axis('off')
-                plt.tight_layout(pad=0)
-                pdf.savefig(fig, bbox_inches='tight', dpi=300)
-                plt.close(fig)
-
-            self.on_status(f"✅ PDF guardado: {filename}", "green")
-
-        except Exception as e:
-            logger.error(f"Error exporting PDF: {e}")
-            self.on_status(f"❌ Error al guardar PDF: {e}", "red")
+        export_pdf(self.image_data, getattr(self, 'full_image', None), self.title_text, self.on_status)

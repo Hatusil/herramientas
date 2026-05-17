@@ -19,8 +19,8 @@ from tools.scrubber.processor import (
     clean_docx,
     get_xlsx_metadata,
     clean_xlsx,
-    get_output_path,
 )
+from core.file_utils import get_output_path
 
 
 # =============================================================================

@@ -293,24 +293,3 @@ class FilePicker(ctk.CTkFrame):
     def get_files(self) -> List[str]:
         """Retorna lista de archivos."""
         return self.files
-
-
-def select_files(filetypes=None, multiple=True, title="Seleccionar"):
-    """Función helper para diálogo simple."""
-    if multiple:
-        return filedialog.askopenfilenames(title=title, filetypes=filetypes)
-    else:
-        return filedialog.askopenfilename(title=title, filetypes=filetypes)
-
-
-def open_file_cross_platform(file_path: str) -> None:
-    """
-    Abre un archivo con la aplicación predeterminada del sistema.
-    Cross-platform: Windows, macOS, Linux.
-    """
-    if sys.platform == 'win32':
-        os.startfile(file_path)
-    elif sys.platform == 'darwin':
-        subprocess.run(['open', file_path], check=True)
-    else:
-        subprocess.run(['xdg-open', file_path], check=True)

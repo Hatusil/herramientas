@@ -72,15 +72,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 def get_pdf_info(file_path: str) -> Dict[str, Any]:
-    """
-    Obtiene información y metadatos de un PDF.
-    
-    Args:
-        file_path: Ruta al archivo PDF
-        
-    Returns:
-        dict: Información del PDF
-    """
+    """Obtiene información y metadatos de un PDF."""
     with Timer('pdf_tool.get_pdf_info'):
         increment('pdf_tool.get_pdf_info_calls')
         return _get_pdf_info_module(file_path)
@@ -96,82 +88,18 @@ def check_pdf_encrypted(file_path: str) -> bool:
 # =============================================================================
 
 def add_text_watermark(files: List[str], text: str, **options) -> Dict[str, Any]:
-    """
-    Agrega marca de agua de texto a PDFs.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        text: Texto del watermark
-        **options: font_size, color, opacity, rotation, position
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Agrega marca de agua de texto a PDFs."""
     return _add_text_watermark_module(files, text, **options)
 
 
 def add_image_watermark(files: List[str], image_path: str, **options) -> Dict[str, Any]:
-    """
-    Agrega marca de agua de imagen a PDFs.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        image_path: Ruta a la imagen
-        **options: scale, opacity, position
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Agrega marca de agua de imagen a PDFs."""
     return _add_image_watermark_module(files, image_path, **options)
 
 
 def remove_watermarks(files: List[str], **options) -> Dict[str, Any]:
-    """
-    Elimina marcas de agua de PDFs.
-    
-    Usa el módulo watermark_removal.py con Fitz para eliminación visual
-    (watermarks mergeados en el contenido). Si Fitz no está disponible,
-    usa pypdf para eliminar solo anotaciones.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        **options:
-            - mode: 'visual' | 'annotations' | 'auto' (default: 'auto')
-            - detection_mode: 'auto' | 'manual' (para modo visual)
-            - manual_region: dict con x, y, width, height (para modo manual)
-            
-    Returns:
-        dict: Resultado de la operación
-    """
-    mode = options.get('mode', 'auto')
-    
-    # Mode 'auto': intentar visual primero, luego fallback a annotations
-    # Mode 'visual': solo eliminación visual con Fitz
-    # Mode 'annotations': solo eliminación de anotaciones con pypdf
-    
-    if mode == 'auto' or mode == 'visual':
-        # Intentar eliminación visual con Fitz
-        if _check_fitz_module():
-            detection_mode = options.get('detection_mode', 'auto')
-            manual_region = options.get('manual_region', None)
-            
-            result = _remove_watermark_fitz_module(
-                files,
-                detection_mode=detection_mode,
-                preserve_layout=True,
-                manual_region=manual_region
-            )
-            
-            if result.get('success'):
-                logger.info("Eliminación visual de watermark completada")
-                return result
-            
-            # Si falló pero es modo 'auto', continuar al fallback
-            if mode == 'visual':
-                return result
-    
-    # Fallback a eliminación de anotaciones con pypdf
-    return _remove_annotations_module(files)
+    """Elimina marcas de agua de PDFs (visual/annotations/auto)."""
+    return _remove_watermarks_module(files, **options)
 
 
 # =============================================================================
@@ -180,19 +108,7 @@ def remove_watermarks(files: List[str], **options) -> Dict[str, Any]:
 
 def add_text_annotation(files: List[str], text: str, page: int = 0,
                         x: float = 100, y: float = 100, **options) -> Dict[str, Any]:
-    """
-    Agrega una anotación de texto a una página del PDF.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        text: Texto de la anotación
-        page: Número de página (0-indexed)
-        x, y: Posición
-        **options: font, font_size, color, background_color
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Agrega una anotación de texto a una página del PDF."""
     return _add_text_annotation_module(files, text, page, x, y, **options)
 
 
@@ -201,106 +117,41 @@ def add_text_annotation(files: List[str], text: str, page: int = 0,
 # =============================================================================
 
 def rotate_pages(files: List[str], degrees: int = 90, pages: List[int] = None) -> Dict[str, Any]:
-    """
-    Rota páginas del PDF.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        degrees: Grados de rotación (90, 180, 270)
-        pages: Lista de números de página a rotar (None = todas)
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Rota páginas del PDF."""
     with Timer('pdf_tool.rotate_pages'):
         increment('pdf_tool.rotate_pages_calls')
         return _rotate_pages_module(files, degrees=degrees, pages=pages)
 
 
 def reorder_pages(files: List[str], new_order: List[int]) -> Dict[str, Any]:
-    """
-    Reordena las páginas de un PDF.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        new_order: Lista con el nuevo orden de páginas (1-indexed)
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Reordena las páginas de un PDF."""
     return _reorder_pages_module(files, new_order)
 
 
 def merge_pdfs(files: List[str], output_path: str = None) -> Dict[str, Any]:
-    """
-    Combina múltiples PDFs en uno.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        output_path: Ruta de salida (opcional)
-        
-    Returns:
-        dict: Resultado con la ruta del PDF combinado
-    """
+    """Combina múltiples PDFs en uno."""
     with Timer('pdf_tool.merge_pdfs'):
         increment('pdf_tool.merge_pdfs_calls')
         return _merge_pdfs_module(files, output_path=output_path)
 
 
 def extract_pages(files: List[str], pages: List[int]) -> Dict[str, Any]:
-    """
-    Extrae páginas específicas de un PDF.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        pages: Lista de números de página a extraer (1-indexed)
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Extrae páginas específicas de un PDF."""
     return _extract_pages_module(files, pages)
 
 
 def extract_range(files: List[str], start: int, end: int) -> Dict[str, Any]:
-    """
-    Extrae un rango de páginas de un PDF.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        start: Página inicial (1-indexed)
-        end: Página final (1-indexed)
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Extrae un rango de páginas de un PDF."""
     return _extract_range_module(files, start, end)
 
 
 def extract_page(files: List[str], page_number: int) -> Dict[str, Any]:
-    """
-    Extrae una página específica de un PDF.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        page_number: Número de página a extraer (1-indexed)
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Extrae una página específica de un PDF."""
     return _extract_page_module(files, page_number)
 
 
 def reorder_pages_advanced(files: List[str], new_order: List[int]) -> Dict[str, Any]:
-    """
-    Reordena las páginas de un PDF con validación mejorada.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        new_order: Lista con el nuevo orden de páginas (1-indexed)
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Reordena las páginas de un PDF con validación mejorada."""
     return _reorder_pages_advanced_module(files, new_order)
 
 
@@ -309,16 +160,7 @@ def reorder_pages_advanced(files: List[str], new_order: List[int]) -> Dict[str, 
 # =============================================================================
 
 def add_page_numbers(files: List[str], **options) -> Dict[str, Any]:
-    """
-    Agrega números de página al PDF.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        **options: position (header/footer), format, start, font_size, color
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Agrega números de página al PDF."""
     return _add_page_numbers_module(files, **options)
 
 
@@ -378,30 +220,12 @@ def redact_area(files: List[str], page: int = 0, x: float = 100, y: float = 100,
 # =============================================================================
 
 def encrypt_pdf(files: List[str], password: str) -> Dict[str, Any]:
-    """
-    Bloquea un PDF con contraseña.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        password: Contraseña para bloquear
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Bloquea un PDF con contraseña."""
     return _encrypt_pdf_module(files, password)
 
 
 def decrypt_pdf(files: List[str], password: str) -> Dict[str, Any]:
-    """
-    Desbloquea un PDF con contraseña.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        password: Contraseña para desbloquear
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Desbloquea un PDF con contraseña."""
     return _decrypt_pdf_module(files, password)
 
 
@@ -410,33 +234,12 @@ def decrypt_pdf(files: List[str], password: str) -> Dict[str, Any]:
 # =============================================================================
 
 def compress_pdf(files: List[str], level: str = 'medium') -> Dict[str, Any]:
-    """
-    Comprime un PDF para reducir su tamaño.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        level: Nivel de compresión (low, medium, high)
-        
-    Returns:
-        dict: Resultado de la operación
-    """
+    """Comprime un PDF para reducir su tamaño."""
     return _compress_pdf_module(files, level)
 
 
 def clean_metadata(files: List[str]) -> Dict[str, Any]:
-    """
-    Limpia metadatos de un PDF.
-    
-    Args:
-        files: Lista de rutas de PDFs
-        
-    Returns:
-        dict: Resultado de la operación
-        
-    .. deprecated::
-        Usar directamente `core.utils.clean_metadata` en su lugar.
-    """
-    # Alias para backward compatibility - délega a core.utils
+    """Limpia metadatos de un PDF (delegado a core.utils)."""
     from core.utils import clean_metadata as _clean_metadata
     return _clean_metadata(files)
 
@@ -446,25 +249,12 @@ def clean_metadata(files: List[str]) -> Dict[str, Any]:
 # =============================================================================
 
 def execute_pipeline(files: List[str], operations: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Ejecuta múltiples operaciones en pipeline.
-    
-    Args:
-        files: Lista de archivos PDF (solo se usa el primero)
-        operations: Lista de operaciones con 'type' y 'params'
-        
-    Returns:
-        dict: Resultado de la ejecución
-    """
+    """Ejecuta múltiples operaciones en pipeline."""
     if not files:
         return {'success': False, 'error': 'No se proporcionó archivo de entrada'}
-    
     if not operations:
         return {'success': False, 'error': 'No hay operaciones para ejecutar'}
-    
-    input_file = files[0]
-    
-    return _execute_pipeline_operations_module(input_file, operations)
+    return _execute_pipeline_operations_module(files[0], operations)
 
 
 # =============================================================================

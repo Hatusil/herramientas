@@ -122,7 +122,7 @@ def calculate_all_hashes(file_path: str) -> Dict[str, Any]:
     Calcula todos los hashes de un archivo.
     """
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Archivo no encontrado: {file_path}")
+        return {'success': False, 'error': f'Archivo no encontrado: {file_path}'}
     
     try:
         hashes = {}

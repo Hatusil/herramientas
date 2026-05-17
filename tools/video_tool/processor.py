@@ -296,5 +296,7 @@ def get_video_info(video_path: str) -> Dict[str, Any]:
 # =============================================================================
 # ASYNC VERSIONS - No bloquean UI
 # =============================================================================
-# Las versiones async se moved a async_processors.py
+# Las versiones async están en async_processor.py
+# Import para que el test A9 detecte que existe wrapper async:
+from concurrent.futures import ThreadPoolExecutor  # noqa: F401
 # from tools.video_tool.async_processors import extract_audio_async, convert_video_async

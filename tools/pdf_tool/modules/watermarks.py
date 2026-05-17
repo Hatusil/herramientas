@@ -354,17 +354,43 @@ def remove_annotations(files: List[str]) -> Dict[str, Any]:
     }
 
 
-def remove_watermarks(files: List[str]) -> Dict[str, Any]:
+def remove_watermarks(files: List[str], **options) -> Dict[str, Any]:
     """
-    Alias para remove_annotations() - Mantenido por compatibilidad.
-    
-    Elimina anotaciones de PDFs. 
-    Ver documentación de remove_annotations() para más detalles.
+    Elimina marcas de agua de PDFs.
     
     Args:
         files: Lista de rutas de PDFs
-        
+        **options:
+            - mode: 'auto' | 'visual' | 'annotations' (default: 'auto')
+            - detection_mode: 'auto' | 'manual' (para modo visual)
+            - manual_region: dict con x, y, width, height
+    
     Returns:
         dict: Resultado de la operación
     """
+    mode = options.get('mode', 'auto')
+    
+    # Importar aquí para evitar dependencia circular
+    from tools.pdf_tool.modules.watermark_removal import check_fitz, remove_watermark as remove_watermark_visual
+    
+    # Mode 'auto' o 'visual': intentar eliminación visual con Fitz
+    if mode in ('auto', 'visual'):
+        if check_fitz():
+            detection_mode = options.get('detection_mode', 'auto')
+            manual_region = options.get('manual_region', None)
+            
+            result = remove_watermark_visual(
+                files,
+                detection_mode=detection_mode,
+                preserve_layout=True,
+                manual_region=manual_region
+            )
+            
+            if result.get('success'):
+                return result
+            
+            if mode == 'visual':
+                return result
+    
+    # Fallback a eliminación de anotaciones
     return remove_annotations(files)
