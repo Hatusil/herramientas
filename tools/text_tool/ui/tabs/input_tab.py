@@ -183,7 +183,11 @@ class InputTab(BaseTab):
         
         if text:
             self._state.update_text(text)
+            print(f"[DEBUG] Text loaded: {len(text)} chars")
+            self._callbacks.on_status(f"Texto cargado: {len(text)} caracteres", COLORS.get("success", "green"))
             self._callbacks.request_analysis("run_specific", {"type": "stats", "params": {}})
+        else:
+            self._callbacks.on_status("⚠️ No hay texto para analizar", COLORS.get("warning", "orange"))
         elif input_type in ("files", "url"):
             # Show message if no text was loaded
             if self._load_btn:
