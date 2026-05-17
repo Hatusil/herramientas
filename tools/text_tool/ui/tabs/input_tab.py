@@ -118,6 +118,13 @@ class InputTab(BaseTab):
             height=40,
         )
         self._load_btn.pack(fill="x")
+        
+        # Button text per input type
+        self._button_texts = {
+            "text": "📥 Agregar Texto",
+            "files": "📄 Seleccionar Archivos",
+            "url": "🌐 Cargar URLs",
+        }
 
     # === Rest of methods remain here ===
     # (Keep existing logic for events, callbacks, etc.)
@@ -135,23 +142,53 @@ class InputTab(BaseTab):
         
         if self._url_frame:
             self._url_frame.pack_forget() if tipo != "url" else self._url_frame.pack(fill="x", padx=10, pady=10)
+        
+        # Update button text based on input type
+        if hasattr(self, '_load_btn') and self._load_btn and hasattr(self, '_button_texts'):
+            self._load_btn.configure(text=self._button_texts.get(tipo, "📥 Agregar Texto"))
 
     def _load_and_analyze(self) -> None:
         """Load input and trigger analysis."""
         text = ""
+        input_type = self._input_type.get()
         
-        if self._input_type.get() == "text" and self._text_area:
+        if input_type == "text" and self._text_area:
             text = self._text_area.get("1.0", "end").strip()
-        elif self._input_type.get() == "files":
-            # File loading logic
-            pass
-        elif self._input_type.get() == "url":
-            # URL loading logic
-            pass
+        elif input_type == "files":
+            # Open file dialog to select text files
+            from tkinter import filedialog
+            files = filedialog.askopenfilenames(
+                title="Seleccionar archivos de texto",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+            )
+            if files:
+                # Read content from files
+                for f in files:
+                    try:
+                        with open(f, 'r', encoding='utf-8') as fp:
+                            text += fp.read() + "\n"
+                    except Exception as e:
+                        logger.warning(f"Could not read {f}: {e}")
+        elif input_type == "url":
+            # Get text from URLs
+            for _, url_entry in self._url_entries:
+                url = url_entry.get().strip()
+                if url:
+                    try:
+                        import requests
+                        response = requests.get(url, timeout=10)
+                        text += response.text + "\n"
+                    except Exception as e:
+                        logger.warning(f"Could not fetch {url}: {e}")
         
         if text:
             self._state.set_text(text)
             self._callbacks.on_analyze()
+        elif input_type in ("files", "url"):
+            # Show message if no text was loaded
+            if self._load_btn:
+                msg = "No se pudieron cargar los archivos" if input_type == "files" else "No se pudieron cargar las URLs"
+                self._load_btn.configure(text=f"⚠️ {msg}")
 
     def get_frame(self) -> ctk.CTkFrame:
         """Return the main frame for this tab (BaseTab abstract method)."""

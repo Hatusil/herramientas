@@ -15,8 +15,13 @@ class FileSelectorMixin:
     
     def _setup_file_selector(self) -> None:
         """Construye el selector de archivos con lista y botones."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         # Check if this should be skipped (for tools with custom UI)
-        if getattr(self, '_skip_file_selector', False):
+        skip = getattr(self, '_skip_file_selector', False)
+        logger.debug(f"FileSelectorMixin._setup_file_selector called, skip={skip}")
+        if skip:
             return
             
         frame = ctk.CTkFrame(self)
