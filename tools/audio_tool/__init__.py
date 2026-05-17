@@ -140,34 +140,34 @@ class AudioTool(BaseTool):
             callback: Función(result) a llamar al terminar
         """
         action = options.get('action', 'normalize')
-        print(f"DEBUG process_async: action={action}, files={files}")
+        logger.debug(f"process_async: action={action}, files={files}")
 
         # Usar función async del processor si existe
         try:
-            print(f"DEBUG: callback={callback}, action={action}")
+            logger.debug(f"callback={callback}, action={action}")
             if action == 'normalize':
                 from tools.audio_tool.processor import normalize_audio_async
-                print("DEBUG: importing normalize_audio_async OK")
+                logger.debug("importing normalize_audio_async OK")
                 normalize_audio_async(files, callback=callback, **options)
-                print("DEBUG: normalize_audio_async called")
+                logger.debug("normalize_audio_async called")
             elif action == 'clean':
                 from tools.audio_tool.processor import clean_audio_metadata_async
                 clean_audio_metadata_async(files, callback=callback)
             elif action == 'convert':
                 from tools.audio_tool.processor import convert_audio_async
-                print("DEBUG: importing convert_audio_async OK")
+                logger.debug("importing convert_audio_async OK")
                 convert_audio_async(
                     files,
                     output_format=options.get('format', 'mp3'),
                     callback=callback,
                     quality=options.get('quality', 192)
                 )
-                print("DEBUG: convert_audio_async called")
+                logger.debug("convert_audio_async called")
             elif action == 'repair':
                 from tools.audio_tool.processor import repair_audio_async
-                print("DEBUG: importing repair_audio_async OK")
+                logger.debug("importing repair_audio_async OK")
                 repair_audio_async(files, callback=callback)
-                print("DEBUG: repair_audio_async called")
+                logger.debug("repair_audio_async called")
             elif action == 'edit_metadata':
                 from tools.audio_tool.processor import edit_audio_metadata_async
                 edit_audio_metadata_async(files, callback=callback, **options)
