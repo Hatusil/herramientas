@@ -18,6 +18,9 @@ from . import transform
 from . import conversion
 from . import watermark_removal
 from . import pipeline
+from . import annotations
+from . import page_numbers
+from . import compression
 
 # Exportar funciones principales para acceso directo
 # Info
@@ -60,6 +63,15 @@ PDFPipeline = pipeline.PDFPipeline
 create_pipeline = pipeline.create_pipeline
 execute_pipeline_operations = pipeline.execute_pipeline_operations
 
+# Annotations
+add_text_annotation = annotations.add_text_annotation
+
+# Page Numbers
+add_page_numbers = page_numbers.add_page_numbers
+
+# Compression
+compress_pdf = compression.compress_pdf
+
 __all__ = [
     # Info
     'get_pdf_info',
@@ -94,4 +106,10 @@ __all__ = [
     'PDFPipeline',
     'create_pipeline',
     'execute_pipeline_operations',
+    # Annotations
+    'add_text_annotation',
+    # Page Numbers
+    'add_page_numbers',
+    # Compression
+    'compress_pdf',
 ]

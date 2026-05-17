@@ -20,6 +20,10 @@ from tools.pdf_tool.modules import (
     # Info
     get_pdf_info as _get_pdf_info_module,
     check_pdf_encrypted as _check_pdf_encrypted_module,
+    # Annotations
+    add_text_annotation as _add_text_annotation_module,
+    # Page Numbers
+    add_page_numbers as _add_page_numbers_module,
     # Watermarks
     add_text_watermark as _add_text_watermark_module,
     add_image_watermark as _add_image_watermark_module,
@@ -43,6 +47,8 @@ from tools.pdf_tool.modules import (
     images_to_pdf as _images_to_pdf_module,
     pdf_to_images as _pdf_to_images_module,
     redact_area as _redact_area_module,
+    # Compression
+    compress_pdf as _compress_pdf_module,
     # Watermark removal (Fitz)
     remove_watermark as _remove_watermark_fitz_module,
     check_fitz as _check_fitz_module,
@@ -169,10 +175,10 @@ def remove_watermarks(files: List[str], **options) -> Dict[str, Any]:
 
 
 # =============================================================================
-# EDICIÓN - ANOTACIONES
+# EDICIÓN - ANOTACIONES - Delegado a modules/annotations.py
 # =============================================================================
 
-def add_text_annotation(files: List[str], text: str, page: int = 0, 
+def add_text_annotation(files: List[str], text: str, page: int = 0,
                         x: float = 100, y: float = 100, **options) -> Dict[str, Any]:
     """
     Agrega una anotación de texto a una página del PDF.
@@ -187,59 +193,7 @@ def add_text_annotation(files: List[str], text: str, page: int = 0,
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    font = options.get('font', 'Helvetica')
-    font_size = options.get('font_size', '12pt')
-    font_color = options.get('font_color', '000000')
-    bg_color = options.get('background_color', 'FFFF00')
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            for i, page_obj in enumerate(reader.pages):
-                if i == page:
-                    # Crear anotación de texto libre
-                    annotation = FreeText(
-                        text=text,
-                        rect=(x, y, x + 200, y + 50),
-                        font=font,
-                        font_size=font_size,
-                        font_color=font_color,
-                        background_color=bg_color,
-                    )
-                    annotation.flags = 4  # Printable
-                    writer.add_annotation(page_number=i, annotation=annotation)
-                
-                writer.add_page(page_obj)
-            
-            output_path = get_output_path(file_path, '_annotated', _exists_ok=False)
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"Anotación agregada: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Anotación agregada a {len(output_files)}/{len(files)} archivos",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _add_text_annotation_module(files, text, page, x, y, **options)
 
 
 # =============================================================================
@@ -365,81 +319,7 @@ def add_page_numbers(files: List[str], **options) -> Dict[str, Any]:
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf() or canvas is None:
-        return {'success': False, 'error': 'pypdf o reportlab no instalado', 'output_files': []}
-    
-    output_files = []
-    errors = []
-    
-    position = options.get('position', 'footer')  # header o footer
-    format_str = options.get('format', 'Página {n} de {total}')  # formato con {n} y {total}
-    start = options.get('start', 1)  # número inicial
-    font_size = options.get('font_size', 12)
-    color = options.get('color', '#000000')
-    
-    # Convertir color
-    r = int(color[1:3], 16) / 255
-    g = int(color[3:5], 16) / 255
-    b = int(color[5:7], 16) / 255
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            total_pages = len(reader.pages)
-            
-            for i, page in enumerate(reader.pages):
-                page_width = float(page.mediabox.width)
-                page_height = float(page.mediabox.height)
-                
-                # Crear número de página
-                page_num = start + i
-                text = format_str.replace('{n}', str(page_num)).replace('{total}', str(total_pages))
-                
-                # Crear overlay
-                packet = BytesIO()
-                c = canvas.Canvas(packet, pagesize=(page_width, page_height))
-                c.setFont("Helvetica", font_size)
-                c.setFillColorRGB(r, g, b)
-                
-                # Posición
-                text_width = c.stringWidth(text, "Helvetica", font_size)
-                x = (page_width - text_width) / 2
-                y = 20 if position == 'footer' else page_height - 30
-                
-                c.drawString(x, y, text)
-                c.save()
-                packet.seek(0)
-                
-                # Merge con página
-                overlay_reader = PdfReader(packet)
-                overlay_page = overlay_reader.pages[0]
-                page.merge_page(overlay_page)
-                
-                writer.add_page(page)
-            
-            output_path = get_output_path(file_path, '_numbered', _exists_ok=False)
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"Números de página agregados: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Números de página agregados a {len(output_files)}/{len(files)} archivos",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _add_page_numbers_module(files, **options)
 
 
 # =============================================================================
@@ -526,7 +406,7 @@ def decrypt_pdf(files: List[str], password: str) -> Dict[str, Any]:
 
 
 # =============================================================================
-# OPTIMIZACIÓN
+# OPTIMIZACIÓN - Delegado a modules/compression.py
 # =============================================================================
 
 def compress_pdf(files: List[str], level: str = 'medium') -> Dict[str, Any]:
@@ -540,46 +420,7 @@ def compress_pdf(files: List[str], level: str = 'medium') -> Dict[str, Any]:
     Returns:
         dict: Resultado de la operación
     """
-    if not check_pypdf():
-        return {'success': False, 'error': 'pypdf no está instalado', 'output_files': []}
-    
-    # pypdf tiene opciones básicas de compresión
-    # La compresión real requiere técnicas adicionales
-    
-    output_files = []
-    errors = []
-    
-    for file_path in files:
-        if not os.path.exists(file_path):
-            errors.append(f"Archivo no encontrado: {file_path}")
-            continue
-        
-        try:
-            reader = PdfReader(file_path)
-            writer = PdfWriter()
-            
-            # Copiar todas las páginas al writer
-            # pypdf aplica compresión básica al escribir
-            for page in reader.pages:
-                writer.add_page(page)
-            
-            output_path = get_output_path(file_path, '_compressed', _exists_ok=False)
-            with open(output_path, 'wb') as f:
-                writer.write(f)
-            
-            output_files.append(output_path)
-            logger.info(f"PDF comprimido: {file_path}")
-            
-        except Exception as e:
-            errors.append(f"Error en {os.path.basename(file_path)}: {str(e)}")
-    
-    success = len(output_files) > 0
-    return {
-        'success': success,
-        'message': f"Comprimidos {len(output_files)}/{len(files)} PDFs",
-        'output_files': output_files,
-        'error': '; '.join(errors) if errors else None
-    }
+    return _compress_pdf_module(files, level)
 
 
 def clean_metadata(files: List[str]) -> Dict[str, Any]:

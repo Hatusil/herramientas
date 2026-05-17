@@ -7,6 +7,9 @@ from typing import Optional, Dict, Any
 
 import customtkinter as ctk
 
+# Import BaseToolUI - refactorizada para seguir arquitectura
+from core.base_tool_ui import BaseToolUI
+
 # Imports for panels
 from tools.search_tool.ui.folder_selector import FolderSelector
 from tools.search_tool.ui.search_options import SearchOptions
@@ -21,8 +24,8 @@ from core.metrics import Counter, Timer
 
 logger = logging.getLogger(__name__)
 
-# Type alias for the UI base that panels expect
-SearchToolUIBase = ctk.CTkFrame
+# Type alias for backward compatibility
+SearchToolUIBase = BaseToolUI
 
 
 class SearchToolUI(SearchToolUIBase):
@@ -34,11 +37,16 @@ class SearchToolUI(SearchToolUIBase):
         on_process: Optional[callable] = None,
         **kwargs,
     ) -> None:
-        """Initialize SearchToolUI."""
-        super().__init__(master, **kwargs)
+        """Initialize SearchToolUI - extends BaseToolUI."""
+        # BaseToolUI espera on_process como segundo argumento
+        super().__init__(master, on_process or self._dummy_process, **kwargs)
         self._on_process = on_process
         self._init_state()
         self._init_metrics()
+    
+    def _dummy_process(self, files, options):
+        """Dummy process callback - search doesn't use file selector."""
+        return {'success': True, 'message': 'Search uses folder selector'}
 
     def _init_state(self) -> None:
         """Initialize internal state."""
