@@ -134,7 +134,8 @@ class RenameToolUI(BaseToolUI):
         if not find:
             self.status_label.configure(text="Ingrese texto a buscar", text_color="#FFA500")
             return
-        replace = self.replace_entry.get()
+        # Permitir string vacío para eliminar texto
+        replace = self.replace_entry.get() or ""
         from tools.rename_tool.processor import rename_replace
         result = rename_replace(self.files, find, replace)
         self._handle_result(result)
@@ -201,4 +202,5 @@ class RenameToolUI(BaseToolUI):
                 self.status_label.configure(text=f"{result['message']} - {len(result['errors'])} errores", text_color="#FFA500")
             self._clear_files()
         else:
-            self.status_label.configure(text=result.get("error", "Error"), text_color="red")
+            # Mostrar message aunque sea False, no solo "Error"
+            self.status_label.configure(text=result.get("message", "Error desconocido"), text_color="red")

@@ -1,6 +1,13 @@
 """
 Aplicación principal con CustomTkinter.
 Dashboard unificado para navegar entre herramientas.
+
+Arquitectura:
+- app.py: Orquestación principal (setup, tools, themes)
+- window_utils.py: Configuración de ventana
+- content_manager.py: Gestión del área de contenido
+
+Refactorizado por SRP (máxima R0: clases <300 líneas).
 """
 import logging
 from typing import Any
@@ -15,6 +22,8 @@ from ui.sidebar import Sidebar
 from ui.status_bar import StatusBar
 from ui.welcome_screen import create_welcome_screen
 from ui.scroll_utils import setup_scrollable_frame
+from ui.window_utils import center_window
+from ui.content_manager import create_content_frame, rebuild_content_frame
 
 
 # Configurar logging
@@ -71,23 +80,12 @@ class App(ctk.CTk):
     
     def _center_window(self) -> None:
         """Centra la ventana en la pantalla."""
-        self.update_idletasks()
-        
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        
-        window_width = constants.APP_WIDTH
-        window_height = constants.APP_HEIGHT
-        
-        x = (screen_width - window_width) // 2
-        y = (screen_height - window_height) // 2 - 30  # Un poco más arriba
-        
-        self.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        center_window(self)
     
     def _on_resize(self, event: Any) -> None:
         """Maneja cuando se redimensiona la ventana."""
-        # Actualizar el sidebar width según alto de ventana
-        pass  # Por ahora solo mantener
+        from ui.window_utils import on_resize
+        on_resize(event)
     
     def _on_closing(self) -> None:
         """Cierra la app cuando se presiona X o Salir."""
@@ -148,11 +146,7 @@ class App(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)   # Content expandible
         
         # Content area (scrollable)
-        self.content_frame = ctk.CTkScrollableFrame(
-            self,
-            label_text="",
-            fg_color=constants.COLORS["bg_medium"]
-        )
+        self.content_frame = create_content_frame(self)
         self.content_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
         
         # Setup scroll binding
@@ -241,62 +235,15 @@ class App(ctk.CTk):
     
     def _clear_content_frame(self) -> None:
         """Limpia los hijos del content frame para CTkScrollableFrame."""
-        import logging
-        logger = logging.getLogger(__name__)
-        
-        def clean_all_children(widget):
-            """Limpia todos los descendientes de un widget."""
-            try:
-                children = widget.winfo_children()
-                for child in children:
-                    clean_all_children(child)
-                    try:
-                        child.destroy()
-                    except Exception:
-                        pass
-            except Exception:
-                pass
-        
-        try:
-            # Buscar cualquier atributo que parezca un frame interno
-            for attr_name in dir(self.content_frame):
-                if 'interior' in attr_name.lower() or attr_name == 'frame':
-                    try:
-                        inner = getattr(self.content_frame, attr_name, None)
-                        if inner and hasattr(inner, 'winfo_children'):
-                            clean_all_children(inner)
-                            logger.info(f"Limpio {attr_name}")
-                    except Exception:
-                        pass
-            
-            # También limpiar hijos directos
-            clean_all_children(self.content_frame)
-                
-        except Exception as e:
-            logger.warning(f"Error limpiar content frame: {e}")
+        from ui.content_manager import clear_content_frame
+        clear_content_frame(self.content_frame)
     
     def _rebuild_content_frame(self) -> None:
         """Destruye y recreate el content frame para evitar problemas de limpieza."""
-        try:
-            # Destruir el content_frame existente
-            self.content_frame.destroy()
-        except Exception:
-            pass
-        
-        # Recrear el content frame
-        self.content_frame = ctk.CTkScrollableFrame(
-            self,
-            label_text="",
-            fg_color=constants.COLORS["bg_medium"]
+        self.content_frame = rebuild_content_frame(
+            self, self.content_frame, self._setup_scroll
         )
         self.content_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
-        
-        # Setup scroll binding
-        self._setup_scroll()
-    
-    def _on_content_wheel(self, event, canvas) -> None:
-        """Maneja scroll en content - ahora sin usar canvas."""
-        pass  # Deprecated
 
 
 def main():

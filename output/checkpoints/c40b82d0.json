@@ -1,0 +1,14 @@
+{
+  "id": "c40b82d0",
+  "operation": "test-op",
+  "state": {
+    "timestamp": "2026-05-16T15:04:32.282992",
+    "git_branch": "main",
+    "uncommitted_files": [
+      "?? core/checkpoint.py"
+    ],
+    "context": {
+      "nota": "test"
+    }
+  }
+}

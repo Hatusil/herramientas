@@ -50,75 +50,13 @@ from tools.pdf_tool.modules import (
     execute_pipeline_operations as _execute_pipeline_operations_module,
 )
 
-# Constantes de validación
-PDF_EXTENSIONS = ('.pdf',)
-MAX_PDF_SIZE_MB = 100  # 100MB max for PDF files
-
-
-def _validate_pdf_input(file_path: str) -> Dict[str, Any]:
-    """Valida archivo de entrada para operaciones PDF."""
-    check = validate_input_file(file_path)
-    if not check['valid']:
-        return check
-    check = validate_file_extension(file_path, PDF_EXTENSIONS)
-    if not check['valid']:
-        return check
-    check = validate_file_size(file_path, MAX_PDF_SIZE_MB)
-    if not check['valid']:
-        return check
-    return {'valid': True}
-
-try:
-    from pypdf import PdfReader, PdfWriter, PageObject
-    from pypdf.generic import RectangleObject
-    from pypdf.annotations import FreeText, Highlight
-except ImportError:
-    PdfReader = None
-    PdfWriter = None
-
-try:
-    from PIL import Image
-except ImportError:
-    Image = None
-
-try:
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import letter
-    from reportlab.lib.units import inch
-    from io import BytesIO
-except ImportError:
-    canvas = None
+# Constantes y utilitarias delegadas a utils.py
+from tools.pdf_tool.utils import (
+    _validate_pdf_input, _validate_encryption_password, check_pypdf,
+    PDF_EXTENSIONS, MAX_PDF_SIZE_MB
+)
 
 logger = logging.getLogger(__name__)
-
-
-# =============================================================================
-# VALIDACIÓN
-# =============================================================================
-
-def _validate_encryption_password(password: str) -> bool:
-    """
-    Valida la contraseña para encriptación de PDF.
-    
-    Args:
-        password: Contraseña a validar
-        
-    Returns:
-        bool: True si la contraseña es válida
-    """
-    if not password or len(password) < 4 or len(password) > 64:
-        return False
-    return True
-
-
-# =============================================================================
-# UTILIDADES
-# =============================================================================
-
-def check_pypdf() -> bool:
-    """Verifica si pypdf está instalado."""
-    return PdfReader is not None
-
 
 # get_output_path() importado desde core.utils (máxima #3: Consistency)
 
@@ -689,26 +627,5 @@ def execute_pipeline(files: List[str], operations: List[Dict[str, Any]]) -> Dict
 
 
 # =============================================================================
-# ASYNC VERSIONS - No bloquean UI
+# ASYNC VERSIONS - Movido a async_processors.py (máxima R0: <300 líneas)
 # =============================================================================
-from core.async_utils import run_in_background
-
-def rotate_pages_async(files: List[str], callback, degrees: int = 90, pages: List[int] = None):
-    """
-    Versión async de rotate_pages().
-    """
-    return run_in_background(rotate_pages, files, callback=callback, degrees=degrees, pages=pages)
-
-
-def merge_pdfs_async(files: List[str], callback, output_path: str = None):
-    """
-    Versión async de merge_pdfs().
-    """
-    return run_in_background(merge_pdfs, files, callback=callback, output_path=output_path)
-
-
-def extract_pages_async(files: List[str], callback, pages: List[int]):
-    """
-    Versión async de extract_pages().
-    """
-    return run_in_background(extract_pages, files, callback=callback, pages=pages)

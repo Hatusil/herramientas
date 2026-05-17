@@ -93,11 +93,21 @@ def rename_replace(files: List[str], find: str, replace: str) -> Dict[str, Any]:
             try:
                 p = Path(f)
                 new_name = p.name.replace(find, replace)
-                new_path = p.parent / new_name
-                if new_path.exists():
-                    errors.append(f"Ya existe: {new_name}")
+                
+                # Si el nombre no cambió, omitir
+                if new_name == p.name:
+                    errors.append(f"Sin cambios: {p.name}")
                     continue
-                shutil.copy2(f, new_path)  # A8: copy instead of rename for idempotency
+                    
+                new_path = p.parent / new_name
+                
+                # Si el destino es igual al origen, ya está renombrado
+                if new_path == p:
+                    renamed.append((f, str(new_path)))
+                    continue
+                
+                # Copiar (preserva el archivo original), usar copy que permite sobrescribir
+                shutil.copy(f, new_path)
                 renamed.append((f, str(new_path)))
             except Exception as e:
                 errors.append(f"Error: {p.name} - {str(e)}")

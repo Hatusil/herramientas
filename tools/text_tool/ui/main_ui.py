@@ -1,9 +1,16 @@
-"""Main UI orchestrator for Text Analyzer."""
+"""
+Main UI orchestrator for Text Analyzer.
+
+Arquitectura (SRP - máxima R0: clases <300 líneas):
+- threading_utils.py: Threading y progress
+- keyboard_shortcuts.py: Keyboard shortcuts
+- constants.py: Configuración de tabs e iconos
+- state.py, callbacks.py, tabs.py: otros módulos existentes
+"""
 from __future__ import annotations
 
 import logging
 import os
-from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict
@@ -14,6 +21,11 @@ from tkinter import filedialog
 
 from core.base_tool_ui import BaseToolUI
 from core.constants import font
+from tools.text_tool.ui.threading_utils import run_in_thread
+from tools.text_tool.ui.keyboard_shortcuts import (
+    setup_shortcuts, handle_paste, handle_open, handle_save, handle_run, handle_cancel
+)
+from tools.text_tool.ui.constants import TAB_ORDER, TAB_ICONS, HELP_CONTENT
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
@@ -21,41 +33,6 @@ if TYPE_CHECKING:
     from tools.text_tool.ui.tabs import BaseTab
 
 logger = logging.getLogger(__name__)
-
-# Tab configuration
-TAB_ORDER = [
-    "input", "clean", "stats", "freq", "wc", "ngrams",
-    "trends", "corr", "scatter", "wordtree", "streamgraph",
-    "bubblelines", "mandala", "kwic", "topics"
-]
-
-TAB_ICONS = {
-    "input": "📥", "clean": "⚙️", "stats": "📉", "freq": "📈",
-    "wc": "☁️", "ngrams": "🔗", "trends": "📊", "corr": "🔥",
-    "scatter": "⬡", "wordtree": "🌳", "streamgraph": "🌊",
-    "bubblelines": "🫧", "mandala": "⭕", "kwic": "🔍", "topics": "📚"
-}
-
-HELP_CONTENT = {
-    "title": "Ayuda - Text Analyzer",
-    "description": "📊 Analiza texto: WordCloud, frecuencia, estadísticas, n-grams, Trends, Correlaciones, Scatter, StreamGraph, Bubblelines, Mandala",
-    "usage": [
-        "1. Elegir tipo: Texto/Archivo/URL",
-        "2. Ingresar o seleccionar contenido",
-        "3. Click en 'Cargar y Analizar'",
-        "4. Ver resultados en las solapas",
-        "5. Click en gráficos para ver en ventana grande",
-    ],
-    "tips": [
-        "💡 Ctrl+V=paste, Ctrl+O=abrir, Ctrl+S=guardar",
-        "💡 Ctrl+Enter=analizar, Escape=cancelar",
-        "💡 Arrastrá archivos sobre el área de texto",
-    ],
-    "warnings": [
-        "⚠️ Textos grandes (>100KB) son más lentos",
-        "⚠️ URL scraping puede fallar con anti-bot",
-    ],
-}
 
 
 class TextAnalyzerUI(BaseToolUI):
@@ -92,9 +69,8 @@ class TextAnalyzerUI(BaseToolUI):
 
         # Threading
         self.executor = ThreadPoolExecutor(max_workers=1)
-        self._process_queue: deque = deque()
         self._is_processing = False
-        self._is_batch_analysis = False  # Flag para que tabs no actualicen status durante batch
+        self._is_batch_analysis = False
         self._progress_start_time = 0.0
         self._progress_threshold = 2.0
 
@@ -191,65 +167,16 @@ class TextAnalyzerUI(BaseToolUI):
         except Exception as e:
             logger.error(f"Tab change error: {e}")
 
-    # === Threading ===
+    # === Threading (delegado a threading_utils.py) ===
 
-    def run_in_thread(
-        self, target: Callable, callback: Callable[[Any], None],
-        *args: Any, **kwargs: Any
-    ) -> None:
-        """Execute function in background thread."""
-        if self._is_processing:
-            self._on_status("Análisis en progreso...", "orange")
-            return
+    def run_in_thread(self, target, callback, *args, **kwargs):
+        return run_in_thread(self, target, callback, *args, **kwargs)
 
-        self._is_processing = True
-        self._progress_start_time = _get_time()
-        self._schedule_progress()
-
-        def worker() -> None:
-            try:
-                result = target(*args, **kwargs)
-                self.after(0, lambda: self._handle_result(result, callback))
-            except Exception as e:
-                self.after(0, lambda: self._handle_error(str(e)))
-
-        self.executor.submit(worker)
-
-    def _schedule_progress(self) -> None:
-        """Show progress bar after threshold if still running."""
-        self.after(int(self._progress_threshold * 1000), self._check_show_progress)
-
-    def _check_show_progress(self) -> None:
-        """Display progress bar if operation is slow."""
-        if self._is_processing:
-            self._on_status("Procesando...", "blue")
-            if self.progress_bar:
-                self.progress_bar.pack(pady=(0, 5))
-                self.progress_bar.start()
-
-    def _handle_result(self, result: Any, callback: Callable) -> None:
-        """Process successful result."""
-        self._stop_progress()
-        self._is_processing = False
-        callback(result)
-
-    def _handle_error(self, msg: str) -> None:
-        """Process error from background thread."""
-        self._stop_progress()
-        self._is_processing = False
-        self._on_status(f"Error: {msg}", "red")
-
-    def _stop_progress(self) -> None:
+    def _stop_progress(self):
         """Hide progress bar."""
         if self.progress_bar:
             self.progress_bar.stop()
             self.progress_bar.pack_forget()
-
-    def _progress_callback(self, current: int, total: int, msg: str = "") -> None:
-        """Update progress during long operations."""
-        if total > 0 and self.progress_bar:
-            self.progress_bar.set(current / total)
-        self._on_status(f"{msg} {current}/{total}", "blue")
 
     # === Analysis ===
 
@@ -345,19 +272,18 @@ class TextAnalyzerUI(BaseToolUI):
         self._on_text_changed()
         self._on_status("Frecuencias actualizadas", "green")
 
-    # === Keyboard Shortcuts ===
+    # === Keyboard Shortcuts (delegado a keyboard_shortcuts.py) ===
 
     def _setup_shortcuts(self) -> None:
         """Bind global keyboard shortcuts."""
-        bindings = [
-            ('<Control-v>', self._on_paste),
-            ('<Control-o>', self._on_open_file),
-            ('<Control-s>', self._on_save_file),
-            ('<Control-Return>', self._on_run),
-            ('<Escape>', self._on_cancel)
-        ]
-        for key, handler in bindings:
-            self.bind(key, handler)
+        handlers = {
+            'on_paste': self._on_paste,
+            'on_open': self._on_open_file,
+            'on_save': self._on_save_file,
+            'on_run': self._on_run,
+            'on_cancel': self._on_cancel,
+        }
+        setup_shortcuts(self, handlers)
 
     def _on_paste(self, event: Any = None) -> str:
         """Handle Ctrl+V."""

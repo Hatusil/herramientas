@@ -7,7 +7,7 @@ from PIL import Image, ImageSequence
 from typing import List, Dict, Any
 
 # Importar función compartida de core (máxima C2: Consistency)
-from core.utils import get_output_path, get_output_path_format
+from core.utils import get_output_path_format
 from core.file_utils import validate_input_file
 
 # Métricas
@@ -81,9 +81,9 @@ def create_gif(image_paths: List[str], output_path: str = None, duration: int = 
                     img = img.resize(first_size, Image.LANCZOS)
                 resized.append(img)
             
-            # Determinar output usando get_output_path (máxima C2: Consistency)
+            # Determinar output usando get_output_path_format (máxima C2: Consistency)
             if output_path is None:
-                output_path = get_output_path(image_paths[0], '_animated', _exists_ok=False)
+                output_path = get_output_path_format(image_paths[0], '_animated', '.gif', _exists_ok=False)
             
             # Guardar como GIF
             resized[0].save(
