@@ -152,8 +152,7 @@ class App(ctk.CTk):
         self.content_frame = create_content_frame(self)
         self.content_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
         
-        # Setup scroll binding
-        self._setup_scroll()
+        # CTkScrollableFrame maneja scroll internamente - no necesita setup adicional
     
     def _setup_scroll(self) -> None:
         """Configura scroll con mouse wheel de forma independiente."""
@@ -243,9 +242,7 @@ class App(ctk.CTk):
     
     def _rebuild_content_frame(self) -> None:
         """Destruye y recrea el content frame para evitar problemas de limpieza."""
-        self.content_frame = rebuild_content_frame(
-            self, self.content_frame, self._setup_scroll
-        )
+        self.content_frame = rebuild_content_frame(self, self.content_frame)
 
 
 def main():
