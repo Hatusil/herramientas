@@ -44,6 +44,11 @@ class SearchToolUI(SearchToolUIBase):
         self._init_state()
         self._init_metrics()
     
+    def _setup_ui(self) -> None:
+        """Override: SearchToolUI builds its own UI - no file selector needed."""
+        # Don't call super() - we build our own UI in build_ui()
+        pass
+    
     def _dummy_process(self, files, options):
         """Dummy process callback - search doesn't use file selector."""
         return {'success': True, 'message': 'Search uses folder selector'}
