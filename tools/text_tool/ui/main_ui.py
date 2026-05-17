@@ -68,8 +68,6 @@ class TextAnalyzerUI(BaseToolUI):
 
         self._build_ui()
 
-    # === Callbacks ===
-
     def _on_status(self, message: str, color: str = "gray") -> None:
         """Update status label."""
         if self.status_label and not getattr(self, '_is_batch_analysis', False):
@@ -91,8 +89,6 @@ class TextAnalyzerUI(BaseToolUI):
         handler = handlers.get(method)
         if handler:
             handler(args)
-
-    # === UI Construction ===
 
     def _build_ui(self) -> None:
         """Build complete UI layout."""
@@ -159,8 +155,6 @@ class TextAnalyzerUI(BaseToolUI):
         except Exception as e:
             logger.error(f"Tab change error: {e}")
 
-    # === Threading ===
-
     def run_in_thread(self, target, callback, *args, **kwargs):
         return run_in_thread(self, target, callback, *args, **kwargs)
 
@@ -168,8 +162,6 @@ class TextAnalyzerUI(BaseToolUI):
         if self.progress_bar:
             self.progress_bar.stop()
             self.progress_bar.pack_forget()
-
-    # === Analysis ===
 
     def _run_all_analysis(self) -> None:
         """Run all text analysis methods."""
@@ -223,51 +215,40 @@ class TextAnalyzerUI(BaseToolUI):
             self._run_frequency(params)
 
     def _run_stats(self) -> None:
-        """Run statistics analysis."""
+        from tools.text_tool.ui.analysis import run_stats
         text = self.state.cleaned_content or self.state.text_content
         if text:
             self.executor.submit(lambda: self._on_stats_complete(run_stats(text)))
 
     def _on_stats_complete(self, result: Dict[str, Any]) -> None:
-        """Handle stats completion."""
         if result.get("success"):
             self._on_status("Estadísticas actualizadas", "green")
         self._on_text_changed()
 
     def _run_frequency(self, params: Dict[str, Any]) -> None:
-        """Run frequency analysis."""
+        from tools.text_tool.ui.analysis import run_frequency
         text = self.state.cleaned_content or self.state.text_content
         if text:
-            self.executor.submit(
-                lambda: self._on_freq_complete(run_frequency(text, params.get("top_n", 50)))
-            )
+            self.executor.submit(lambda: self._on_freq_complete(run_frequency(text, params.get("top_n", 50))))
 
     def _on_freq_complete(self, result: Dict[str, Any]) -> None:
-        """Handle frequency completion."""
         self._on_text_changed()
         self._on_status("Frecuencias actualizadas", "green")
 
-    # === Keyboard ===
-
     def _setup_shortcuts(self) -> None:
-        """Bind global keyboard shortcuts."""
-        handlers = {
+        setup_shortcuts(self, {
             'on_paste': self._on_paste,
             'on_open': self._on_open_file,
             'on_save': self._on_save_file,
             'on_run': self._on_run,
             'on_cancel': self._on_cancel,
-        }
-        setup_shortcuts(self, handlers)
+        })
 
     def _on_paste(self, event: Any = None) -> str:
         return "break"
     
     def _on_open_file(self, event: Any = None) -> str:
-        files = filedialog.askopenfilenames(
-            title="Seleccionar archivos",
-            filetypes=[("Texto", "*.txt *.md"), ("Documentos", "*.pdf *.docx"), ("Todos", "*.*")]
-        )
+        files = filedialog.askopenfilenames(title="Seleccionar archivos", filetypes=[("Texto", "*.txt *.md"), ("Documentos", "*.pdf *.docx"), ("Todos", "*.*")])
         if files:
             self._load_files(files)
         return "break"
@@ -277,11 +258,7 @@ class TextAnalyzerUI(BaseToolUI):
         if not text:
             self._on_status("No hay texto para guardar", "orange")
             return "break"
-
-        path = filedialog.asksaveasfilename(
-            title="Guardar archivo", defaultextension=".txt",
-            filetypes=[("Texto", "*.txt"), ("Markdown", "*.md"), ("Todos", "*.*")]
-        )
+        path = filedialog.asksaveasfilename(title="Guardar archivo", defaultextension=".txt", filetypes=[("Texto", "*.txt"), ("Markdown", "*.md"), ("Todos", "*.*")])
         if path:
             try:
                 with open(path, 'w', encoding='utf-8') as f:
@@ -301,33 +278,21 @@ class TextAnalyzerUI(BaseToolUI):
             self._on_status("Análisis cancelado", "orange")
         return "break"
 
-    # === File Operations ===
-
     def _load_files(self, files: tuple) -> None:
-        """Load files and update state."""
         try:
             from tools.text_tool.processor import extract_text_from_file
-            texts = []
-            for f in files:
-                result = extract_text_from_file(f)
-                if result.get('success'):
-                    texts.append(result['text'])
-
+            texts = [result['text'] for f in files if (result := extract_text_from_file(f)).get('success')]
             if texts:
                 new_text = '\n\n'.join(texts)
-                if self.state.text_content:
-                    self.state.text_content += '\n\n' + new_text
-                else:
-                    self.state.text_content = new_text
+                self.state.text_content = (self.state.text_content or '') + '\n\n' + new_text
                 self.state.sources["files"].extend(list(files))
                 self.state.file_path = files[0] if files else None
                 self._on_text_changed()
-                self._on_status(f"{len(files)} archivos: {len(self.state.text_content)} chars", "green")
+                self._on_status(f"{len(files)} archivos cargados", "green")
         except ImportError:
-            self._on_status("Instala dependencias: pip install wordcloud nltk pdfplumber", "red")
+            self._on_status("Instala dependencias: wordcloud nltk pdfplumber", "red")
 
     def _on_file_drop(self, event: Any) -> str:
-        """Handle file drop on widget."""
         files = self.tk.splitlist(event.data) if hasattr(event, 'data') else ()
         if files:
             valid = [f for f in files if Path(f).suffix.lower() in {'.txt', '.md', '.pdf', '.docx', '.doc'}]
@@ -338,7 +303,3 @@ class TextAnalyzerUI(BaseToolUI):
         return "break"
 
 
-def _get_time() -> float:
-    """Get current time for threshold check."""
-    import time
-    return time.time()
