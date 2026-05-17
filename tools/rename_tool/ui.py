@@ -4,6 +4,7 @@ import tkinter as tk
 from typing import Callable, Dict
 from core.base_tool_ui import BaseToolUI
 from core.tool_builder import create_standard_tool_ui
+from core.constants import COLORS
 
 
 class RenameToolUI(BaseToolUI):
@@ -78,7 +79,7 @@ class RenameToolUI(BaseToolUI):
             return
         prefix = self.prefix_entry.get()
         if not prefix:
-            self.status_label.configure(text="Ingrese un prefijo", text_color="#FFA500")
+            self.status_label.configure(text="Ingrese un prefijo", text_color=COLORS.get("warning"))
             return
         from tools.rename_tool.processor import rename_with_prefix
         result = rename_with_prefix(self.files, prefix)
@@ -132,7 +133,7 @@ class RenameToolUI(BaseToolUI):
             return
         find = self.find_entry.get()
         if not find:
-            self.status_label.configure(text="Ingrese texto a buscar", text_color="#FFA500")
+            self.status_label.configure(text="Ingrese texto a buscar", text_color=COLORS.get("warning"))
             return
         # Permitir string vacío para eliminar texto
         replace = self.replace_entry.get() or ""
@@ -197,10 +198,10 @@ class RenameToolUI(BaseToolUI):
 
     def _handle_result(self, result: Dict) -> None:
         if result.get("success"):
-            self.status_label.configure(text=result["message"], text_color="green")
+            self.status_label.configure(text=result["message"], text_color=COLORS.get("success"))
             if result.get("errors"):
-                self.status_label.configure(text=f"{result['message']} - {len(result['errors'])} errores", text_color="#FFA500")
+                self.status_label.configure(text=f"{result['message']} - {len(result['errors'])} errores", text_color=COLORS.get("warning"))
             self._clear_files()
         else:
             # Mostrar message aunque sea False, no solo "Error"
-            self.status_label.configure(text=result.get("message", "Error desconocido"), text_color="red")
+            self.status_label.configure(text=result.get("message", "Error desconocido"), text_color=COLORS.get("error"))

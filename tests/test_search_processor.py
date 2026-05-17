@@ -350,7 +350,7 @@ class TestSearchContent:
         
         assert result == {}
 
-    @patch('tools.search_tool.processor.get_file_content')
+    @patch('tools.search_tool.content_extractors.get_file_content')
     def test_search_content_finds_match(self, mock_content):
         """Test finding content pattern in files."""
         from tools.search_tool.processor import search_content
@@ -363,7 +363,7 @@ class TestSearchContent:
         assert '/path/file.txt' in result
         assert result['/path/file.txt']['matches'] == 1
 
-    @patch('tools.search_tool.processor.get_file_content')
+    @patch('tools.search_tool.content_extractors.get_file_content')
     def test_search_content_case_off(self, mock_content):
         """Test case insensitive content search."""
         from tools.search_tool.processor import search_content
@@ -520,48 +520,48 @@ class TestExtractContent:
 
     def test_extract_docx_not_available(self):
         """Test docx extraction when library not available."""
-        from tools.search_tool import processor
+        from tools.search_tool import content_extractors
         
-        original = processor.DOCX_AVAILABLE
-        processor.DOCX_AVAILABLE = False
+        original = content_extractors.DOCX_AVAILABLE
+        content_extractors.DOCX_AVAILABLE = False
         
-        result = processor.extract_docx_content('/path/file.docx')
+        result = content_extractors.extract_docx_content('/path/file.docx')
         
-        processor.DOCX_AVAILABLE = original
+        content_extractors.DOCX_AVAILABLE = original
         assert result == ''
 
     def test_extract_pdf_not_available(self):
         """Test pdf extraction when library not available."""
-        from tools.search_tool import processor
+        from tools.search_tool import content_extractors
         
-        original = processor.PDF_AVAILABLE
-        processor.PDF_AVAILABLE = False
+        original = content_extractors.PDF_AVAILABLE
+        content_extractors.PDF_AVAILABLE = False
         
-        result = processor.extract_pdf_content('/path/file.pdf')
+        result = content_extractors.extract_pdf_content('/path/file.pdf')
         
-        processor.PDF_AVAILABLE = original
+        content_extractors.PDF_AVAILABLE = original
         assert result == ''
 
     def test_extract_xlsx_not_available(self):
         """Test xlsx extraction when library not available."""
-        from tools.search_tool import processor
+        from tools.search_tool import content_extractors
         
-        original = processor.XLSX_AVAILABLE
-        processor.XLSX_AVAILABLE = False
+        original = content_extractors.XLSX_AVAILABLE
+        content_extractors.XLSX_AVAILABLE = False
         
-        result = processor.extract_xlsx_content('/path/file.xlsx')
+        result = content_extractors.extract_xlsx_content('/path/file.xlsx')
         
-        processor.XLSX_AVAILABLE = original
+        content_extractors.XLSX_AVAILABLE = original
         assert result == ''
 
     def test_extract_pptx_not_available(self):
         """Test pptx extraction when library not available."""
-        from tools.search_tool import processor
+        from tools.search_tool import content_extractors
         
-        original = processor.PPTX_AVAILABLE
-        processor.PPTX_AVAILABLE = False
+        original = content_extractors.PPTX_AVAILABLE
+        content_extractors.PPTX_AVAILABLE = False
         
-        result = processor.extract_pptx_content('/path/file.pptx')
+        result = content_extractors.extract_pptx_content('/path/file.pptx')
         
-        processor.PPTX_AVAILABLE = original
+        content_extractors.PPTX_AVAILABLE = original
         assert result == ''

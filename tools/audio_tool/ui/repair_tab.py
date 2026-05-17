@@ -55,10 +55,10 @@ def verify_before_repair(ui: 'AudioToolUI') -> None:
     """Verifica archivos antes de reparar."""
     selected = ui._get_selected_files()
     if not selected:
-        ui.status_label.configure(text="Seleccion\u00e1 al menos un archivo", text_color="#FFA500")
+        ui.status_label.configure(text="Seleccion\u00e1 al menos un archivo", text_color=COLORS.get("warning"))
         return
 
-    ui.status_label.configure(text="Verificando...", text_color="#FFD700")
+    ui.status_label.configure(text="Verificando...", text_color=COLORS.get("warning"))
     ui.repair_verify_text.configure(state="normal")
     ui.repair_verify_text.delete("1.0", tk.END)
     ui.update()
@@ -91,14 +91,14 @@ def verify_before_repair(ui: 'AudioToolUI') -> None:
 
         if len(corrupt_files) > 0:
             ui.btn_repair_corrupt.configure(state="normal")
-            ui.status_label.configure(text=f"{len(corrupt_files)} corruptos", text_color="#FFA500")
+            ui.status_label.configure(text=f"{len(corrupt_files)} corruptos", text_color=COLORS.get("warning"))
         else:
             ui.btn_repair_corrupt.configure(state="disabled")
-            ui.status_label.configure(text="Todos OK", text_color="green")
+            ui.status_label.configure(text="Todos OK", text_color=COLORS.get("success"))
 
         ui.btn_repair_all.configure(state="normal" if len(ok_files) > 0 else "disabled")
     except Exception as e:
-        ui.status_label.configure(text=f"Error: {str(e)}", text_color="red")
+        ui.status_label.configure(text=f"Error: {str(e)}", text_color=COLORS.get("error"))
 
 
 def do_repair(ui: 'AudioToolUI', mode: str) -> None:
@@ -110,5 +110,5 @@ def do_repair(ui: 'AudioToolUI', mode: str) -> None:
     else:
         files = ui._get_selected_files()
     
-    ui.status_label.configure(text="🔄 Reparando...", text_color="#FFD700")
+    ui.status_label.configure(text="🔄 Reparando...", text_color=COLORS.get("warning"))
     ui.process_async("repair", files, {})

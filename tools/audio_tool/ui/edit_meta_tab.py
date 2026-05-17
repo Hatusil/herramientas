@@ -7,7 +7,7 @@ Funciones:
 """
 
 import customtkinter as ctk
-from core.constants import font
+from core.constants import font, COLORS
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -55,8 +55,8 @@ def edit_metadata(ui: 'AudioToolUI') -> None:
     
     options = {k: v.get() for k, v in ui.meta_vars.items() if v.get().strip()}
     if not options:
-        ui.status_label.configure(text="Ingresa al menos un campo", text_color="#FFA500")
+        ui.status_label.configure(text="Ingresa al menos un campo", text_color=COLORS.get("warning"))
         return
     
-    ui.status_label.configure(text="🔄 Editando metadatos...", text_color="#FFD700")
+    ui.status_label.configure(text="🔄 Editando metadatos...", text_color=COLORS.get("warning"))
     ui.process_async("edit_metadata", ui.files, options)

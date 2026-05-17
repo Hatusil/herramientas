@@ -137,7 +137,7 @@ class HashToolUI(BaseToolUI):
             return
         expected = self.expected_hash.get().strip()
         if not expected:
-            self.status_label.configure(text="Ingrese el hash esperado", text_color="#FFA500")
+            self.status_label.configure(text="Ingrese el hash esperado", text_color=COLORS.get("warning"))
             return
         algo = self.verify_algo.get()
         self.verify_result.delete("1.0", tk.END)

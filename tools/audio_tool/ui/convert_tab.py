@@ -7,7 +7,7 @@ Funciones:
 """
 
 import customtkinter as ctk
-from core.constants import font
+from core.constants import font, COLORS
 from core.tool_builder import create_radiobutton as RadioButton
 from typing import TYPE_CHECKING
 
@@ -52,7 +52,7 @@ def convert(ui: 'AudioToolUI') -> None:
     if not check:
         return
     
-    ui.status_label.configure(text="🔄 Convirtiendo formato...", text_color="#FFD700")
+    ui.status_label.configure(text="🔄 Convirtiendo formato...", text_color=COLORS.get("warning"))
     ui.process_async("convert", ui.files, {
         "format": ui.format_var.get(),
         "quality": int(ui.conv_quality_var.get()),

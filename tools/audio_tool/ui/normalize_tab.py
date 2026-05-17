@@ -7,7 +7,7 @@ Funciones:
 """
 
 import customtkinter as ctk
-from core.constants import font
+from core.constants import font, COLORS
 from core.tool_builder import create_radiobutton as RadioButton
 from typing import TYPE_CHECKING
 
@@ -69,7 +69,7 @@ def normalize(ui: 'AudioToolUI') -> None:
     if not ui._check_files():
         return
     
-    ui.status_label.configure(text="🔄 Normalizando...", text_color="#FFD700")
+    ui.status_label.configure(text="🔄 Normalizando...", text_color=COLORS.get("warning"))
     options = {
         "target_lufs": int(ui.lufs_var.get()),
         "limit_clipping": ui.limit_var.get(),

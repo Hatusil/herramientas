@@ -8,6 +8,7 @@ Funciones:
 """
 
 import customtkinter as ctk
+from core.constants import COLORS
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -94,7 +95,7 @@ def reorder_pages(ui: 'PDFToolUI') -> None:
 
     order_str = ui.reorder_input.get().strip()
     if not order_str:
-        ui.status_label.configure(text="Ingrese el orden de páginas", text_color="#FFA500")
+        ui.status_label.configure(text="Ingrese el orden de páginas", text_color=COLORS.get("warning"))
         return
 
     try:

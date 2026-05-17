@@ -7,7 +7,7 @@ Funciones:
 """
 
 import customtkinter as ctk
-from core.constants import font
+from core.constants import font, COLORS
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -31,5 +31,5 @@ def clean_metadata(ui: 'AudioToolUI') -> None:
     if not ui._check_files():
         return
     
-    ui.status_label.configure(text="🔄 Limpiando metadatos...", text_color="#FFD700")
+    ui.status_label.configure(text="🔄 Limpiando metadatos...", text_color=COLORS.get("warning"))
     ui.process_async("clean", ui.files, {})

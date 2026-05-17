@@ -7,7 +7,7 @@ Funciones:
 """
 
 import customtkinter as ctk
-from core.constants import font
+from core.constants import font, COLORS
 from core.tool_builder import create_radiobutton as RadioButton
 from typing import TYPE_CHECKING
 
@@ -72,11 +72,11 @@ def transcribe(ui: 'AudioToolUI') -> None:
     except ImportError:
         ui.status_label.configure(
             text="⚠️ Dependencias faltantes: pip install torch transformers librosa",
-            text_color="orange"
+            text_color=COLORS.get("warning")
         )
         return
 
-    ui.status_label.configure(text="🔄 Transcribiendo...", text_color="#FFD700")
+    ui.status_label.configure(text="🔄 Transcribiendo...", text_color=COLORS.get("warning"))
     ui.process_async("transcribe", ui.files, {
         "model": ui.transcribe_model_var.get(),
         "format": ui.transcribe_format_var.get(),

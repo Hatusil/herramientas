@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Callable
 from core.base_tool_ui import BaseToolUI
 from core.tool_builder import create_standard_tool_ui
+from core.constants import COLORS
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +139,7 @@ class DuplicateToolUI(BaseToolUI):
     def _find_duplicates(self) -> None:
         folder = self.folder_entry.get().strip()
         if not folder or not Path(folder).exists():
-            self.status_label.configure(text="Seleccione una carpeta v\u00e1lida", text_color="#FFA500")
+            self.status_label.configure(text="Seleccione una carpeta v\u00e1lida", text_color=COLORS.get("warning"))
             return
 
         exts = []
@@ -150,10 +151,10 @@ class DuplicateToolUI(BaseToolUI):
             exts.extend([".mp3", ".wav", ".flac", ".mp4", ".avi", ".mkv"])
 
         if not exts:
-            self.status_label.configure(text="Seleccione al menos un tipo", text_color="#FFA500")
+            self.status_label.configure(text="Seleccione al menos un tipo", text_color=COLORS.get("warning"))
             return
 
-        self.status_label.configure(text="Escaneando...", text_color="#FFD700")
+        self.status_label.configure(text="Escaneando...", text_color=COLORS.get("warning"))
         self.update()
 
         from tools.duplicate_tool.processor import find_duplicates_by_size, find_duplicates_by_hash

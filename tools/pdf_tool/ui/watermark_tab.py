@@ -11,6 +11,7 @@ Funciones:
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog
+from core.constants import COLORS
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -81,7 +82,7 @@ def setup_watermark_tab(ui: 'PDFToolUI') -> None:
 
     ctk.CTkLabel(options_frame, text="Color:").pack(side="left", padx=5)
     ui.watermark_color = ctk.CTkEntry(options_frame, width=80)
-    ui.watermark_color.insert(0, "#888888")
+    ui.watermark_color.insert(0, COLORS.get("text_secondary", "#888888"))
     ui.watermark_color.pack(side="left", padx=5)
 
     # Opacity slider
@@ -224,7 +225,7 @@ def apply_text_watermark(ui: 'PDFToolUI') -> None:
     if ui.watermark_type.get() == "image":
         image_path = ui.watermark_image_path.get()
         if not image_path:
-            ui.status_label.configure(text="Seleccione una imagen", text_color="#FFA500")
+            ui.status_label.configure(text="Seleccione una imagen", text_color=COLORS.get("warning"))
             return
 
         result = ui.process_async('image_watermark', ui.files, {
@@ -251,7 +252,7 @@ def apply_text_watermark(ui: 'PDFToolUI') -> None:
         result = ui.process_async('text_watermark', ui.files, {
             'text': text,
             'font_size': int(ui.watermark_size.get() or 48),
-            'color': ui.watermark_color.get() or '#888888',
+            'color': ui.watermark_color.get() or COLORS.get("text_secondary", "#888888"),
             'opacity': ui.watermark_opacity_slider.get() / 100.0,
             'rotation': int(ui.watermark_rotation_slider.get()),
             'position': position,

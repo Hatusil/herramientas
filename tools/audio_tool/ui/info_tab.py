@@ -33,7 +33,7 @@ def show_info(ui: 'AudioToolUI') -> None:
     """Muestra información del audio."""
     selected = ui._get_selected_files()
     if not selected:
-        ui.status_label.configure(text="Seleccion\u00e1 al menos un archivo", text_color="#FFA500")
+        ui.status_label.configure(text="Seleccion\u00e1 al menos un archivo", text_color=COLORS.get("warning"))
         return
 
     ui.info_text.configure(state="normal")
@@ -79,4 +79,4 @@ def show_info(ui: 'AudioToolUI') -> None:
 
     ui.info_text.configure(state="disabled")
     status = f"Mostrando {len(all_info)}/{len(selected)} archivos"
-    ui.status_label.configure(text=status, text_color="green" if not errors else "#FFA500")
+    ui.status_label.configure(text=status, text_color=COLORS.get("success") if not errors else COLORS.get("warning"))

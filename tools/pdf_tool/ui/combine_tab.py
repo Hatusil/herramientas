@@ -8,6 +8,7 @@ Funciones:
 """
 
 import customtkinter as ctk
+from core.constants import COLORS
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -59,7 +60,7 @@ def setup_combine_tab(ui: 'PDFToolUI') -> None:
 def merge_pdfs(ui: 'PDFToolUI') -> None:
     """Combina múltiples PDFs en uno."""
     if not ui._check_files() or len(ui.files) < 2:
-        ui.status_label.configure(text="Seleccione al menos 2 PDFs", text_color="#FFA500")
+        ui.status_label.configure(text="Seleccione al menos 2 PDFs", text_color=COLORS.get("warning"))
         return
 
     ui.status_label.configure(text="Procesando...", text_color="blue")
@@ -76,7 +77,7 @@ def extract_pages(ui: 'PDFToolUI') -> None:
 
     pages_str = ui.extract_pages.get().strip()
     if not pages_str:
-        ui.status_label.configure(text="Ingrese las páginas a extraer", text_color="#FFA500")
+        ui.status_label.configure(text="Ingrese las páginas a extraer", text_color=COLORS.get("warning"))
         return
 
     pages = []

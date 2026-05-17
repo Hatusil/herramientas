@@ -8,6 +8,7 @@ Funciones:
 """
 
 import customtkinter as ctk
+from core.constants import COLORS
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -68,7 +69,7 @@ def encrypt_pdf(ui: 'PDFToolUI') -> None:
 
     password = ui.lock_password.get()
     if not password:
-        ui.status_label.configure(text="Ingrese una contraseña", text_color="#FFA500")
+        ui.status_label.configure(text="Ingrese una contraseña", text_color=COLORS.get("warning"))
         return
 
     ui.status_label.configure(text="Procesando...", text_color="blue")
@@ -85,7 +86,7 @@ def decrypt_pdf(ui: 'PDFToolUI') -> None:
 
     password = ui.unlock_password.get()
     if not password:
-        ui.status_label.configure(text="Ingrese la contraseña", text_color="#FFA500")
+        ui.status_label.configure(text="Ingrese la contraseña", text_color=COLORS.get("warning"))
         return
 
     ui.status_label.configure(text="Procesando...", text_color="blue")

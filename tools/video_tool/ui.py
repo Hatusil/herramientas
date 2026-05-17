@@ -95,7 +95,7 @@ class VideoToolUI(BaseToolUI):
             return
         self.extract_progress.pack()
         self.extract_progress.set(0.1)
-        self.status_label.configure(text="Extrayendo audio...", text_color="#FFD700")
+        self.status_label.configure(text="Extrayendo audio...", text_color=COLORS.get("warning"))
         self.update()
 
         def extract_thread():
@@ -173,7 +173,7 @@ class VideoToolUI(BaseToolUI):
         self.convert_progress.pack()
         self.convert_progress.set(0.1)
         selected = self._get_selected_files()
-        self.status_label.configure(text=f"Convirtiendo 0/{len(selected)}...", text_color="#FFD700")
+        self.status_label.configure(text=f"Convirtiendo 0/{len(selected)}...", text_color=COLORS.get("warning"))
         self.update()
 
         def convert_thread():
@@ -214,7 +214,7 @@ class VideoToolUI(BaseToolUI):
 
     def _update_convert_progress(self, progress: float, current: int, total: int) -> None:
         self.convert_progress.set(progress)
-        self.status_label.configure(text=f"Convirtiendo {current}/{total}...", text_color="#FFD700")
+        self.status_label.configure(text=f"Convirtiendo {current}/{total}...", text_color=COLORS.get("warning"))
 
     def _on_convert_done(self, result: dict) -> None:
         self.convert_progress.set(1)
@@ -237,17 +237,17 @@ class VideoToolUI(BaseToolUI):
 
     def _show_info(self) -> None:
         if not self._check_files():
-            self.status_label.configure(text="Seleccion\u00e1 un video primero", text_color="#FFA500")
+            self.status_label.configure(text="Seleccion\u00e1 un video primero", text_color=COLORS.get("warning"))
             return
 
         from tools.video_tool.processor import get_video_info
 
-        self.status_label.configure(text="Cargando info...", text_color="#FFD700")
+        self.status_label.configure(text="Cargando info...", text_color=COLORS.get("warning"))
         self.update()
 
         selected = self._get_selected_files()
         if not selected:
-            self.status_label.configure(text="Seleccion\u00e1 un video", text_color="#FFA500")
+            self.status_label.configure(text="Seleccion\u00e1 un video", text_color=COLORS.get("warning"))
             return
 
         self.info_text.configure(state="normal")

@@ -42,7 +42,7 @@ def show_pdf_info(ui: 'PDFToolUI') -> None:
         return
 
     if not ui.files:
-        ui.status_label.configure(text="Seleccione un PDF", text_color="#FFA500")
+        ui.status_label.configure(text="Seleccione un PDF", text_color=COLORS.get("warning"))
         return
 
     from tools.pdf_tool.processor import get_pdf_info

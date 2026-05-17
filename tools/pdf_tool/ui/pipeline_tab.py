@@ -119,7 +119,7 @@ def setup_pipeline_tab(ui: 'PDFToolUI') -> None:
         text="Ejecutar Pipeline",
         command=lambda: ui._execute_pipeline(),
         width=150,
-        fg_color="#2CC985"
+        fg_color=COLORS.get("success")
     ).pack(side="left", padx=5, fill="x", expand=True)
 
     # Actualizar inputs visibles
@@ -150,7 +150,7 @@ def update_pipeline_inputs(ui: 'PDFToolUI') -> None:
 def add_to_pipeline(ui: 'PDFToolUI') -> None:
     """Agrega una operación al pipeline."""
     if not ui._check_files():
-        ui.status_label.configure(text="Seleccione un PDF primero", text_color="#FFA500")
+        ui.status_label.configure(text="Seleccione un PDF primero", text_color=COLORS.get("warning"))
         return
 
     op_type = ui.pipeline_op_type.get()
@@ -159,7 +159,7 @@ def add_to_pipeline(ui: 'PDFToolUI') -> None:
     if op_type == "reorder":
         order_str = ui.pipeline_reorder_input.get().strip()
         if not order_str:
-            ui.status_label.configure(text="Ingrese el orden de páginas", text_color="#FFA500")
+            ui.status_label.configure(text="Ingrese el orden de páginas", text_color=COLORS.get("warning"))
             return
         try:
             params['new_order'] = [int(p) for p in order_str.split(',')]
@@ -179,7 +179,7 @@ def add_to_pipeline(ui: 'PDFToolUI') -> None:
     elif op_type == "extract":
         pages_str = ui.pipeline_extract_input.get().strip()
         if not pages_str:
-            ui.status_label.configure(text="Ingrese las páginas", text_color="#FFA500")
+            ui.status_label.configure(text="Ingrese las páginas", text_color=COLORS.get("warning"))
             return
         try:
             params['pages'] = [int(p.strip()) for p in pages_str.split(',')]
@@ -240,11 +240,11 @@ def clear_pipeline(ui: 'PDFToolUI') -> None:
 def execute_pipeline(ui: 'PDFToolUI') -> None:
     """Ejecuta todas las operaciones del pipeline."""
     if not ui._check_files():
-        ui.status_label.configure(text="Seleccione un PDF primero", text_color="#FFA500")
+        ui.status_label.configure(text="Seleccione un PDF primero", text_color=COLORS.get("warning"))
         return
 
     if not ui.pipeline_operations:
-        ui.status_label.configure(text="No hay operaciones en el pipeline", text_color="#FFA500")
+        ui.status_label.configure(text="No hay operaciones en el pipeline", text_color=COLORS.get("warning"))
         return
 
     ui.status_label.configure(text="Ejecutando pipeline...", text_color="blue")

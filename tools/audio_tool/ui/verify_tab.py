@@ -37,10 +37,10 @@ def verify_audio(ui: 'AudioToolUI') -> None:
     """Verifica la integridad de los archivos."""
     selected = ui._get_selected_files()
     if not selected:
-        ui.status_label.configure(text="Seleccion\u00e1 al menos un archivo", text_color="#FFA500")
+        ui.status_label.configure(text="Seleccion\u00e1 al menos un archivo", text_color=COLORS.get("warning"))
         return
 
-    ui.status_label.configure(text="Verificando archivos...", text_color="#FFD700")
+    ui.status_label.configure(text="Verificando archivos...", text_color=COLORS.get("warning"))
     ui.update()
 
     try:
@@ -71,8 +71,8 @@ def verify_audio(ui: 'AudioToolUI') -> None:
         ui.verify_text.configure(state="disabled")
 
         if result["corrupt"] == 0:
-            ui.status_label.configure(text=f"Todos OK ({result['ok']} archivos)", text_color="green")
+            ui.status_label.configure(text=f"Todos OK ({result['ok']} archivos)", text_color=COLORS.get("success"))
         else:
-            ui.status_label.configure(text=f"{result['ok']} OK, {result['corrupt']} corruptos", text_color="#FFA500")
+            ui.status_label.configure(text=f"{result['ok']} OK, {result['corrupt']} corruptos", text_color=COLORS.get("warning"))
     except Exception as e:
-        ui.status_label.configure(text=f"Error: {str(e)}", text_color="red")
+        ui.status_label.configure(text=f"Error: {str(e)}", text_color=COLORS.get("error"))

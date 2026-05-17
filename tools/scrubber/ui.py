@@ -158,7 +158,7 @@ class ScrubberToolUI(BaseToolUI):
             msg = "No hay imágenes seleccionadas"
             if non_images > 0:
                 msg += f" ({non_images} docs/PDFs omitidos)"
-            self.status_label.configure(text=msg, text_color="#FFA500")
+            self.status_label.configure(text=msg, text_color=COLORS.get("warning"))
             return
         
         options = {
@@ -239,7 +239,7 @@ class ScrubberToolUI(BaseToolUI):
         docx_files = [f for f in self.files if f.lower().endswith('.docx')]
         
         if not docx_files:
-            self.status_label.configure(text="No hay archivos DOCX", text_color="#FFA500")
+            self.status_label.configure(text="No hay archivos DOCX", text_color=COLORS.get("warning"))
             return
         
         self.status_label.configure(text="Procesando...", text_color="blue")
@@ -262,7 +262,7 @@ class ScrubberToolUI(BaseToolUI):
         xlsx_files = [f for f in self.files if f.lower().endswith('.xlsx')]
         
         if not xlsx_files:
-            self.status_label.configure(text="No hay archivos XLSX", text_color="#FFA500")
+            self.status_label.configure(text="No hay archivos XLSX", text_color=COLORS.get("warning"))
             return
         
         self.status_label.configure(text="Procesando...", text_color="blue")
@@ -285,7 +285,7 @@ class ScrubberToolUI(BaseToolUI):
         pdf_files = [f for f in self.files if f.lower().endswith('.pdf')]
         
         if not pdf_files:
-            self.status_label.configure(text="No hay archivos PDF", text_color="#FFA500")
+            self.status_label.configure(text="No hay archivos PDF", text_color=COLORS.get("warning"))
             return
         
         self.status_label.configure(text="Procesando...", text_color="blue")

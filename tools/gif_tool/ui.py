@@ -115,13 +115,13 @@ class GifToolUI(BaseToolUI):
 
     def _create_gif(self) -> None:
         if not self._check_files() or len(self.files) < 2:
-            self.status_label.configure(text="Necesitas al menos 2 im\u00e1genes", text_color="#FFA500")
+            self.status_label.configure(text="Necesitas al menos 2 im\u00e1genes", text_color=COLORS.get("warning"))
             return
 
         duration = int(self.duration_var.get())
         loop = int(self.loop_var.get())
 
-        self.status_label.configure(text="Creando GIF...", text_color="#FFD700")
+        self.status_label.configure(text="Creando GIF...", text_color=COLORS.get("warning"))
 
         from tools.gif_tool.processor import create_gif
         result = create_gif(self.files, duration=duration, loop=loop)
