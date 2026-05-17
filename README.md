@@ -90,36 +90,22 @@ herramientas/
 │   ├── app.py         # Main app (<300 líneas - SRP refactorizado)
 │   ├── window_utils.py
 │   └── content_manager.py
-├── tools/             # Herramientas (plugins - 12 directorios)
-│   ├── video_tool/
-│   │   ├── processor.py    # (<300 líneas)
-│   │   └── async_processors.py
-│   ├── scrubber/
-│   │   ├── processor.py   # (re-export - 20 líneas)
-│   │   ├── image_processor.py
-│   │   ├── docx_processor.py
-│   │   └── xlsx_processor.py
-│   ├── search_tool/
-│   │   ├── processor.py   # (re-export - 28 líneas)
-│   │   ├── filters.py
-│   │   ├── content_extractors.py
-│   │   ├── exports.py
-│   │   └── search_all.py
-│   ├── text_tool/ui/
-│   │   ├── main_ui.py      # (threading + keyboard extraídos)
-│   │   ├── threading_utils.py
-│   │   └── keyboard_shortcuts.py
-│   └── pdf_tool/
-│       ├── processor.py    # (630 líneas - wrapper API)
-│       ├── utils.py
-│       ├── async_processors.py
-│       └── modules/
-│           ├── transform.py      # (re-export - 20 líneas)
-│           ├── validation.py
-│           └── transform_operations.py
+├── tools/             # 12 herramientas (plugins)
+│   ├── audio_tool/    # Normaliza, convierte, transcribe
+│   ├── compress_tool/ # ZIP, TAR.GZ
+│   ├── duplicate_tool/# Detecta duplicados por hash
+│   ├── gif_tool/      # Crea GIFs animados
+│   ├── hash_tool/     # MD5, SHA1, SHA256, SHA512
+│   ├── image_tool/    # Filtros, geometría, morfología
+│   ├── pdf_tool/      # Watermarks, merge, extraer, cifra
+│   ├── rename_tool/   # Prefijos, sufijos, números
+│   ├── scrubber/      # Limpia metadatos EXIF/DOCX/XLSX
+│   ├── search_tool/   # Busca por nombre, contenido, fecha
+│   ├── text_tool/     # WordCloud, stats, n-grams
+│   └── video_tool/    # Extrae audio, convierte
 ├── tests/             # Tests unitarios con pytest
-├── informes/          # Documentación interna (roadmap, backlog)
-├── assets/            # Recursos (iconos, imágenes)
+├── informes/          # Documentación interna
+├── assets/            # Recursos
 ├── build/             # Build outputs de PyInstaller
 ├── dist/              # Ejecutables generados
 └── .agent/            # Configuración de agentes IA
@@ -138,6 +124,7 @@ Archivos refactorizados para cumplir SRP:
 - ✅ video_tool/processor.py (329 → 299 líneas)
 - ✅ scrubber/processor.py (374 → 20 líneas)
 - ✅ search_tool/processor.py (453 → 28 líneas)
+- ✅ text_tool/ui/main_ui.py (455 → 381 líneas)
 - ✅ pdf_tool/modules/transform.py (465 → 20 líneas)
 
 ## Desarrollo
