@@ -242,11 +242,10 @@ class App(ctk.CTk):
         clear_content_frame(self.content_frame)
     
     def _rebuild_content_frame(self) -> None:
-        """Destruye y recreate el content frame para evitar problemas de limpieza."""
+        """Destruye y recrea el content frame para evitar problemas de limpieza."""
         self.content_frame = rebuild_content_frame(
             self, self.content_frame, self._setup_scroll
         )
-        self.content_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
 
 
 def main():

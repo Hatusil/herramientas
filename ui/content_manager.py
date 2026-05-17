@@ -39,12 +39,39 @@ def rebuild_content_frame(parent, old_frame, setup_scroll_fn) -> ctk.CTkScrollab
     Returns:
         Nuevo CTkScrollableFrame
     """
+    # Destruir frame anterior completamente
+    if old_frame is not None:
+        try:
+            # Destruir todos los hijos primero
+            for child in old_frame.winfo_children():
+                try:
+                    child.destroy()
+                except Exception:
+                    pass
+            # Luego destruir el frame principal
+            old_frame.destroy()
+        except Exception:
+            pass
+    
+    # Forzar procesamiento de eventos para asegurar limpieza
     try:
-        old_frame.destroy()
+        parent.update_idletasks()
     except Exception:
         pass
     
+    # Crear nuevo frame
     new_frame = create_content_frame(parent)
+    
+    # Grid el nuevo frame ANTES de configurar scroll
+    new_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+    
+    # Forzar update para que el widget se renderice completamente
+    try:
+        parent.update_idletasks()
+    except Exception:
+        pass
+    
+    # Ahora configurar scroll - el frame ya está listo
     setup_scroll_fn()
     
     return new_frame
