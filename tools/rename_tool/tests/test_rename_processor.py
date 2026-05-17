@@ -5,18 +5,28 @@ import os
 import tempfile
 import pytest
 from unittest.mock import patch
-from pathlib import Path, Path as PathHelper
-import sys
+from pathlib import Path
+import types
 
-sys.path.insert(0, str(PathHelper(__file__).parent.parent))
-from processor import (
-    rename_with_prefix,
-    rename_with_suffix,
-    rename_replace,
-    rename_numbered,
-    rename_case,
-    rename_regex
-)
+
+def load_processor_module():
+    """Carga el processor dinámicamente sin conflictos de nombres."""
+    tool_dir = Path(__file__).parent.parent
+    processor_path = tool_dir / "processor.py"
+    namespace = {}
+    with open(processor_path, 'r') as f:
+        code = compile(f.read(), str(processor_path), 'exec')
+        exec(code, namespace)
+    return types.SimpleNamespace(**namespace)
+
+
+processor = load_processor_module()
+rename_with_prefix = processor.rename_with_prefix
+rename_with_suffix = processor.rename_with_suffix
+rename_replace = processor.rename_replace
+rename_numbered = processor.rename_numbered
+rename_case = processor.rename_case
+rename_regex = processor.rename_regex
 
 
 class TestProcessDispatch:

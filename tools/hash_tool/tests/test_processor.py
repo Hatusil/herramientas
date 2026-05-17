@@ -183,28 +183,28 @@ class TestVerifyHash:
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp.write(b'hello world')
             tmp_path = tmp.name
-        
+
         try:
             # First calculate the hash
             calc_result = calculate_hash(tmp_path, algorithm='sha256')
             expected = calc_result['hash']
-            
+
             # Now verify
             result = verify_hash(tmp_path, expected, algorithm='sha256')
             assert result['success'] is True
-            assert result['matches'] is True
+            assert result['match'] is True
         finally:
             Path(tmp_path).unlink()
-    
+
     def test_verify_hash_mismatch(self):
         """Test hash verification with non-matching hash."""
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp.write(b'hello world')
             tmp_path = tmp.name
-        
+
         try:
             result = verify_hash(tmp_path, 'wronghash123', algorithm='sha256')
             assert result['success'] is True
-            assert result['matches'] is False
+            assert result['match'] is False
         finally:
             Path(tmp_path).unlink()

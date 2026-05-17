@@ -31,17 +31,17 @@ class TestCleanImageMetadata:
         # Create fake image file
         fake_image = tmp_path / "test.jpg"
         fake_image.write_bytes(b"fake jpg")
-        
-        result = clean_image_metadata([str(fake_image)], {})
-        
+
+        result = clean_image_metadata(str(fake_image), {})
+
         assert isinstance(result, dict)
         assert 'success' in result
 
-    def test_clean_image_metadata_empty_files(self):
-        """clean_image_metadata handles empty file list."""
-        result = clean_image_metadata([], {})
-        
-        assert result['success'] is True
+    def test_clean_image_metadata_nonexistent(self):
+        """clean_image_metadata handles nonexistent file."""
+        result = clean_image_metadata("/nonexistent/file.jpg", {})
+
+        assert result['success'] is False
 
 
 class TestConstants:

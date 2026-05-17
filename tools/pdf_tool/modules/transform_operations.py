@@ -37,16 +37,8 @@ def rotate_pages(files: List[str], degrees: int = 90, pages: List[int] = None) -
             for i, page in enumerate(reader.pages):
                 if pages is None or (i + 1) in pages:
                     try:
-                        current_rotation = 0
-                        if '/Rotate' in page:
-                            rot_obj = page['/Rotate']
-                            try:
-                                current_rotation = int(rot_obj)
-                            except (TypeError, ValueError):
-                                current_rotation = 0
-                        
-                        new_rotation = (current_rotation + degrees) % 360
-                        page['/Rotate'] = new_rotation
+                        # Use pypdf's rotate method
+                        page = page.rotate(degrees)
                     except Exception as e:
                         logger.warning(f"Error rotando página {i}: {e}")
                 

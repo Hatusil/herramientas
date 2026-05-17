@@ -6,21 +6,34 @@ import csv
 import pytest
 import tempfile
 from datetime import datetime, timedelta
+import types
+from pathlib import Path
 
-from processor import (
-    search_by_name,
-    search_by_date,
-    filter_by_size,
-    filter_by_extension,
-    extract_docx_content,
-    extract_pdf_content,
-    extract_xlsx_content,
-    get_file_content,
-    search_content,
-    search_all,
-    export_to_csv,
-    export_to_txt,
-)
+
+def load_processor_module():
+    """Carga el processor dinámicamente sin conflictos de nombres."""
+    tool_dir = Path(__file__).parent
+    processor_path = tool_dir / "processor.py"
+    namespace = {}
+    with open(processor_path, 'r') as f:
+        code = compile(f.read(), str(processor_path), 'exec')
+        exec(code, namespace)
+    return types.SimpleNamespace(**namespace)
+
+
+processor = load_processor_module()
+search_by_name = processor.search_by_name
+search_by_date = processor.search_by_date
+filter_by_size = processor.filter_by_size
+filter_by_extension = processor.filter_by_extension
+extract_docx_content = processor.extract_docx_content
+extract_pdf_content = processor.extract_pdf_content
+extract_xlsx_content = processor.extract_xlsx_content
+get_file_content = processor.get_file_content
+search_content = processor.search_content
+search_all = processor.search_all
+export_to_csv = processor.export_to_csv
+export_to_txt = processor.export_to_txt
 
 
 @pytest.fixture
@@ -139,28 +152,33 @@ class TestSearchByDate:
     def test_date_range(self, temp_dir):
         files = []
         file1 = os.path.join(temp_dir, "file1.txt")
-        with open(file1, 'w') as f:
-            f.write("content")
+        with open(file1, 'w') as fh:
+            fh.write("content")
+        # Set to old date (2001) - should be excluded by date_from
         os.utime(file1, (1000000000, 1000000000))
         
         file2 = os.path.join(temp_dir, "file2.txt")
-        with open(file2, 'w') as f:
-            f.write("content")
+        with open(file2, 'w') as fh:
+            fh.write("content")
+        # file2 keeps current mtime - should be included
         
         files = [file1, file2]
         
+        # date_from is 365 days ago, date_to is in the future - includes file2
         from_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
-        to_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        to_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
         result = search_by_date(files, date_from=from_date, date_to=to_date)
         
+        # file1 (2001) is older than from_date, file2 (now) is within range
         assert len(result) == 1
+        assert "file2.txt" in result[0]
     
     def test_dd_mm_yyyy_format(self, temp_dir):
         files = []
-        f = os.path.join(temp_dir, "test.txt")
-        with open(f, 'w') as f:
-            f.write("test")
-        files.append(f)
+        fpath = os.path.join(temp_dir, "test.txt")
+        with open(fpath, 'w') as fh:
+            fh.write("test")
+        files.append(fpath)
         
         result = search_by_date(files, date_from="01/01/2000")
         assert len(result) == 1
@@ -256,19 +274,19 @@ class TestFilterByExtension:
         assert len(result) == 2
     
     def test_extension_with_dot(self, temp_dir):
-        f = os.path.join(temp_dir, "file.txt")
-        with open(f, 'w') as f:
-            f.write("test")
+        fpath = os.path.join(temp_dir, "file.txt")
+        with open(fpath, 'w') as fh:
+            fh.write("test")
         
-        result = filter_by_extension([f], ['.txt'])
+        result = filter_by_extension([fpath], ['.txt'])
         assert len(result) == 1
     
     def test_case_insensitive(self, temp_dir):
-        f = os.path.join(temp_dir, "file.TXT")
-        with open(f, 'w') as f:
-            f.write("test")
+        fpath = os.path.join(temp_dir, "file.TXT")
+        with open(fpath, 'w') as fh:
+            fh.write("test")
         
-        result = filter_by_extension([f], ['txt'])
+        result = filter_by_extension([fpath], ['txt'])
         assert len(result) == 1
     
     def test_empty_extensions(self, sample_files):
@@ -280,11 +298,11 @@ class TestExtractContent:
     """Tests para funciones de extracción de contenido."""
     
     def test_extract_txt_content(self, temp_dir):
-        f = os.path.join(temp_dir, "test.txt")
-        with open(f, 'w') as f:
-            f.write("Hello World\nTest content")
+        fpath = os.path.join(temp_dir, "test.txt")
+        with open(fpath, 'w') as fh:
+            fh.write("Hello World\nTest content")
         
-        content = get_file_content(f)
+        content = get_file_content(fpath)
         assert "Hello World" in content
         assert "Test content" in content
     
@@ -317,31 +335,31 @@ class TestSearchContent:
     """Tests para search_content()."""
     
     def test_search_content_case_insensitive(self, temp_dir):
-        f = os.path.join(temp_dir, "test.txt")
-        with open(f, 'w') as f:
-            f.write("Hello World\nTest content Hello again")
+        fpath = os.path.join(temp_dir, "test.txt")
+        with open(fpath, 'w') as fh:
+            fh.write("Hello World\nTest content Hello again")
         
-        result = search_content([f], "hello", case_sensitive=False)
+        result = search_content([fpath], "hello", case_sensitive=False)
         
         assert len(result) == 1
-        assert result[f]['matches'] == 2
+        assert result[fpath]['matches'] == 2
     
     def test_search_content_case_sensitive(self, temp_dir):
-        f = os.path.join(temp_dir, "test.txt")
-        with open(f, 'w') as f:
-            f.write("Hello World\nTest content Hello again")
+        fpath = os.path.join(temp_dir, "test.txt")
+        with open(fpath, 'w') as fh:
+            fh.write("hello world\ntest content hello again")
         
-        result = search_content([f], "hello", case_sensitive=True)
+        result = search_content([fpath], "hello", case_sensitive=True)
         
         assert len(result) == 1
-        assert result[f]['matches'] == 2
+        assert result[fpath]['matches'] == 2
     
     def test_search_content_no_match(self, temp_dir):
-        f = os.path.join(temp_dir, "test.txt")
-        with open(f, 'w') as f:
-            f.write("Hello World")
+        fpath = os.path.join(temp_dir, "test.txt")
+        with open(fpath, 'w') as fh:
+            fh.write("Hello World")
         
-        result = search_content([f], "nonexistent")
+        result = search_content([fpath], "nonexistent")
         assert len(result) == 0
 
 
@@ -498,19 +516,19 @@ class TestGetFileContent:
     """Tests para get_file_content()."""
     
     def test_get_file_content_txt(self, temp_dir):
-        f = os.path.join(temp_dir, "test.txt")
-        with open(f, 'w') as f:
-            f.write("Test content")
+        fpath = os.path.join(temp_dir, "test.txt")
+        with open(fpath, 'w') as fh:
+            fh.write("Test content")
         
-        content = get_file_content(f)
+        content = get_file_content(fpath)
         assert "Test content" in content
     
     def test_get_file_content_unknown_ext(self, temp_dir):
-        f = os.path.join(temp_dir, "test.xyz")
-        with open(f, 'w') as f:
-            f.write("content")
+        fpath = os.path.join(temp_dir, "test.xyz")
+        with open(fpath, 'w') as fh:
+            fh.write("content")
         
-        content = get_file_content(f)
+        content = get_file_content(fpath)
         assert content == ""
     
     def test_get_file_content_nonexistent(self):

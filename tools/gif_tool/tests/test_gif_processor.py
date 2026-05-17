@@ -6,11 +6,25 @@ import tempfile
 import pytest
 from pathlib import Path
 from unittest.mock import patch
-import sys
+import types
 from PIL import Image
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from processor import create_gif, extract_frames, get_gif_info
+
+def load_processor_module():
+    """Carga el processor dinámicamente sin conflictos de nombres."""
+    tool_dir = Path(__file__).parent.parent
+    processor_path = tool_dir / "processor.py"
+    namespace = {}
+    with open(processor_path, 'r') as f:
+        code = compile(f.read(), str(processor_path), 'exec')
+        exec(code, namespace)
+    return types.SimpleNamespace(**namespace)
+
+
+processor = load_processor_module()
+create_gif = processor.create_gif
+extract_frames = processor.extract_frames
+get_gif_info = processor.get_gif_info
 
 
 @pytest.fixture

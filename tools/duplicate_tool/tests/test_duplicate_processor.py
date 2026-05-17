@@ -1,14 +1,29 @@
 """
 Tests for processor.py - duplicate detection functions.
 """
-import sys
+import types
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import tempfile
 import pytest
 from unittest.mock import patch
-from processor import find_duplicates_by_hash, find_duplicates_by_size
+
+
+def load_processor_module():
+    """Carga el processor dinámicamente sin conflictos de nombres."""
+    tool_dir = Path(__file__).parent.parent
+    processor_path = tool_dir / "processor.py"
+    namespace = {}
+    with open(processor_path, 'r') as f:
+        code = compile(f.read(), str(processor_path), 'exec')
+        exec(code, namespace)
+    return types.SimpleNamespace(**namespace)
+
+
+processor = load_processor_module()
+find_duplicates_by_hash = processor.find_duplicates_by_hash
+find_duplicates_by_size = processor.find_duplicates_by_size
+find_duplicates_async = processor.find_duplicates_async
 
 
 @pytest.fixture
@@ -84,17 +99,19 @@ class TestFindDuplicatesByHash:
         file1 = Path(temp_folder) / "image.jpg"
         file2 = Path(temp_folder) / "image.png"
         file3 = Path(temp_folder) / "document.txt"
+        file4 = Path(temp_folder) / "document2.txt"
         
         content = "same content"
         file1.write_bytes(content.encode())
         file2.write_bytes(content.encode())
-        file3.write_text("same content")
+        file3.write_bytes(content.encode())  # 2 archivos .txt con mismo contenido
+        file4.write_bytes(content.encode())
         
         result_jpg = find_duplicates_by_hash(temp_folder, extensions=['.jpg'])
         result_txt = find_duplicates_by_hash(temp_folder, extensions=['.txt'])
         
         assert result_jpg['count'] == 0
-        assert result_txt['count'] == 1
+        assert result_txt['count'] == 1  # 1 grupo de duplicados (2 archivos)
 
     def test_empty_folder(self, temp_folder):
         """Test empty folder returns no duplicates."""
@@ -143,15 +160,15 @@ class TestFindDuplicatesBySize:
         file3 = Path(temp_folder) / "dup2_a.txt"
         file4 = Path(temp_folder) / "dup2_b.txt"
         
-        file1.write_text("aaaa")
-        file2.write_text("aaaa")
-        file3.write_text("bbbb")
-        file4.write_text("bbbb")
+        file1.write_text("aaaa")  # 4 bytes
+        file2.write_text("aaaa")  # 4 bytes - mismo tamaño que dup1
+        file3.write_text("bbbbb")  # 5 bytes - diferente tamaño
+        file4.write_text("bbbbb")  # 5 bytes - mismo tamaño que dup2
         
         result = find_duplicates_by_size(temp_folder)
         
         assert result['success'] is True
-        assert result['count'] == 2
+        assert result['count'] == 2  # 2 grupos: archivos de 4 bytes y archivos de 5 bytes
 
     def test_nonexistent_folder_size(self):
         """Test handling of non-existent folder."""

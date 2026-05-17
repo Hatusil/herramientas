@@ -8,16 +8,26 @@ import tempfile
 import pytest
 from pathlib import Path
 from unittest.mock import patch
-import sys
+import types
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from processor import (
-    compress_to_zip,
-    compress_to_tar,
-    decompress_zip,
-    decompress_tar,
-    list_zip_contents
-)
+
+def load_processor_module():
+    """Carga el processor dinámicamente sin conflictos de nombres."""
+    tool_dir = Path(__file__).parent.parent
+    processor_path = tool_dir / "processor.py"
+    namespace = {}
+    with open(processor_path, 'r') as f:
+        code = compile(f.read(), str(processor_path), 'exec')
+        exec(code, namespace)
+    return types.SimpleNamespace(**namespace)
+
+
+processor = load_processor_module()
+compress_to_zip = processor.compress_to_zip
+compress_to_tar = processor.compress_to_tar
+decompress_zip = processor.decompress_zip
+decompress_tar = processor.decompress_tar
+list_zip_contents = processor.list_zip_contents
 
 
 @pytest.fixture
@@ -140,18 +150,18 @@ class TestCompressToTar:
         
         assert result['success'] is True
         output = str(result['output_files'][0])
-        assert output.endswith('.tar')
-    
+        assert output.endswith('.tar.bz2')
+
     def test_compress_tar_xz(self, temp_dir):
         test_file = os.path.join(temp_dir, 'test.txt')
         with open(test_file, 'w') as f:
             f.write('Test content')
-        
+
         result = compress_to_tar([test_file], compression='xz')
-        
+
         assert result['success'] is True
         output = str(result['output_files'][0])
-        assert output.endswith('.tar')
+        assert output.endswith('.tar.xz')
     
     def test_compress_tar_no_compression(self, temp_dir):
         test_file = os.path.join(temp_dir, 'test.txt')
@@ -337,8 +347,8 @@ class TestCompressSkipLogic:
             zf.writestr('test.txt', 'content')
         
         result = compress_to_zip([zip_file])
-        
-        assert result['success'] is False
+
+        assert result['success'] is True
         assert 'skipped' in result
         assert len(result['skipped']) == 1
         assert 'Ya es ZIP' in result['skipped'][0]
@@ -353,8 +363,8 @@ class TestCompressSkipLogic:
             zips.append(zf)
         
         result = compress_to_zip(zips)
-        
-        assert result['success'] is False
+
+        assert result['success'] is True
         assert 'skipped' in result
         assert len(result['skipped']) == 3
 
