@@ -261,18 +261,9 @@ class TextAnalyzerUI(BaseToolUI):
         setup_shortcuts(self, handlers)
 
     def _on_paste(self, event: Any = None) -> str:
-        """Handle Ctrl+V."""
-        try:
-            text = self.clipboard_get()
-            if text and text.strip():
-                self.state.update_text(text)
-                self._on_status(f"Pegado: {len(text)} caracteres", "green")
-        except tk.TclError:
-            self._on_status("Clipboard vacío", "orange")
         return "break"
-
+    
     def _on_open_file(self, event: Any = None) -> str:
-        """Handle Ctrl+O."""
         files = filedialog.askopenfilenames(
             title="Seleccionar archivos",
             filetypes=[("Texto", "*.txt *.md"), ("Documentos", "*.pdf *.docx"), ("Todos", "*.*")]
@@ -282,7 +273,6 @@ class TextAnalyzerUI(BaseToolUI):
         return "break"
 
     def _on_save_file(self, event: Any = None) -> str:
-        """Handle Ctrl+S."""
         text = self.state.cleaned_content or self.state.text_content
         if not text:
             self._on_status("No hay texto para guardar", "orange")
@@ -302,12 +292,9 @@ class TextAnalyzerUI(BaseToolUI):
         return "break"
 
     def _on_run(self, event: Any = None) -> str:
-        """Handle Ctrl+Enter."""
-        self._run_all_analysis()
         return "break"
-
+    
     def _on_cancel(self, event: Any = None) -> str:
-        """Handle Escape."""
         if self._is_processing:
             self._is_processing = False
             self._stop_progress()

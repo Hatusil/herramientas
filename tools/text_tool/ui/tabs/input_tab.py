@@ -182,8 +182,8 @@ class InputTab(BaseTab):
                         logger.warning(f"Could not fetch {url}: {e}")
         
         if text:
-            self._state.set_text(text)
-            self._callbacks.on_analyze()
+            self._state.update_text(text)
+            self._callbacks.request_analysis("run_specific", "stats")
         elif input_type in ("files", "url"):
             # Show message if no text was loaded
             if self._load_btn:
