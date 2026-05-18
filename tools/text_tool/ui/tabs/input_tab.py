@@ -194,6 +194,8 @@ class InputTab(BaseTab):
             
             if hasattr(self, '_file_label') and self._file_label:
                 self._file_label.configure(text=f"{file_count} archivo(s)")
+            # Update state sources
+            self._state.sources["files"].extend(list(files))
             self._callbacks.on_status(f"✅ {file_count} archivo(s) cargado(s)", "green")
             
         elif input_type == "url":
@@ -207,14 +209,16 @@ class InputTab(BaseTab):
             for i, url in enumerate(urls, 1):
                 try:
                     import requests
+                    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
                     self._callbacks.on_status(f"🌐 Descargando {i}/{len(urls)}...", "blue")
-                    response = requests.get(url, timeout=10)
+                    response = requests.get(url, headers=headers, timeout=10)
                     text += response.text + "\n"
                     url_count += 1
                 except Exception as e:
                     logger.warning(f"Error: {e}")
             
             self._callbacks.on_status(f"✅ {url_count} URL(s) descargada(s)", "green")
+            self._state.sources["urls"].extend(urls)
         
         # === FASE 2: ANALIZAR ===
         
