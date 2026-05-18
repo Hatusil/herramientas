@@ -157,14 +157,14 @@ class InputTab(BaseTab):
         elif input_type == "files":
             from tkinter import filedialog
             files = filedialog.askopenfilenames(
-                title="Seleccionar archivos de texto",
+                title="Seleccionar archivos para analizar",
                 filetypes=[
-                    ("Textos", "*.txt *.md"),
+                    ("Todos los soportados", "*.*"),
                     ("PDF", "*.pdf"),
                     ("Word", "*.docx *.doc"),
                     ("Excel", "*.xlsx *.xls"),
                     ("CSV", "*.csv"),
-                    ("Todos", "*.*"),
+                    ("Texto plano", "*.txt *.md"),
                 ]
             )
             if files:
