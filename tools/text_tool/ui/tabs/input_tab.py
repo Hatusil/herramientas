@@ -169,43 +169,48 @@ class InputTab(BaseTab):
             )
             if files:
                 file_count = 0
-                self._callbacks.on_status("Cargando archivos...", COLORS.get("info", "blue"))
+                self._callbacks.on_status("Cargando archivos...", "blue")
                 from tools.text_tool.processors import extract_text_from_file
                 for f in files:
                     result = extract_text_from_file(f)
                     if result.get('success'):
                         text += result.get('text', '') + "\n"
                         file_count += 1
+                        self._callbacks.on_status(f"Procesando {file_count}/{len(files)}...", "blue")
                     else:
                         logger.warning(f"Could not extract text from {f}: {result.get('error')}")
                 # Update file label if available
                 if hasattr(self, '_file_label') and self._file_label:
                     self._file_label.configure(text=f"{file_count} archivo(s) cargado(s)")
                 # Update status and button
-                self._callbacks.on_status(f"{file_count} archivo(s) cargado(s)", COLORS.get("success", "green"))
+                self._callbacks.on_status(f"✅ {file_count} archivo(s) cargado(s)", "green")
                 if self._load_btn:
-                    self._load_btn.configure(text=f"✅ {file_count} archivo(s) cargado(s)")
+                    self._load_btn.configure(text=f"✅ {file_count} archivo(s) listo(s)")
         elif input_type == "url":
             # Get text from URLs
             url_count = 0
+            self._callbacks.on_status("Cargando URLs...", "blue")
             for _, url_entry in self._url_entries:
                 url = url_entry.get().strip()
                 if url:
                     try:
                         import requests
+                        self._callbacks.on_status(f"Descargando {url}...", "blue")
                         response = requests.get(url, timeout=10)
                         text += response.text + "\n"
                         url_count += 1
                     except Exception as e:
                         logger.warning(f"Could not fetch {url}: {e}")
             if url_count > 0:
-                self._callbacks.on_status(f"{url_count} URL(s) cargada(s)", COLORS.get("success", "green"))
+                self._callbacks.on_status(f"✅ {url_count} URL(s) cargada(s)", "green")
                 if self._load_btn:
-                    self._load_btn.configure(text=f"✅ {url_count} URL(s) cargada(s)")
+                    self._load_btn.configure(text=f"✅ {url_count} URL(s) lista(s)")
+            else:
+                self._callbacks.on_status("⚠️ No se pudieron cargar las URLs", "orange")
         
         if text:
             self._state.update_text(text)
-            self._callbacks.on_status(f"Texto cargado: {len(text)} caracteres", COLORS.get("success", "green"))
+            self._callbacks.on_status(f"✅ {len(text)} caracteres cargados", "green")
             self._callbacks.request_analysis("run_specific", {"type": "stats", "params": {}})
         elif input_type in ("files", "url"):
             # Show message if no text was loaded
