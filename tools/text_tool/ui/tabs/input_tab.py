@@ -169,6 +169,7 @@ class InputTab(BaseTab):
             )
             if files:
                 file_count = 0
+                self._callbacks.on_status("Cargando archivos...", COLORS.get("info", "blue"))
                 from tools.text_tool.processors import extract_text_from_file
                 for f in files:
                     result = extract_text_from_file(f)
@@ -180,11 +181,13 @@ class InputTab(BaseTab):
                 # Update file label if available
                 if hasattr(self, '_file_label') and self._file_label:
                     self._file_label.configure(text=f"{file_count} archivo(s) cargado(s)")
-                # Update button text to show success
+                # Update status and button
+                self._callbacks.on_status(f"{file_count} archivo(s) cargado(s)", COLORS.get("success", "green"))
                 if self._load_btn:
                     self._load_btn.configure(text=f"✅ {file_count} archivo(s) cargado(s)")
         elif input_type == "url":
             # Get text from URLs
+            url_count = 0
             for _, url_entry in self._url_entries:
                 url = url_entry.get().strip()
                 if url:
@@ -192,8 +195,13 @@ class InputTab(BaseTab):
                         import requests
                         response = requests.get(url, timeout=10)
                         text += response.text + "\n"
+                        url_count += 1
                     except Exception as e:
                         logger.warning(f"Could not fetch {url}: {e}")
+            if url_count > 0:
+                self._callbacks.on_status(f"{url_count} URL(s) cargada(s)", COLORS.get("success", "green"))
+                if self._load_btn:
+                    self._load_btn.configure(text=f"✅ {url_count} URL(s) cargada(s)")
         
         if text:
             self._state.update_text(text)
