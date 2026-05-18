@@ -152,74 +152,78 @@ class InputTab(BaseTab):
         text = ""
         input_type = self._input_type.get()
         
+        # === FASE 1: CARGAR CONTENIDO ===
+        
         if input_type == "text" and self._text_area:
             text = self._text_area.get("1.0", "end").strip()
+            if text:
+                self._callbacks.on_status("📝 Cargando texto...", "blue")
+                self._callbacks.on_status(f"✅ Texto cargado ({len(text)} caracteres)", "green")
+            else:
+                self._callbacks.on_status("⚠️ Escribí algún texto primero", "orange")
+                return
+                
         elif input_type == "files":
             from tkinter import filedialog
             files = filedialog.askopenfilenames(
-                title="Seleccionar archivos para analizar",
+                title="Seleccionar archivos",
                 filetypes=[
-                    ("Todos los soportados", "*.*"),
+                    ("Todos", "*.*"),
                     ("PDF", "*.pdf"),
-                    ("Word", "*.docx *.doc"),
-                    ("Excel", "*.xlsx *.xls"),
+                    ("Word", "*.docx"),
+                    ("Excel", "*.xlsx"),
                     ("CSV", "*.csv"),
-                    ("Texto plano", "*.txt *.md"),
+                    ("Texto", "*.txt *.md"),
                 ]
             )
-            if files:
-                file_count = 0
-                self._callbacks.on_status("Cargando archivos...", "blue")
-                from tools.text_tool.processors import extract_text_from_file
-                for f in files:
-                    result = extract_text_from_file(f)
-                    if result.get('success'):
-                        text += result.get('text', '') + "\n"
-                        file_count += 1
-                        self._callbacks.on_status(f"Procesando {file_count}/{len(files)}...", "blue")
-                    else:
-                        logger.warning(f"Could not extract text from {f}: {result.get('error')}")
-                # Update file label
-                if hasattr(self, '_file_label') and self._file_label:
-                    self._file_label.configure(text=f"{file_count} archivo(s) cargado(s)")
-                # Feedback solo en status
-                self._callbacks.on_status(f"Listo: {file_count} archivo(s)", "green")
+            if not files:
+                self._callbacks.on_status("⚠️ No seleccionaste archivos", "orange")
+                return
+                
+            file_count = 0
+            self._callbacks.on_status("📂 Cargando archivos...", "blue")
+            from tools.text_tool.processors import extract_text_from_file
+            for i, f in enumerate(files, 1):
+                result = extract_text_from_file(f)
+                if result.get('success'):
+                    text += result.get('text', '') + "\n"
+                    file_count += 1
+                    self._callbacks.on_status(f"📄 Procesando {i}/{len(files)}...", "blue")
+                else:
+                    logger.warning(f"Error: {result.get('error')}")
+            
+            if hasattr(self, '_file_label') and self._file_label:
+                self._file_label.configure(text=f"{file_count} archivo(s)")
+            self._callbacks.on_status(f"✅ {file_count} archivo(s) cargado(s)", "green")
+            
         elif input_type == "url":
+            urls = [u.get().strip() for _, u in self._url_entries if u.get().strip()]
+            if not urls:
+                self._callbacks.on_status("⚠️ Escribí al menos una URL", "orange")
+                return
+                
             url_count = 0
-            print(f"[DEBUG] URL entries: {len(self._url_entries)}")
-            for entry_frame, url_entry in self._url_entries:
-                url = url_entry.get().strip()
-                print(f"[DEBUG] URL value: '{url}'")
-            self._callbacks.on_status("Cargando URLs...", "blue")
-            for _, url_entry in self._url_entries:
-                url = url_entry.get().strip()
-                if url:
-                    try:
-                        import requests
-                        print(f"[DEBUG] Fetching: {url}")
-                        self._callbacks.on_status(f"Descargando {url}...", "blue")
-                        response = requests.get(url, timeout=10)
-                        print(f"[DEBUG] Got response: {len(response.text)} chars")
-                        text += response.text + "\n"
-                        url_count += 1
-                    except Exception as e:
-                        print(f"[DEBUG] Error fetching {url}: {e}")
-                        logger.warning(f"Could not fetch {url}: {e}")
-            if url_count > 0:
-                self._callbacks.on_status(f"Listo: {url_count} URL(s)", "green")
-            else:
-                self._callbacks.on_status("⚠️ No se pudieron cargar las URLs", "orange")
+            self._callbacks.on_status("🌐 Descargando URLs...", "blue")
+            for i, url in enumerate(urls, 1):
+                try:
+                    import requests
+                    self._callbacks.on_status(f"🌐 Descargando {i}/{len(urls)}...", "blue")
+                    response = requests.get(url, timeout=10)
+                    text += response.text + "\n"
+                    url_count += 1
+                except Exception as e:
+                    logger.warning(f"Error: {e}")
+            
+            self._callbacks.on_status(f"✅ {url_count} URL(s) descargada(s)", "green")
+        
+        # === FASE 2: ANALIZAR ===
         
         if text:
             self._state.update_text(text)
-            self._callbacks.on_status(f"✅ {len(text)} caracteres cargados", "green")
+            self._callbacks.on_status("📊 Ejecutando análisis...", "blue")
             self._callbacks.request_analysis("run_specific", {"type": "stats", "params": {}})
-        elif input_type in ("files", "url"):
-            # Show message if no text was loaded
-            msg = "No se pudieron cargar los archivos" if input_type == "files" else "No se pudieron cargar las URLs"
-            self._callbacks.on_status(f"⚠️ {msg}", COLORS.get("warning", "orange"))
         else:
-            self._callbacks.on_status("⚠️ No hay texto para analizar", COLORS.get("warning", "orange"))
+            self._callbacks.on_status("⚠️ No hay contenido para analizar", "orange")
 
     def get_frame(self) -> ctk.CTkFrame:
         """Return the main frame for this tab (BaseTab abstract method)."""
