@@ -37,7 +37,7 @@ def setup_url_input(parent_frame, state: TextAnalyzerState, callbacks: AppCallba
         url_entry.pack(fill="x", padx=5, pady=5)
         url_entries.append((url_entry_frame, url_entry))
         update_count()
-        logger.debug(f"URL added, total: {len(url_entries)}")
+        logger.info(f"➕ Nueva URL añadida ({len(url_entries)} total)")
 
     def update_count():
         """Actualiza el contador de URLs."""

@@ -186,17 +186,24 @@ class InputTab(BaseTab):
                 self._callbacks.on_status(f"Listo: {file_count} archivo(s)", "green")
         elif input_type == "url":
             url_count = 0
+            print(f"[DEBUG] URL entries: {len(self._url_entries)}")
+            for entry_frame, url_entry in self._url_entries:
+                url = url_entry.get().strip()
+                print(f"[DEBUG] URL value: '{url}'")
             self._callbacks.on_status("Cargando URLs...", "blue")
             for _, url_entry in self._url_entries:
                 url = url_entry.get().strip()
                 if url:
                     try:
                         import requests
+                        print(f"[DEBUG] Fetching: {url}")
                         self._callbacks.on_status(f"Descargando {url}...", "blue")
                         response = requests.get(url, timeout=10)
+                        print(f"[DEBUG] Got response: {len(response.text)} chars")
                         text += response.text + "\n"
                         url_count += 1
                     except Exception as e:
+                        print(f"[DEBUG] Error fetching {url}: {e}")
                         logger.warning(f"Could not fetch {url}: {e}")
             if url_count > 0:
                 self._callbacks.on_status(f"Listo: {url_count} URL(s)", "green")
