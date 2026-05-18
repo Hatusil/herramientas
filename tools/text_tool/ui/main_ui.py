@@ -70,7 +70,8 @@ class TextAnalyzerUI(BaseToolUI):
 
     def _on_status(self, message: str, color: str = "gray") -> None:
         """Update status label."""
-        if self.status_label and not getattr(self, '_is_batch_analysis', False):
+        print(f"[STATUS] {message} ({color})")
+        if self.status_label:
             self.status_label.configure(text=message, text_color=color)
 
     def _on_text_changed(self) -> None:
