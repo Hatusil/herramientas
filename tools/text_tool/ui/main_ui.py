@@ -166,16 +166,17 @@ class TextAnalyzerUI(BaseToolUI):
     def _run_all_analysis(self) -> None:
         """Run all text analysis methods."""
         if not self.state.has_text:
-            self._on_status("No hay texto para analizar", "orange")
+            self._on_status("No hay texto para analizar", COLORS.get("warning", "orange"))
             return
 
         text = self.state.cleaned_content or self.state.text_content
         self._is_processing = True
         self._is_batch_analysis = True
-        self._on_status("Ejecutando análisis...", "blue")
+        self._on_status("Ejecutando análisis...", COLORS.get("info", "blue"))
 
         def worker() -> None:
             try:
+                from tools.text_tool.ui.analysis import run_all_analysis
                 results = run_all_analysis(text)
                 self.after(0, lambda: self._on_analysis_complete(results))
             except Exception as e:
