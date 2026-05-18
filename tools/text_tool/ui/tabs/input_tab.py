@@ -179,15 +179,12 @@ class InputTab(BaseTab):
                         self._callbacks.on_status(f"Procesando {file_count}/{len(files)}...", "blue")
                     else:
                         logger.warning(f"Could not extract text from {f}: {result.get('error')}")
-                # Update file label if available
+                # Update file label
                 if hasattr(self, '_file_label') and self._file_label:
                     self._file_label.configure(text=f"{file_count} archivo(s) cargado(s)")
-                # Update status and button
-                self._callbacks.on_status(f"✅ {file_count} archivo(s) cargado(s)", "green")
-                if self._load_btn:
-                    self._load_btn.configure(text=f"✅ {file_count} archivo(s) listo(s)")
+                # Feedback solo en status
+                self._callbacks.on_status(f"Listo: {file_count} archivo(s)", "green")
         elif input_type == "url":
-            # Get text from URLs
             url_count = 0
             self._callbacks.on_status("Cargando URLs...", "blue")
             for _, url_entry in self._url_entries:
@@ -202,9 +199,7 @@ class InputTab(BaseTab):
                     except Exception as e:
                         logger.warning(f"Could not fetch {url}: {e}")
             if url_count > 0:
-                self._callbacks.on_status(f"✅ {url_count} URL(s) cargada(s)", "green")
-                if self._load_btn:
-                    self._load_btn.configure(text=f"✅ {url_count} URL(s) lista(s)")
+                self._callbacks.on_status(f"Listo: {url_count} URL(s)", "green")
             else:
                 self._callbacks.on_status("⚠️ No se pudieron cargar las URLs", "orange")
         
