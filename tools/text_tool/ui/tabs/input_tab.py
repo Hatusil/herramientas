@@ -156,7 +156,6 @@ class InputTab(BaseTab):
             text = self._text_area.get("1.0", "end").strip()
         elif input_type == "files":
             from tkinter import filedialog
-            from tools.text_tool.processors import extract_text_from_file
             files = filedialog.askopenfilenames(
                 title="Seleccionar archivos de texto",
                 filetypes=[
@@ -168,9 +167,13 @@ class InputTab(BaseTab):
                     ("Todos", "*.*"),
                 ]
             )
+            print(f"[DEBUG] Files selected: {files}")
             if files:
+                from tools.text_tool.processors import extract_text_from_file
                 for f in files:
+                    print(f"[DEBUG] Processing: {f}")
                     result = extract_text_from_file(f)
+                    print(f"[DEBUG] Result: {result}")
                     if result.get('success'):
                         text += result.get('text', '') + "\n"
                     else:
