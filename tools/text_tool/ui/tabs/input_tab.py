@@ -100,7 +100,7 @@ class InputTab(BaseTab):
 
     def _build_file_input(self) -> None:
         """Delegado a input_file.py"""
-        self._file_frame = setup_file_input(self._frame, self._state, self._callbacks)
+        self._file_frame, self._file_label = setup_file_input(self._frame, self._state, self._callbacks)
 
     def _build_url_input(self) -> None:
         """Delegado a input_url.py"""
@@ -167,17 +167,22 @@ class InputTab(BaseTab):
                     ("Todos", "*.*"),
                 ]
             )
-            print(f"[DEBUG] Files selected: {files}")
             if files:
+                file_count = 0
                 from tools.text_tool.processors import extract_text_from_file
                 for f in files:
-                    print(f"[DEBUG] Processing: {f}")
                     result = extract_text_from_file(f)
-                    print(f"[DEBUG] Result: {result}")
                     if result.get('success'):
                         text += result.get('text', '') + "\n"
+                        file_count += 1
                     else:
                         logger.warning(f"Could not extract text from {f}: {result.get('error')}")
+                # Update file label if available
+                if hasattr(self, '_file_label') and self._file_label:
+                    self._file_label.configure(text=f"{file_count} archivo(s) cargado(s)")
+                # Update button text to show success
+                if self._load_btn:
+                    self._load_btn.configure(text=f"✅ {file_count} archivo(s) cargado(s)")
         elif input_type == "url":
             # Get text from URLs
             for _, url_entry in self._url_entries:

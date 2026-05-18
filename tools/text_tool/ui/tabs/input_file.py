@@ -1,6 +1,6 @@
 """Input tab - File input section."""
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 
 import customtkinter as ctk
 
@@ -9,8 +9,8 @@ if TYPE_CHECKING:
     from tools.text_tool.ui.callbacks import AppCallbacks
 
 
-def setup_file_input(parent_frame, state: TextAnalyzerState, callbacks: AppCallbacks) -> ctk.CTkFrame:
-    """Build the file selection frame."""
+def setup_file_input(parent_frame, state: TextAnalyzerState, callbacks: AppCallbacks) -> Tuple[ctk.CTkFrame, ctk.CTkLabel]:
+    """Build the file selection frame. Returns frame and label."""
     file_frame = ctk.CTkFrame(parent_frame)
     file_frame.pack(fill="x", padx=10, pady=10)
     file_frame.pack_forget()  # Hidden by default, shown when "files" selected
@@ -31,4 +31,4 @@ def setup_file_input(parent_frame, state: TextAnalyzerState, callbacks: AppCallb
     )
     files_label.pack(fill="x", padx=5, pady=5)
 
-    return file_frame
+    return file_frame, files_label
