@@ -155,20 +155,26 @@ class InputTab(BaseTab):
         if input_type == "text" and self._text_area:
             text = self._text_area.get("1.0", "end").strip()
         elif input_type == "files":
-            # Open file dialog to select text files
             from tkinter import filedialog
+            from tools.text_tool.processors import extract_text_from_file
             files = filedialog.askopenfilenames(
                 title="Seleccionar archivos de texto",
-                filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+                filetypes=[
+                    ("Textos", "*.txt *.md"),
+                    ("PDF", "*.pdf"),
+                    ("Word", "*.docx *.doc"),
+                    ("Excel", "*.xlsx *.xls"),
+                    ("CSV", "*.csv"),
+                    ("Todos", "*.*"),
+                ]
             )
             if files:
-                # Read content from files
                 for f in files:
-                    try:
-                        with open(f, 'r', encoding='utf-8') as fp:
-                            text += fp.read() + "\n"
-                    except Exception as e:
-                        logger.warning(f"Could not read {f}: {e}")
+                    result = extract_text_from_file(f)
+                    if result.get('success'):
+                        text += result.get('text', '') + "\n"
+                    else:
+                        logger.warning(f"Could not extract text from {f}: {result.get('error')}")
         elif input_type == "url":
             # Get text from URLs
             for _, url_entry in self._url_entries:
@@ -183,7 +189,6 @@ class InputTab(BaseTab):
         
         if text:
             self._state.update_text(text)
-            print(f"[DEBUG] Text loaded: {len(text)} chars")
             self._callbacks.on_status(f"Texto cargado: {len(text)} caracteres", COLORS.get("success", "green"))
             self._callbacks.request_analysis("run_specific", {"type": "stats", "params": {}})
         elif input_type in ("files", "url"):

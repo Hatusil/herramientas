@@ -207,7 +207,6 @@ class TextAnalyzerUI(BaseToolUI):
 
     def _run_specific_analysis(self, args: Dict[str, Any]) -> None:
         """Run specific analysis requested by tab."""
-        print(f"[DEBUG] _run_specific_analysis called with: {args}")
         t = args.get("type")
         params = args.get("params", {})
         if t == "stats":
@@ -216,15 +215,12 @@ class TextAnalyzerUI(BaseToolUI):
             self._run_frequency(params)
 
     def _run_stats(self) -> None:
-        print("[DEBUG] _run_stats called")
         from tools.text_tool.ui.analysis import run_stats
         text = self.state.cleaned_content or self.state.text_content
-        print(f"[DEBUG] text for analysis: {len(text) if text else 0} chars")
         if text:
             self._on_status("Calculando estadísticas...", COLORS.get("info", "blue"))
             self.executor.submit(lambda: self._on_stats_complete(run_stats(text)))
         else:
-            print("[DEBUG] No text available for analysis")
             self._on_status("No hay texto para analizar", COLORS.get("warning", "orange"))
 
     def _on_stats_complete(self, result: Dict[str, Any]) -> None:
