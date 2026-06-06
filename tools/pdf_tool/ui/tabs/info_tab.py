@@ -10,8 +10,14 @@ if TYPE_CHECKING:
 
 
 class InfoTab(PDFBaseTab):
-    def __init__(self, parent: ctk.CTkFrame, callbacks: PDFCallbacks, main_ui=None):
-        super().__init__(parent, callbacks, main_ui)
+    def __init__(
+        self,
+        parent: ctk.CTkFrame,
+        callbacks: PDFCallbacks,
+        main_ui=None,
+        state=None,
+    ):
+        super().__init__(parent, callbacks, main_ui, state)
 
     def _setup_frame(self) -> None:
         self._frame = create_frame(self._parent, fg_color="transparent")
@@ -28,6 +34,8 @@ class InfoTab(PDFBaseTab):
             info_frame, text="Ver Informacion",
             command=self._run_analysis,
         ).pack(pady=5)
+
+        self._state.info_text = self._info_text
 
     def get_frame(self) -> ctk.CTkFrame:
         return self._frame

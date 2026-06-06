@@ -8,20 +8,31 @@ import customtkinter as ctk
 
 if TYPE_CHECKING:
     from tools.pdf_tool.ui.callbacks import PDFCallbacks
+    from tools.pdf_tool.ui.state import PDFState
 
 
 class PDFBaseTab(ABC):
-    """Abstract base class for all tabs in PDF Tool UI."""
+    """Abstract base class for all tabs in PDF Tool UI.
+
+    Tabs receive a ``state`` (``PDFState``) reference at construction
+    time and publish each widget they own into ``self._state.<attr>``
+    exactly once, at the end of ``_setup_frame()``. Click handlers
+    never reassign — they read the typed dataclass field directly. The
+    ``main_ui`` back-reference remains for the chrome (e.g. files
+    list, status label) but is no longer the widget namespace.
+    """
 
     def __init__(
         self,
         parent: ctk.CTkFrame,
         callbacks: PDFCallbacks,
         main_ui: Optional[object] = None,
+        state: Optional["PDFState"] = None,
     ) -> None:
         self._parent = parent
         self._callbacks = callbacks
         self._main_ui = main_ui
+        self._state = state
         self._frame: Optional[ctk.CTkFrame] = None
         self._setup_frame()
         if self._frame is not None:
@@ -29,7 +40,11 @@ class PDFBaseTab(ABC):
 
     @abstractmethod
     def _setup_frame(self) -> None:
-        """Create the main frame for this tab."""
+        """Create the main frame for this tab.
+
+        Subclasses MUST publish every widget they own to
+        ``self._state.<attr>`` at the end of this method.
+        """
         ...
 
     @abstractmethod

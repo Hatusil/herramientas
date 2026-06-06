@@ -16,6 +16,7 @@ from core.help_panel import add_help
 from core.constants import COLORS
 
 from tools.pdf_tool.ui.callbacks import PDFCallbacks
+from tools.pdf_tool.ui.state import PDFState, PDFContext
 from tools.pdf_tool.ui.tabs.info_tab import InfoTab
 from tools.pdf_tool.ui.tabs.edit_tab import EditTab
 from tools.pdf_tool.ui.tabs.transform_tab import TransformTab
@@ -98,6 +99,13 @@ class PDFToolUI(BaseToolUI):
             on_status=self._set_status,
         )
 
+        self._state = PDFState()
+        self._state.ctx = PDFContext(
+            files=self.files,
+            status_label=self.status_label,
+            process_async=self.on_process,
+        )
+
         self._build_tabs()
 
     def _get_file_label(self) -> str:
@@ -129,7 +137,7 @@ class PDFToolUI(BaseToolUI):
         self.tabs = {}
         for name, cls in tab_configs:
             frame = self.tabview.add(name)
-            tab = cls(frame, self.callbacks, main_ui=self)
+            tab = cls(frame, self.callbacks, main_ui=self, state=self._state)
             self.tabs[name] = tab
 
     def _check_files(self) -> bool:

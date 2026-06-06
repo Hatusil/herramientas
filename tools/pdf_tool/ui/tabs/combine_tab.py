@@ -10,8 +10,14 @@ if TYPE_CHECKING:
 
 
 class CombineTab(PDFBaseTab):
-    def __init__(self, parent: ctk.CTkFrame, callbacks: PDFCallbacks, main_ui=None):
-        super().__init__(parent, callbacks, main_ui)
+    def __init__(
+        self,
+        parent: ctk.CTkFrame,
+        callbacks: PDFCallbacks,
+        main_ui=None,
+        state=None,
+    ):
+        super().__init__(parent, callbacks, main_ui, state)
 
     def _setup_frame(self) -> None:
         self._frame = create_frame(self._parent, fg_color="transparent")
@@ -42,6 +48,8 @@ class CombineTab(PDFBaseTab):
         create_button(
             extract_frame, text="Extraer", command=self._extract
         ).pack(pady=5)
+
+        self._state.extract_pages = self._extract_pages
 
     def get_frame(self) -> ctk.CTkFrame:
         return self._frame

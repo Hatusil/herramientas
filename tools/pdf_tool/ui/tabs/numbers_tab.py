@@ -10,8 +10,14 @@ if TYPE_CHECKING:
 
 
 class NumbersTab(PDFBaseTab):
-    def __init__(self, parent: ctk.CTkFrame, callbacks: PDFCallbacks, main_ui=None):
-        super().__init__(parent, callbacks, main_ui)
+    def __init__(
+        self,
+        parent: ctk.CTkFrame,
+        callbacks: PDFCallbacks,
+        main_ui=None,
+        state=None,
+    ):
+        super().__init__(parent, callbacks, main_ui, state)
 
     def _setup_frame(self) -> None:
         self._frame = create_frame(self._parent, fg_color="transparent")
@@ -40,6 +46,10 @@ class NumbersTab(PDFBaseTab):
             num_frame, text="Agregar Numeros",
             command=self._add_numbers, height=40,
         ).pack(pady=10)
+
+        self._state.num_position = self._num_position
+        self._state.num_start = self._num_start
+        self._state.num_format = self._num_format
 
     def get_frame(self) -> ctk.CTkFrame:
         return self._frame

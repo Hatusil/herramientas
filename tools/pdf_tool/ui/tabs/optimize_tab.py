@@ -10,8 +10,14 @@ if TYPE_CHECKING:
 
 
 class OptimizeTab(PDFBaseTab):
-    def __init__(self, parent: ctk.CTkFrame, callbacks: PDFCallbacks, main_ui=None):
-        super().__init__(parent, callbacks, main_ui)
+    def __init__(
+        self,
+        parent: ctk.CTkFrame,
+        callbacks: PDFCallbacks,
+        main_ui=None,
+        state=None,
+    ):
+        super().__init__(parent, callbacks, main_ui, state)
 
     def _setup_frame(self) -> None:
         self._frame = create_frame(self._parent, fg_color="transparent")
@@ -40,6 +46,8 @@ class OptimizeTab(PDFBaseTab):
         create_button(
             clean_frame, text="Limpiar Metadatos", command=self._clean, height=40,
         ).pack(pady=5)
+
+        self._state.compress_level = self._compress_level
 
     def get_frame(self) -> ctk.CTkFrame:
         return self._frame

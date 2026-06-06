@@ -10,11 +10,18 @@ from ui.theme_factory import create_frame, create_label, create_button, create_e
 
 if TYPE_CHECKING:
     from tools.pdf_tool.ui.callbacks import PDFCallbacks
+    from tools.pdf_tool.ui.state import PDFState
 
 
 class WatermarkTab(PDFBaseTab):
-    def __init__(self, parent: ctk.CTkFrame, callbacks: PDFCallbacks, main_ui=None):
-        super().__init__(parent, callbacks, main_ui)
+    def __init__(
+        self,
+        parent: ctk.CTkFrame,
+        callbacks: PDFCallbacks,
+        main_ui=None,
+        state: "PDFState" = None,
+    ):
+        super().__init__(parent, callbacks, main_ui, state)
 
     def _setup_frame(self) -> None:
         self._frame = create_frame(self._parent, fg_color="transparent")
@@ -35,12 +42,29 @@ class WatermarkTab(PDFBaseTab):
         self._inputs_frame = create_frame(self._frame)
         self._inputs_frame.pack(fill="x", padx=10, pady=5)
 
+        self._watermark_text_var = ctk.StringVar(value="WATERMARK")
+        self._watermark_image_path_var = ctk.StringVar()
+
         self._text_frame = create_frame(self._inputs_frame)
         create_label(self._text_frame, text="Texto:").pack(side="left", padx=5)
-        self._watermark_text = create_entry(self._text_frame, width=200)
-        self._watermark_text.insert(0, "WATERMARK")
-        self._watermark_text.pack(side="left", padx=5)
+        self._watermark_text_entry = create_entry(
+            self._text_frame, width=200, textvariable=self._watermark_text_var,
+        )
+        self._watermark_text_entry.pack(side="left", padx=5)
         self._text_frame.pack(fill="x", padx=5, pady=5)
+
+        self._image_frame = create_frame(self._inputs_frame)
+        create_label(self._image_frame, text="Imagen:").pack(side="left", padx=5)
+        self._watermark_image_entry = create_entry(
+            self._image_frame, width=200, textvariable=self._watermark_image_path_var,
+        )
+        self._watermark_image_entry.pack(side="left", padx=5)
+        create_button(
+            self._image_frame, text="Examinar...",
+            command=self._select_image, width=80,
+        ).pack(side="left", padx=5)
+
+        self._update_inputs()
 
         opts_frame = create_frame(self._frame)
         opts_frame.pack(fill="x", padx=10, pady=5)
@@ -105,6 +129,17 @@ class WatermarkTab(PDFBaseTab):
             command=self._remove_watermark, height=40,
         ).pack(side="left", padx=5, fill="x", expand=True)
 
+        self._state.watermark_text = self._watermark_text_var
+        self._state.watermark_size = self._watermark_size
+        self._state.watermark_color = self._watermark_color
+        self._state.watermark_opacity_slider = self._opacity_slider
+        self._state.watermark_rotation_slider = self._rotation_slider
+        self._state.watermark_position = self._watermark_position
+        self._state.watermark_pos_x = self._watermark_pos_x
+        self._state.watermark_pos_y = self._watermark_pos_y
+        self._state.watermark_image_path = self._watermark_image_path_var
+        self._state.watermark_type = self._watermark_type
+
     def get_frame(self) -> ctk.CTkFrame:
         return self._frame
 
@@ -115,24 +150,11 @@ class WatermarkTab(PDFBaseTab):
         self._rotation_label.configure(text=f"{int(value)}deg")
 
     def _update_inputs(self) -> None:
-        for w in self._inputs_frame.winfo_children():
-            w.destroy()
         if self._watermark_type.get() == "text":
-            self._text_frame = create_frame(self._inputs_frame)
-            create_label(self._text_frame, text="Texto:").pack(side="left", padx=5)
-            self._watermark_text = create_entry(self._text_frame, width=200)
-            self._watermark_text.insert(0, "WATERMARK")
-            self._watermark_text.pack(side="left", padx=5)
+            self._image_frame.pack_forget()
             self._text_frame.pack(fill="x", padx=5, pady=5)
         else:
-            self._image_frame = create_frame(self._inputs_frame)
-            create_label(self._image_frame, text="Imagen:").pack(side="left", padx=5)
-            self._watermark_image_path = create_entry(self._image_frame, width=200)
-            self._watermark_image_path.pack(side="left", padx=5)
-            create_button(
-                self._image_frame, text="Examinar...",
-                command=self._select_image, width=80,
-            ).pack(side="left", padx=5)
+            self._text_frame.pack_forget()
             self._image_frame.pack(fill="x", padx=5, pady=5)
 
     def _select_image(self) -> None:
@@ -141,12 +163,11 @@ class WatermarkTab(PDFBaseTab):
             filetypes=[("Imagenes", "*.png *.jpg *.jpeg *.gif *.bmp"), ("Todos", "*.*")],
         )
         if file_path:
-            self._watermark_image_path.delete(0, tk.END)
-            self._watermark_image_path.insert(0, file_path)
+            self._watermark_image_path_var.set(file_path)
 
     def _apply_watermark(self) -> None:
         from tools.pdf_tool.ui.handlers.watermark_handler import apply_text_watermark, apply_image_watermark
-        self._main_ui.watermark_text = self._watermark_text
+        self._main_ui.watermark_text = self._watermark_text_var
         self._main_ui.watermark_size = self._watermark_size
         self._main_ui.watermark_color = self._watermark_color
         self._main_ui.watermark_opacity_slider = self._opacity_slider
@@ -154,7 +175,7 @@ class WatermarkTab(PDFBaseTab):
         self._main_ui.watermark_position = self._watermark_position
         self._main_ui.watermark_pos_x = self._watermark_pos_x
         self._main_ui.watermark_pos_y = self._watermark_pos_y
-        self._main_ui.watermark_image_path = getattr(self, '_watermark_image_path', None)
+        self._main_ui.watermark_image_path = self._watermark_image_path_var
         self._main_ui.watermark_type = self._watermark_type
         if self._watermark_type.get() == "image":
             apply_image_watermark(self._main_ui)

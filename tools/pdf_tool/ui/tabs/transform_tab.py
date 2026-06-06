@@ -10,8 +10,14 @@ if TYPE_CHECKING:
 
 
 class TransformTab(PDFBaseTab):
-    def __init__(self, parent: ctk.CTkFrame, callbacks: PDFCallbacks, main_ui=None):
-        super().__init__(parent, callbacks, main_ui)
+    def __init__(
+        self,
+        parent: ctk.CTkFrame,
+        callbacks: PDFCallbacks,
+        main_ui=None,
+        state=None,
+    ):
+        super().__init__(parent, callbacks, main_ui, state)
 
     def _setup_frame(self) -> None:
         self._frame = create_frame(self._parent, fg_color="transparent")
@@ -49,6 +55,10 @@ class TransformTab(PDFBaseTab):
         create_button(
             reorder_frame, text="Reordenar", command=self._reorder_pages
         ).pack(pady=5)
+
+        self._state.rotate_var = self._rotate_var
+        self._state.rotate_pages = self._rotate_pages
+        self._state.reorder_input = self._reorder_input
 
     def get_frame(self) -> ctk.CTkFrame:
         return self._frame

@@ -12,8 +12,14 @@ if TYPE_CHECKING:
 
 
 class PipelineTab(PDFBaseTab):
-    def __init__(self, parent: ctk.CTkFrame, callbacks: PDFCallbacks, main_ui=None):
-        super().__init__(parent, callbacks, main_ui)
+    def __init__(
+        self,
+        parent: ctk.CTkFrame,
+        callbacks: PDFCallbacks,
+        main_ui=None,
+        state=None,
+    ):
+        super().__init__(parent, callbacks, main_ui, state)
         self._operations = []
 
     def _setup_frame(self) -> None:
@@ -87,6 +93,8 @@ class PipelineTab(PDFBaseTab):
             action_frame, text="Ejecutar Pipeline", command=self._execute,
             width=150, fg_color=COLORS.get("success"),
         ).pack(side="left", padx=5, fill="x", expand=True)
+
+        self._state.pipeline_operations = self._operations
 
     def get_frame(self) -> ctk.CTkFrame:
         return self._frame

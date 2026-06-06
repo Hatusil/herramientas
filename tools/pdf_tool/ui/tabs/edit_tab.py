@@ -10,8 +10,14 @@ if TYPE_CHECKING:
 
 
 class EditTab(PDFBaseTab):
-    def __init__(self, parent: ctk.CTkFrame, callbacks: PDFCallbacks, main_ui=None):
-        super().__init__(parent, callbacks, main_ui)
+    def __init__(
+        self,
+        parent: ctk.CTkFrame,
+        callbacks: PDFCallbacks,
+        main_ui=None,
+        state=None,
+    ):
+        super().__init__(parent, callbacks, main_ui, state)
 
     def _setup_frame(self) -> None:
         self._frame = create_frame(self._parent, fg_color="transparent")
@@ -90,6 +96,18 @@ class EditTab(PDFBaseTab):
         create_button(
             extract_frame, text="Extraer Rango", command=self._extract_range
         ).pack(pady=5)
+
+        self._state.annot_text = self._annot_text
+        self._state.annot_page = self._annot_page
+        self._state.annot_x = self._annot_x
+        self._state.annot_y = self._annot_y
+        self._state.redact_page = self._redact_page
+        self._state.redact_x = self._redact_x
+        self._state.redact_y = self._redact_y
+        self._state.redact_w = self._redact_w
+        self._state.redact_h = self._redact_h
+        self._state.extract_start = self._extract_start
+        self._state.extract_end = self._extract_end
 
     def get_frame(self) -> ctk.CTkFrame:
         return self._frame

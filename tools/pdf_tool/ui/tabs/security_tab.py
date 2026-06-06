@@ -10,8 +10,14 @@ if TYPE_CHECKING:
 
 
 class SecurityTab(PDFBaseTab):
-    def __init__(self, parent: ctk.CTkFrame, callbacks: PDFCallbacks, main_ui=None):
-        super().__init__(parent, callbacks, main_ui)
+    def __init__(
+        self,
+        parent: ctk.CTkFrame,
+        callbacks: PDFCallbacks,
+        main_ui=None,
+        state=None,
+    ):
+        super().__init__(parent, callbacks, main_ui, state)
 
     def _setup_frame(self) -> None:
         self._frame = create_frame(self._parent, fg_color="transparent")
@@ -42,6 +48,9 @@ class SecurityTab(PDFBaseTab):
         create_button(
             unlock_frame, text="Desbloquear", command=self._decrypt, height=40,
         ).pack(pady=5)
+
+        self._state.lock_password = self._lock_password
+        self._state.unlock_password = self._unlock_password
 
     def get_frame(self) -> ctk.CTkFrame:
         return self._frame
