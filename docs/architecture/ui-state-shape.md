@@ -82,12 +82,10 @@ import customtkinter as ctk
 @dataclass
 class ToolContext:
     files: List[str] = field(default_factory=list)
-    status_label: Optional[ctk.CTkLabel] = None
     process_async: Callable[..., Any] = None
 @dataclass
 class ToolState:
     primary_input: Optional[ctk.CTkEntry] = None
-    output_view: Optional[ctk.CTkTextbox] = None
     ctx: ToolContext = field(default_factory=ToolContext)
 ```
 
