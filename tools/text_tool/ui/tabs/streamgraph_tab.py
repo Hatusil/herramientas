@@ -101,6 +101,11 @@ class StreamGraphTab(BaseTab):
         """Return the main frame for this tab."""
         return self._frame
 
+    def on_tab_selected(self) -> None:
+        """Re-render image when tab is selected."""
+        if self._current_image_data:
+            self._display_image(self._current_image_data)
+
     def _on_terms_change(self, value: float) -> None:
         """Handle n_terms slider change."""
         n = int(value)
@@ -123,7 +128,7 @@ class StreamGraphTab(BaseTab):
         try:
             from tools.text_tool.processor import analyze_streamgraph
 
-            result = analyze_streamgraph(self.state.cleaned_content, n_terms=n_terms, n_sections=n_sections)
+            result = analyze_streamgraph(self.state.cleaned_content, n_terms=n_terms, n_sections=n_sections, already_cleaned=True)
 
             if result.get("success") and result.get("image_data"):
                 self._display_image(result["image_data"])

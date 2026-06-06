@@ -5,11 +5,30 @@ import logging
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
-import tkinter as tk
-from collections import Counter
 
 from tools.text_tool.ui.tabs.base_tab import BaseTab
+from tools.text_tool.ui.phases.clean_phase import CleanPhase
 from core.constants import COLORS
+
+from .clean_sources import (
+    build_sources_section,
+    update_sources_display,
+    remove_source,
+)
+from .clean_filters import (
+    build_stats_section,
+    build_clean_options,
+    update_filter_stats,
+    update_execute_button_state,
+)
+from .clean_results import (
+    build_action_buttons,
+    build_results_section,
+    build_execute_button,
+    show_raw_text,
+    show_filtered_text,
+    update_freq_display,
+)
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
@@ -19,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class CleanTab(BaseTab):
-    """Tab for text cleaning options and preview."""
+    """Tab for text cleaning options and preview with progressive filters."""
 
     def __init__(
         self,
@@ -28,13 +47,17 @@ class CleanTab(BaseTab):
         callbacks: AppCallbacks,
     ) -> None:
         """Initialize CleanTab."""
-        self._sources_summary: ctk.CTkLabel | None = None
-        self._remove_stopwords: ctk.BooleanVar = ctk.BooleanVar(value=True)
         self._exclude_entry: ctk.CTkEntry | None = None
+        self._remove_stopwords: ctk.BooleanVar | None = None
         self._preview_raw_btn: ctk.CTkButton | None = None
         self._apply_clean_btn: ctk.CTkButton | None = None
+        self._execute_btn: ctk.CTkButton | None = None
         self._clean_text: ctk.CTkTextbox | None = None
         self._clean_freq_text: ctk.CTkTextbox | None = None
+        self._sources_frame: ctk.CTkFrame | None = None
+        self._stats_label: ctk.CTkLabel | None = None
+        self._filter_info: ctk.CTkLabel | None = None
+        self._update_fn: callable | None = None
         super().__init__(parent, state, callbacks)
 
     def _setup_frame(self) -> None:
@@ -43,250 +66,150 @@ class CleanTab(BaseTab):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        """Build the tab UI."""
-        self._build_sources_section()
-        self._build_clean_options()
-        self._build_action_buttons()
-        self._build_generate_button()
-        self._build_results_section()
+        """Build the tab UI using imported submodule builders."""
 
-    def _build_sources_section(self) -> None:
-        """Build the sources summary section."""
-        self._sources_summary = ctk.CTkLabel(
+        def _refresh_all() -> None:
+            """Coordinator: updates sources, stats, filters, and execute button."""
+            update_sources_display(
+                self._sources_frame,
+                self.state,
+                self.callbacks,
+                remove_fn=self._remove_source,
+            )
+            update_filter_stats(self._stats_label, self._filter_info, self.state)
+            self._apply_filters()
+            update_execute_button_state(self._execute_btn, self.state)
+
+        self._update_fn = _refresh_all
+
+        self._sources_frame = build_sources_section(self._frame)
+
+        self._stats_label, self._filter_info = build_stats_section(self._frame)
+
+        self._remove_stopwords, self._exclude_entry, _apply_btn = build_clean_options(
             self._frame,
-            text="📁 Sin contenido cargado",
-            font=ctk.CTkFont(size=14),
+            self.state,
+            on_filter_change=self._on_filter_change,
+            apply_filters_fn=self._apply_filters,
         )
-        self._sources_summary.pack(anchor="w", padx=10, pady=(10, 5))
 
-        remove_frame = ctk.CTkFrame(self._frame)
-        remove_frame.pack(fill="x", padx=10, pady=5)
-
-        ctk.CTkButton(
-            remove_frame,
-            text="❌ Quitar Textos",
-            command=lambda: self._remove_source("text"),
-            fg_color=COLORS["error"],
-        ).pack(side="left", padx=2)
-
-        ctk.CTkButton(
-            remove_frame,
-            text="❌ Quitar Archivos",
-            command=lambda: self._remove_source("files"),
-            fg_color=COLORS["error"],
-        ).pack(side="left", padx=2)
-
-        ctk.CTkButton(
-            remove_frame,
-            text="❌ Quitar URLs",
-            command=lambda: self._remove_source("urls"),
-            fg_color=COLORS["error"],
-        ).pack(side="left", padx=2)
-
-    def _build_clean_options(self) -> None:
-        """Build the cleaning options section."""
-        opts_section = ctk.CTkLabel(
+        self._preview_raw_btn, self._apply_clean_btn = build_action_buttons(
             self._frame,
-            text="⚙️ OPCIONES DE LIMPIEZA",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            show_raw_fn=self._show_raw_text,
+            show_filtered_fn=self._show_filtered_text,
         )
-        opts_section.pack(anchor="w", padx=10, pady=(15, 5))
 
-        opts_frame = ctk.CTkFrame(self._frame)
-        opts_frame.pack(fill="x", padx=10, pady=5)
+        self._clean_text, self._clean_freq_text = build_results_section(self._frame)
 
-        self._remove_stopwords = ctk.BooleanVar(value=True)
-        ctk.CTkCheckBox(
-            opts_frame,
-            text="Quitar conectores (stopwords)",
-            variable=self._remove_stopwords,
-        ).pack(anchor="w", padx=5, pady=3)
-
-        ctk.CTkLabel(
-            opts_frame, text="Excluir palabras (separadas por coma):"
-        ).pack(anchor="w", padx=5, pady=(5, 0))
-
-        self._exclude_entry = ctk.CTkEntry(
-            opts_frame, placeholder_text="ej: palabra1, palabra2, palabra3"
-        )
-        self._exclude_entry.pack(fill="x", padx=5, pady=5)
-
-    def _build_action_buttons(self) -> None:
-        """Build the action buttons."""
-        action_frame = ctk.CTkFrame(self._frame, fg_color="transparent")
-        action_frame.pack(fill="x", padx=10, pady=10)
-
-        self._preview_raw_btn = ctk.CTkButton(
-            action_frame,
-            text="👁 Preview Texto Bruto",
-            command=self._preview_raw_text,
-            width=180,
-            fg_color=COLORS["bg_medium"],
-            hover_color=COLORS["bg_hover"],
-        )
-        self._preview_raw_btn.pack(side="left", padx=5)
-
-        self._apply_clean_btn = ctk.CTkButton(
-            action_frame,
-            text="🔄 Aplicar Limpieza",
-            command=self._apply_clean,
-            width=180,
-            fg_color=COLORS["primary"],
-            hover_color=COLORS["primary_hover"],
-        )
-        self._apply_clean_btn.pack(side="left", padx=5)
-
-    def _build_results_section(self) -> None:
-        """Build the results display section."""
-        results_section = ctk.CTkLabel(
-            self._frame,
-            text="✅ RESULTADOS",
-            font=ctk.CTkFont(size=14, weight="bold"),
-        )
-        results_section.pack(anchor="w", padx=10, pady=(15, 5))
-
-        clean_label = ctk.CTkLabel(
-            self._frame, text="Texto limpio (preview):", font=ctk.CTkFont(size=12)
-        )
-        clean_label.pack(anchor="w", padx=10, pady=(5, 0))
-
-        self._clean_text = ctk.CTkTextbox(self._frame, wrap="word", height=150, fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
-        self._clean_text.pack(fill="both", expand=False, padx=10, pady=5)
-
-        top_words_label = ctk.CTkLabel(
-            self._frame, text="Top 20 palabras:", font=ctk.CTkFont(size=12)
-        )
-        top_words_label.pack(anchor="w", padx=10, pady=(10, 0))
-
-        self._clean_freq_text = ctk.CTkTextbox(
-            self._frame, wrap="word", font=("Courier New", 11), fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"]
-        )
-        self._clean_freq_text.pack(fill="both", expand=True, padx=10, pady=5)
-
-    def _build_generate_button(self) -> None:
-        """Build the main generate button."""
-        ctk.CTkButton(
-            self._frame,
-            text="📊 GENERAR VISUALIZACIONES Y ANÁLISIS",
-            command=self._run_all_analysis,
-            height=45,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            fg_color=COLORS["primary"],
-            hover_color=COLORS["primary_hover"],
-        ).pack(fill="x", padx=10, pady=(20, 10))
+        self._execute_btn = build_execute_button(self._frame, self._run_all_analysis)
 
     def get_frame(self) -> ctk.CTkFrame:
         """Return the main frame for this tab."""
         return self._frame
 
     def refresh(self) -> None:
-        """Refresh the clean tab state."""
-        self._update_sources_summary()
+        """Refresh the clean tab state via coordinator."""
+        if self._update_fn:
+            self._update_fn()
 
-    def _update_sources_summary(self) -> None:
-        """Update the sources summary label."""
-        if self._sources_summary:
-            self._sources_summary.configure(text=self.state.sources_summary)
+    def _remove_source(self, source_type: str, source_id: str) -> None:
+        """Remove a specific source."""
+        remove_source(
+            source_type,
+            source_id,
+            self.state,
+            self.callbacks,
+            self._clean_text,
+            self._clean_freq_text,
+            self._stats_label,
+            self._filter_info,
+            self._update_fn,
+        )
 
-    def _remove_source(self, source_type: str) -> None:
-        """Remove a source type and reset content."""
-        if not self.state.text_content and not self.state.sources[source_type]:
+    def _on_filter_change(self) -> None:
+        """Handle filter checkbox change."""
+        if self._remove_stopwords is not None:
+            self.state.remove_stopwords = self._remove_stopwords.get()
+        exclusions = self._exclude_entry.get().strip() if self._exclude_entry else ""
+        self.state.set_exclusions(exclusions)
+        self._apply_filters()
+
+    def _apply_filters(self) -> None:
+        """Apply current filters and update display."""
+        if not self.state.has_text:
+            self.update_status("Primero carg\u00e1 contenido", "orange")
             return
 
-        self.state.text_content = ""
-        self.state.update_cleaned(None)
-        self._clean_text.delete("1.0", tk.END)
-        self._clean_freq_text.delete("1.0", tk.END)
-        self.state.sources = {"text": [], "files": [], "urls": []}
-        self._update_sources_summary()
-        self.update_status("Contenido reseteado", "gray")
+        self.state.apply_stopwords_filter(
+            self._remove_stopwords.get() if self._remove_stopwords else True,
+        )
+        if self._exclude_entry:
+            self.state.set_exclusions(self._exclude_entry.get().strip())
 
-    def _preview_raw_text(self) -> None:
-        """Show preview of raw text (no filters)."""
-        if not self.state.text_content:
-            self.update_status("Primero cargá texto", "orange")
+        update_filter_stats(self._stats_label, self._filter_info, self.state)
+
+        self._show_filtered_text()
+
+        self.state.transition_to_phase(CleanPhase.EXECUTE)
+        update_execute_button_state(self._execute_btn, self.state)
+
+        self.update_status(
+            f"Filtros aplicados: {len(self.state.filter_pipeline.filtered_words)}"
+            f" palabras - Listo para ejecutar",
+            "green",
+        )
+
+    def _show_raw_text(self) -> None:
+        """Show raw (unfiltered) text."""
+        if not self.state.has_text:
+            self.update_status("Primero carg\u00e1 contenido", "orange")
             return
 
-        self._clean_text.delete("1.0", tk.END)
-        self._clean_text.insert("1.0", self.state.text_content[:2000])
+        show_raw_text(
+            self._clean_text,
+            self._clean_freq_text,
+            self.state,
+            self.callbacks,
+            self._preview_raw_btn,
+            self._apply_clean_btn,
+            lambda: update_execute_button_state(self._execute_btn, self.state),
+        )
+        self.state.transition_to_phase(CleanPhase.PREVIEW)
+        self.update_status(
+            f"Texto bruto: {len(self.state.filter_pipeline.raw_words)} palabras",
+            "blue",
+        )
 
-        words = self.state.text_content.lower().split()
-        word_freq = Counter(words)
-        top_20 = word_freq.most_common(20)
-
-        self._update_freq_display(top_20, "texto bruto (sin filtros)")
-        self._preview_raw_btn.configure(fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"])
-        self._apply_clean_btn.configure(fg_color=COLORS["success"], hover_color=COLORS["success"])
-        self.update_status("Preview: texto en bruto (sin filtros)", "green")
-
-    def _apply_clean(self) -> None:
-        """Apply cleaning and show preview."""
-        if not self.state.text_content:
-            self.update_status("Primero cargá texto", "orange")
+    def _show_filtered_text(self) -> None:
+        """Show filtered text."""
+        if not self.state.has_text:
+            self.update_status("Primero carg\u00e1 contenido", "orange")
             return
 
-        try:
-            from core.utils import clean_text
-
-            exclude_text = self._exclude_entry.get().strip()
-            exclude_words = (
-                [w.strip().lower() for w in exclude_text.split(",")]
-                if exclude_text
-                else []
-            )
-            self.state.exclude_words = exclude_text  # Sincronizar con estado centralizado
-
-            cleaned = clean_text(
-                self.state.text_content,
-                remove_stopwords=self._remove_stopwords.get(),
-                exclude_words=exclude_words,
-            )
-
-            self._clean_text.delete("1.0", tk.END)
-            self._clean_text.insert("1.0", cleaned[:2000])
-
-            words = cleaned.lower().split()
-            word_freq = Counter(words)
-            top_20 = word_freq.most_common(20)
-
-            self._update_freq_display(top_20, "limpio")
-            self.state.update_cleaned(cleaned)
-            self._callbacks.emit_text_changed()  # Refrescar otras tabs con texto limpio
-
-            self._preview_raw_btn.configure(fg_color=COLORS["bg_medium"], hover_color=COLORS["bg_hover"])
-            self._apply_clean_btn.configure(fg_color=COLORS["success"], hover_color=COLORS["success"])
-            self.update_status(
-                f"Limpieza aplicada: {len(cleaned.split())} palabras", "green"
-            )
-            self.state.last_analysis = "limpieza"
-        except Exception as e:
-            self.update_status(f"Error: {e}", "red")
-
-    def _update_freq_display(self, top_20: list, label: str) -> None:
-        """Update the frequency display with top words."""
-        if not top_20:
-            self._clean_freq_text.delete("1.0", tk.END)
-            self._clean_freq_text.insert("1.0", "Sin palabras")
-            return
-
-        max_count = top_20[0][1] if top_20 else 1
-        max_word_len = max(len(word) for word, _ in top_20) if top_20 else 10
-        text_width = max(15, max_word_len + 2)
-
-        texto = f"📊 Top 20 palabras ({label}):\n"
-        texto += "=" * (text_width + 10) + "\n\n"
-
-        for i, (word, count) in enumerate(top_20, 1):
-            bar = "█" * min(int(count / max_count * 20), 20)
-            texto += f"{i:2}. {word:<{text_width}} {count:>4} {bar}\n"
-
-        self._clean_freq_text.delete("1.0", tk.END)
-        self._clean_freq_text.insert("1.0", texto)
+        show_filtered_text(
+            self._clean_text,
+            self._clean_freq_text,
+            self.state,
+            self.callbacks,
+            self._preview_raw_btn,
+            self._apply_clean_btn,
+            lambda: update_execute_button_state(self._execute_btn, self.state),
+        )
+        self.state.transition_to_phase(CleanPhase.PREVIEW)
+        self.update_status(
+            f"Texto filtrado: {len(self.state.filter_pipeline.filtered_words)}"
+            f" palabras",
+            "green",
+        )
 
     def _run_all_analysis(self) -> None:
         """Request full analysis of cleaned text."""
         if not self.state.has_text:
-            self.update_status("Primero cargá texto", "orange")
+            self.update_status("Primero carg\u00e1 texto", "orange")
             return
+
+        self.state.clear_analysis()
+
+        self.state.transition_to_phase(CleanPhase.EXECUTE)
 
         self.callbacks.request_analysis("full_analysis", None)

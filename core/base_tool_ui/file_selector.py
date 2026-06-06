@@ -170,6 +170,13 @@ class FileSelectorMixin:
                 text_color="blue"
             )
     
+    def _update_file_list(self) -> None:
+        """Refresca la lista visual del file_listbox desde self.files."""
+        self.file_listbox.delete(0, tk.END)
+        for f in self.files:
+            self.file_listbox.insert(tk.END, Path(f).name)
+        self._update_selection_status()
+
     def _check_files(self) -> bool:
         """Valida que haya al menos un archivo seleccionado."""
         if not self.files:

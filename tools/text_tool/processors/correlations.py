@@ -12,13 +12,14 @@ from io import BytesIO
 from core.utils import clean_text
 
 
-def analyze_correlations(text: str, n_terms: int = 15) -> Dict[str, Any]:
+def analyze_correlations(text: str, n_terms: int = 15, already_cleaned: bool = False) -> Dict[str, Any]:
     """
     Análisis de correlaciones entre términos - heatmap de co-ocurrencia.
 
     Args:
         text: Texto de entrada
         n_terms: Número de términos a analizar
+        already_cleaned: Si True, el texto ya está limpio
 
     Returns:
         Dict con 'success', 'image_data', 'terms', 'matrix'
@@ -31,8 +32,11 @@ def analyze_correlations(text: str, n_terms: int = 15) -> Dict[str, Any]:
     except ImportError:
         return {'success': False, 'error': 'matplotlib no instalado'}
 
-    cleaned = clean_text(text, remove_stopwords=True)
-    words = cleaned.split()
+    if already_cleaned:
+        words = text.split()
+    else:
+        cleaned = clean_text(text, remove_stopwords=True)
+        words = cleaned.split()
 
     if len(words) < 20:
         return {'success': False, 'error': 'Texto muy corto para correlaciones'}

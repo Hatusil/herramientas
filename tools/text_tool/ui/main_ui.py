@@ -2,27 +2,28 @@
 from __future__ import annotations
 
 import logging
-import os
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict
 
 import customtkinter as ctk
 import tkinter as tk
-from tkinter import filedialog
 
 from core.base_tool_ui import BaseToolUI
 from core.constants import font, COLORS
-from tools.text_tool.ui.threading_utils import run_in_thread
-from tools.text_tool.ui.keyboard_shortcuts import (
-    setup_shortcuts, handle_paste, handle_open, handle_save, handle_run, handle_cancel
-)
 from tools.text_tool.ui.constants import TAB_ORDER, TAB_ICONS, HELP_CONTENT
+
+# Handler imports
+from tools.text_tool.ui.handlers import analysis_handler
+from tools.text_tool.ui.handlers import file_handler
+from tools.text_tool.ui.handlers import keyboard_handler
+from tools.text_tool.ui.handlers import progress_handler
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
     from tools.text_tool.ui.callbacks import AppCallbacks
     from tools.text_tool.ui.tabs import BaseTab
+else:
+    from tools.text_tool.ui.state import record_analysis_start, record_analysis_error
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,9 @@ class TextAnalyzerUI(BaseToolUI):
         self.callbacks: AppCallbacks = AppCallbacks(
             on_status=self._on_status,
             on_text_changed=self._on_text_changed,
-            on_analysis_request=self._on_analysis_request
+            on_analysis_request=self._on_analysis_request,
+            on_progress=self._on_progress,  # A12: spinner con mensaje
+            on_progress_stop=self._stop_all_progress,  # A12: detiene spinner
         )
 
         # Tab management
@@ -65,20 +68,30 @@ class TextAnalyzerUI(BaseToolUI):
         self._is_batch_analysis = False
         self._progress_start_time = 0.0
         self._progress_threshold = 2.0
+        self._progress_active = False
 
         self._build_ui()
 
     def _on_status(self, message: str, color: str = "gray") -> None:
-        """Update status label."""
+        """Update status label. Thread-safe via after()."""
         print(f"[STATUS] {message} ({color})")
+        # Resolver color: si es HEX directo (comienza con #) usar tal cual
+        from core.constants import COLORS
+        if color.startswith('#'):
+            resolved = color
+        else:
+            resolved = COLORS.get(color, color)
         if self.status_label:
-            self.status_label.configure(text=message, text_color=color)
+            self.status_label.configure(text=message, text_color=resolved)
 
     def _on_text_changed(self) -> None:
         """Refresh all tabs when text changes."""
         for tab in self.tabs.values():
             if hasattr(tab, 'refresh'):
                 tab.refresh()
+        # Also refresh viz panel if it exists
+        if hasattr(self, 'viz_panel'):
+            self.viz_panel.refresh()
 
     def _on_analysis_request(self, method: str, args: Any = None) -> None:
         """Handle requests from tabs (e.g., open modal, full analysis)."""
@@ -91,8 +104,21 @@ class TextAnalyzerUI(BaseToolUI):
         if handler:
             handler(args)
 
+    def _on_progress(self, message: str) -> None:
+        """Show progress message with spinner animation."""
+        progress_handler.on_progress(self, message)
+
+    def _stop_progress(self) -> None:
+        """Stop the progress spinner. (legacy - use _stop_all_progress)"""
+        progress_handler.stop_progress(self)
+
+    def _stop_all_progress(self) -> None:
+        """Stop spinner and progress bar. A12: feedback cleanup."""
+        progress_handler.stop_all_progress(self)
+
     def _build_ui(self) -> None:
         """Build complete UI layout."""
+        self._setup_progress_bar()  # A12: progress bar for UX feedback
         self._setup_title()
         self._setup_help()
         self._setup_status()
@@ -100,8 +126,11 @@ class TextAnalyzerUI(BaseToolUI):
         self._setup_shortcuts()
 
     def _setup_status(self) -> None:
-        """Create status label."""
-        self.status_label = ctk.CTkLabel(self, text="", text_color="gray")
+        """Create status label with emoji support."""
+        self.status_label = ctk.CTkLabel(
+            self, text="", text_color="gray",
+            font=("Segoe UI Emoji", 12)
+        )
         self.status_label.pack(pady=5)
 
     def _setup_title(self) -> None:
@@ -126,17 +155,35 @@ class TextAnalyzerUI(BaseToolUI):
 
         # Create tab frames (icon-only, tooltip on hover via status bar)
         for key in TAB_ORDER:
-            if key in self._tab_registry:
+            # Always create frame for "viz" even if not in registry
+            if key in self._tab_registry or key == "viz":
                 icon = TAB_ICONS.get(key, "")
                 self._tab_frames[key] = self.tabview.add(icon)
 
         self._create_tabs()
+        self._create_viz_panel()
         self.tabview.configure(command=self._on_tab_changed)
+
+    def _create_viz_panel(self) -> None:
+        """Create the visualization panel for the 'viz' tab."""
+        from tools.text_tool.ui.viz_panel import VisualizationPanel
+        viz_frame = self._tab_frames.get("viz")
+        if viz_frame:
+            self.viz_panel = VisualizationPanel(
+                viz_frame,
+                self.state,
+                self.callbacks,
+                self._tab_registry,
+            )
+            self.viz_panel.pack(fill="both", expand=True)
 
     def _create_tabs(self) -> None:
         """Instantiate all tabs from registry."""
         from tools.text_tool.ui.tabs import get_tab
         for key, frame in self._tab_frames.items():
+            # Skip "viz" - it's handled by VisualizationPanel
+            if key == "viz":
+                continue
             cls = get_tab(key)
             if cls:
                 self.tabs[key] = cls(frame, self.state, self.callbacks)
@@ -150,53 +197,21 @@ class TextAnalyzerUI(BaseToolUI):
             rev = {v: k for k, v in TAB_ICONS.items()}
             key = rev.get(tab_name, "input")
             self.state.current_tab = key
+
+            # Handle viz tab specially
+            if key == "viz" and hasattr(self, "viz_panel"):
+                self.viz_panel.refresh()
+                return
+
             tab = self.tabs.get(key)
             if tab and hasattr(tab, 'on_tab_selected'):
                 tab.on_tab_selected()
         except Exception as e:
             logger.error(f"Tab change error: {e}")
 
-    def run_in_thread(self, target, callback, *args, **kwargs):
-        return run_in_thread(self, target, callback, *args, **kwargs)
-
-    def _stop_progress(self):
-        if self.progress_bar:
-            self.progress_bar.stop()
-            self.progress_bar.pack_forget()
-
     def _run_all_analysis(self) -> None:
-        """Run all text analysis methods."""
-        if not self.state.has_text:
-            self._on_status("No hay texto para analizar", COLORS.get("warning", "orange"))
-            return
-
-        text = self.state.cleaned_content or self.state.text_content
-        self._is_processing = True
-        self._is_batch_analysis = True
-        self._on_status("Ejecutando análisis...", COLORS.get("info", "blue"))
-
-        def worker() -> None:
-            try:
-                from tools.text_tool.ui.analysis import run_all_analysis
-                results = run_all_analysis(text)
-                self.after(0, lambda: self._on_analysis_complete(results))
-            except Exception as e:
-                self._is_batch_analysis = False
-                self.after(0, lambda err=e: self._handle_error(str(err)))
-
-        self.executor.submit(worker)
-
-    def _on_analysis_complete(self, results: Dict[str, Any]) -> None:
-        """Handle analysis completion."""
-        self._is_processing = False
-        self._is_batch_analysis = False  # Habilitar status antes de mostrar mensaje
-        errors = [k for k, v in results.items() if isinstance(v, dict) and v.get("error")]
-        ok = len(results) - len(errors)
-        if errors:
-            self._on_status(f"Visualizaciones: {ok} ok, {len(errors)} fallaron", "orange")
-        else:
-            self._on_status(f"Visualizaciones y análisis: {ok} generados", "green")
-        self._on_text_changed()
+        """Run all text analysis methods. Delegate to analysis_handler."""
+        analysis_handler.run_all_analysis(self)
 
     def _open_chart_modal(self, args: Dict[str, Any]) -> None:
         """Open modal for expanded chart."""
@@ -208,103 +223,50 @@ class TextAnalyzerUI(BaseToolUI):
             logger.error("ChartModal not available")
 
     def _run_specific_analysis(self, args: Dict[str, Any]) -> None:
-        """Run specific analysis requested by tab."""
+        """Run specific analysis requested by tab via dispatch."""
         t = args.get("type")
-        params = args.get("params", {})
-        if t == "stats":
-            self._run_stats()
-        elif t == "frequency":
-            self._run_frequency(params)
+        if t in ("stats", "frequency"):
+            from tools.text_tool.ui.handlers import analysis_handler
+            analysis_handler.run_specific_analysis(self, [t])
 
     def _run_stats(self) -> None:
-        from tools.text_tool.ui.analysis import run_stats
-        text = self.state.cleaned_content or self.state.text_content
-        if text:
-            self._on_status("Calculando estadísticas...", COLORS.get("info", "blue"))
-            self.executor.submit(lambda: self._on_stats_complete(run_stats(text)))
-        else:
-            self._on_status("No hay texto para analizar", COLORS.get("warning", "orange"))
-
-    def _on_stats_complete(self, result: Dict[str, Any]) -> None:
-        if result.get("success"):
-            self._on_status("Estadísticas actualizadas", "green")
-        self._on_text_changed()
+        """Run statistics analysis. Delegate to analysis_handler."""
+        analysis_handler.run_stats(self)
 
     def _run_frequency(self, params: Dict[str, Any]) -> None:
-        from tools.text_tool.ui.analysis import run_frequency
-        text = self.state.cleaned_content or self.state.text_content
-        if text:
-            self.executor.submit(lambda: self._on_freq_complete(run_frequency(text, params.get("top_n", 50))))
-
-    def _on_freq_complete(self, result: Dict[str, Any]) -> None:
-        self._on_text_changed()
-        self._on_status("Frecuencias actualizadas", "green")
+        """Run frequency analysis. Delegate to analysis_handler."""
+        analysis_handler.run_frequency(self, params)
 
     def _setup_shortcuts(self) -> None:
-        setup_shortcuts(self, {
-            'on_paste': self._on_paste,
-            'on_open': self._on_open_file,
-            'on_save': self._on_save_file,
-            'on_run': self._on_run,
-            'on_cancel': self._on_cancel,
-        })
+        """Setup keyboard shortcuts. Delegate to keyboard_handler."""
+        keyboard_handler.setup_shortcuts(self)
 
     def _on_paste(self, event: Any = None) -> str:
-        return "break"
-    
+        """Handle paste shortcut. Delegate to keyboard_handler."""
+        return keyboard_handler.on_paste(self, event)
+
     def _on_open_file(self, event: Any = None) -> str:
-        files = filedialog.askopenfilenames(title="Seleccionar archivos", filetypes=[("Texto", "*.txt *.md"), ("Documentos", "*.pdf *.docx"), ("Todos", "*.*")])
-        if files:
-            self._load_files(files)
-        return "break"
+        """Handle open file shortcut. Delegate to file_handler."""
+        return file_handler.on_open_file(self, event)
 
     def _on_save_file(self, event: Any = None) -> str:
-        text = self.state.cleaned_content or self.state.text_content
-        if not text:
-            self._on_status("No hay texto para guardar", "orange")
-            return "break"
-        path = filedialog.asksaveasfilename(title="Guardar archivo", defaultextension=".txt", filetypes=[("Texto", "*.txt"), ("Markdown", "*.md"), ("Todos", "*.*")])
-        if path:
-            try:
-                with open(path, 'w', encoding='utf-8') as f:
-                    f.write(text)
-                self._on_status(f"Guardado: {os.path.basename(path)}", "green")
-            except Exception as e:
-                self._on_status(f"Error al guardar: {e}", "red")
-        return "break"
+        """Handle save file shortcut. Delegate to file_handler."""
+        return file_handler.on_save_file(self, event)
 
     def _on_run(self, event: Any = None) -> str:
-        return "break"
-    
+        """Handle run shortcut. Delegate to keyboard_handler."""
+        return keyboard_handler.on_run(self, event)
+
     def _on_cancel(self, event: Any = None) -> str:
-        if self._is_processing:
-            self._is_processing = False
-            self._stop_progress()
-            self._on_status("Análisis cancelado", "orange")
-        return "break"
+        """Handle cancel shortcut. Delegate to keyboard_handler."""
+        return keyboard_handler.on_cancel(self, event)
 
     def _load_files(self, files: tuple) -> None:
-        try:
-            from tools.text_tool.processor import extract_text_from_file
-            texts = [result['text'] for f in files if (result := extract_text_from_file(f)).get('success')]
-            if texts:
-                new_text = '\n\n'.join(texts)
-                self.state.text_content = (self.state.text_content or '') + '\n\n' + new_text
-                self.state.sources["files"].extend(list(files))
-                self.state.file_path = files[0] if files else None
-                self._on_text_changed()
-                self._on_status(f"{len(files)} archivos cargados", "green")
-        except ImportError:
-            self._on_status("Instala dependencias: wordcloud nltk pdfplumber", "red")
+        """Load files. Delegate to file_handler."""
+        file_handler.load_files(self, files)
 
     def _on_file_drop(self, event: Any) -> str:
-        files = self.tk.splitlist(event.data) if hasattr(event, 'data') else ()
-        if files:
-            valid = [f for f in files if Path(f).suffix.lower() in {'.txt', '.md', '.pdf', '.docx', '.doc'}]
-            if valid:
-                self._load_files(tuple(valid))
-            elif files:
-                self._on_status("Tipo de archivo no soportado", "red")
-        return "break"
+        """Handle file drop event. Delegate to file_handler."""
+        return file_handler.on_file_drop(self, event)
 
 

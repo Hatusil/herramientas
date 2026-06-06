@@ -52,22 +52,6 @@ def setup_buttons(parent, on_inicio, on_acerca_de) -> None:
     ).pack(fill="x", padx=10, pady=(8, 0))
 
 
-def setup_theme_switch(parent, on_toggle, current_theme) -> ctk.CTkSwitch:
-    """Configura el switch de cambio de tema."""
-    theme_var = ctk.StringVar(value=current_theme)
-    
-    switch = ctk.CTkSwitch(
-        parent,
-        text="",
-        variable=theme_var,
-        command=on_toggle,
-        onvalue="light",
-        offvalue="dark"
-    )
-    switch.pack(padx=12, pady=5)
-    return switch
-
-
 def setup_theme_label(parent, current_theme) -> ctk.CTkLabel:
     """Configura la etiqueta del tema actual."""
     label = create_secondary_label(

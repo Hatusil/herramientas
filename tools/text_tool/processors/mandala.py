@@ -14,9 +14,9 @@ from core.utils import clean_text
 
 # Helper functions for SRP
 
-def _get_mandala_top_terms(text: str, n_terms: int) -> List[str]:
+def _get_mandala_top_terms(text: str, n_terms: int, already_cleaned: bool = False) -> List[str]:
     """Extraer los n términos más frecuentes."""
-    cleaned = clean_text(text, remove_stopwords=True)
+    cleaned = text if already_cleaned else clean_text(text, remove_stopwords=True)
     words = cleaned.split()
     freq = Counter(words)
     return [w for w, _ in freq.most_common(n_terms)]
@@ -84,7 +84,7 @@ def _generate_mandala_chart(top_words: List[str], mandala_data: Dict[str, List[i
     return img_buffer.getvalue()
 
 
-def analyze_mandala(text: str, n_terms: int = 12, n_rings: int = 3) -> Dict[str, Any]:
+def analyze_mandala(text: str, n_terms: int = 12, n_rings: int = 3, already_cleaned: bool = False) -> Dict[str, Any]:
     """
     Análisis Mandala - diagrama circular concéntrico.
 
@@ -107,13 +107,13 @@ def analyze_mandala(text: str, n_terms: int = 12, n_rings: int = 3) -> Dict[str,
     if n_rings < 2 or n_rings > 6:
         return {'success': False, 'error': 'n_rings debe estar entre 2 y 6', 'image_data': None}
 
-    cleaned = clean_text(text, remove_stopwords=True)
+    cleaned = text if already_cleaned else clean_text(text, remove_stopwords=True)
     words = cleaned.split()
 
     if len(words) < 100:
         return {'success': False, 'error': 'Texto muy corto para Mandala (mínimo 100 palabras)', 'image_data': None}
 
-    top_words = _get_mandala_top_terms(text, n_terms)
+    top_words = _get_mandala_top_terms(text, n_terms, already_cleaned=already_cleaned)
 
     if not top_words:
         return {'success': False, 'error': 'No hay palabras suficientes', 'image_data': None}

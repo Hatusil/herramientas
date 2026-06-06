@@ -12,7 +12,7 @@ from io import BytesIO
 from core.utils import clean_text
 
 
-def analyze_scatter(text: str, n_terms: int = 30) -> Dict[str, Any]:
+def analyze_scatter(text: str, n_terms: int = 30, already_cleaned: bool = False) -> Dict[str, Any]:
     """
     Scatter plot de términos basado en frecuencia y posición.
 
@@ -30,7 +30,7 @@ def analyze_scatter(text: str, n_terms: int = 30) -> Dict[str, Any]:
     except ImportError:
         return {'success': False, 'error': 'matplotlib no instalado'}
 
-    cleaned = clean_text(text, remove_stopwords=True)
+    cleaned = text if already_cleaned else clean_text(text, remove_stopwords=True)
     words = cleaned.split()
 
     if len(words) < 20:

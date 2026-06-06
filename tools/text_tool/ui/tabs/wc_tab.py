@@ -31,6 +31,7 @@ class WCTab(BaseTab):
         self._shape: ctk.CTkComboBox | None = None
         self._exclude_entry: ctk.CTkEntry | None = None
         self._wc_label: ctk.CTkLabel | None = None
+        self._last_generated: bool = False  # Don't auto-generate
         super().__init__(parent, state, callbacks)
 
     def _setup_frame(self) -> None:
@@ -165,10 +166,15 @@ class WCTab(BaseTab):
         self._margin_label.configure(text=f"{m}px")
 
     def refresh(self) -> None:
-        """Generate initial wordcloud on tab selection."""
+        """Update display when text changes."""
         if not self.state.cleaned_content:
+            self._wc_label.configure(image=None, text="WordCloud aparecerá aquí")
+            self._last_generated = False
             return
-        self._regenerate()
+
+        # Auto-run if enough text (50+ words)
+        if len(self.state.cleaned_content.split()) >= 50:
+            self._regenerate()
 
     def _regenerate(self) -> None:
         """Regenerate wordcloud with current settings."""
@@ -211,11 +217,12 @@ class WCTab(BaseTab):
                 )
 
             result = analyze_wordcloud(
-                cleaned, n_words=n_words, colormap=colormap, margin=margin, shape=shape
+                cleaned, n_words=n_words, colormap=colormap, margin=margin, shape=shape, already_cleaned=True
             )
 
             if result.get("success") and result.get("image_data"):
                 self._show_wordcloud(result["image_data"])
+                self._last_generated = True
                 self.update_status(
                     f"WordCloud: {actual_words} palabras, {colormap}", "green"
                 )

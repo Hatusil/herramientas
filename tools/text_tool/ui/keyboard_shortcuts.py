@@ -6,7 +6,7 @@ import logging
 import os
 import tkinter as tk
 from tkinter import filedialog
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -85,10 +85,9 @@ def handle_run(ui: Any, event: Any = None) -> str:
 
 
 def handle_cancel(ui: Any, event: Any = None) -> str:
-    """Handle Escape."""
+    """Handle Escape. A9: thread-safe progress stop."""
     if ui._is_processing:
         ui._is_processing = False
-        from tools.text_tool.ui.threading_utils import _stop_progress
-        _stop_progress(ui)
+        ui.stop_progress()  # A12: ProgressMixin wired
         ui._on_status("Análisis cancelado", "orange")
     return "break"

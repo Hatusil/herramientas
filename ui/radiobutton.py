@@ -1,8 +1,10 @@
 """
-Wrapper para widgets de Tk no disponibles en customtkinter (CTk).
+Wrapper legacy para tk.Radiobutton.
 
-CTk no tiene RadioButton nativo, usamos tk.Radiobutton con soporte para
-los kwargs más comunes para mantener consistencia visual con el tema CTk.
+NOTA: CTk SI tiene CTkRadioButton nativo (desde versiones tempranas).
+Este wrapper se mantiene por compatibilidad con tools existentes que
+usan tk.Radiobutton directamente. Para tools nuevas, usar CTkRadioButton
+o core.tool_builder.create_radiobutton().
 """
 import tkinter as tk
 

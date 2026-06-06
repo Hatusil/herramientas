@@ -101,6 +101,11 @@ class MandalaTab(BaseTab):
         """Return the main frame for this tab."""
         return self._frame
 
+    def on_tab_selected(self) -> None:
+        """Re-render image when tab is selected."""
+        if self._current_image_data:
+            self._display_image(self._current_image_data)
+
     def _on_terms_change(self, value: float) -> None:
         """Handle n_terms slider change."""
         n = int(value)
@@ -126,7 +131,7 @@ class MandalaTab(BaseTab):
             self.update_status("🔄 Generando mandala...", "blue")
             self._parent.update()
 
-            result = analyze_mandala(self.state.cleaned_content, n_terms=n_terms, n_rings=n_rings)
+            result = analyze_mandala(self.state.cleaned_content, n_terms=n_terms, n_rings=n_rings, already_cleaned=True)
 
             if result.get("success") and result.get("image_data"):
                 self._display_image(result["image_data"])

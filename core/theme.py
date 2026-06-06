@@ -25,11 +25,18 @@ THEMES = {
         "primary_hover": "#2563eb",
         "primary_light": "#1976d2",
         
-        # Estados
+        # Estados - Status colors (usar desde cualquier tool)
         "success": "#22c55e",      # Verde éxito
         "error": "#ef4444",       # Rojo error
         "warning": "#f59e0b",     # Amarillo warning
-        "info": "#0277d2",
+        "info": "#0277d2",        # Azul info
+        
+        # Alias para STATUS_COLORS (legacy)
+        "blue": "#0277d2",
+        "green": "#22c55e",
+        "orange": "#f59e0b",
+        "red": "#ef4444",
+        "gray": "#9ca3af",
         
         # Texto
         "text_primary": "#e0e0e0", # Texto primario
@@ -61,11 +68,18 @@ THEMES = {
         "primary_hover": "#1d4ed8",
         "primary_light": "#3b82f6",
         
-        # Estados
+        # Estados - Status colors
         "success": "#16a34a",      # Verde éxito
         "error": "#dc2626",       # Rojo error
         "warning": "#d97706",     # Amarillo warning
-        "info": "#0284c7",
+        "info": "#0284c7",        # Azul info
+        
+        # Alias para STATUS_COLORS (legacy)
+        "blue": "#0284c7",
+        "green": "#16a34a",
+        "orange": "#d97706",
+        "red": "#dc2626",
+        "gray": "#6b7280",
         
         # Texto
         "text_primary": "#1f1f1f", # Texto primario
@@ -146,6 +160,16 @@ def apply_theme_to_widget(widget) -> None:
     elif widget_type == "CTkTextbox":
         widget.configure(fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
     # Para otros widgets, no hacer nada especial
+
+
+# Status colors - se calculan dinámicamente
+# Usar get_status_color() para obtener el color actual del tema
+STATUS_COLORS_KEYS = ["blue", "green", "orange", "red", "gray"]
+
+
+def get_status_color(key: str) -> str:
+    """Obtener color de status desde el tema activo."""
+    return COLORS.get(key, f"#{ord(key[0]) * 16:02x}0000")  # fallback con hash
 
 
 def init_theme() -> None:

@@ -16,7 +16,8 @@ def analyze_bubblelines(
     text: str,
     terms_list: List[str] = None,
     show_bubbles: bool = True,
-    bubble_scale: float = 1.5
+    bubble_scale: float = 1.5,
+    already_cleaned: bool = False
 ) -> Dict[str, Any]:
     """
     Análisis Bubblelines - líneas con burbujas.
@@ -43,7 +44,7 @@ def analyze_bubblelines(
     if bubble_scale < 0.5 or bubble_scale > 3.0:
         return {'success': False, 'error': 'bubble_scale debe estar entre 0.5 y 3.0', 'image_data': None}
 
-    cleaned = clean_text(text, remove_stopwords=True)
+    cleaned = text if already_cleaned else clean_text(text, remove_stopwords=True)
     words = cleaned.split()
 
     if len(words) < 50:

@@ -106,13 +106,18 @@ class NgramsTab(BaseTab):
         """Return the main frame for this tab."""
         return self._frame
 
+    def on_tab_selected(self) -> None:
+        """Refresh display when tab is selected."""
+        self.refresh()
+
     def refresh(self) -> None:
         """Update n-grams display when text changes."""
         if not self.state.cleaned_content:
             self._ngram_text.delete("1.0", tk.END)
             self._ngram_text.insert("1.0", "🔗 N-grams aparecerá aquí\nEjecute análisis primero")
             return
-        self._refresh_display()
+        # Auto-run: show both 2-grams and 3-grams
+        self._refresh_display(multi=True)
 
     def _on_slider_change(self, value: float) -> None:
         """Handle slider value change."""
@@ -124,8 +129,8 @@ class NgramsTab(BaseTab):
         """Handle n-gram size change."""
         self._refresh_display()
 
-    def _refresh_display(self, top_k: int | None = None) -> None:
-        """Update n-grams display."""
+    def _refresh_display(self, top_k: int | None = None, multi: bool = False) -> None:
+        """Update n-grams display. If multi=True, show both 2 and 3-grams."""
         if top_k is None:
             top_k = int(self._slider.get())
 
@@ -135,17 +140,46 @@ class NgramsTab(BaseTab):
         try:
             from tools.text_tool.processor import analyze_ngrams
 
-            n = self._ngram_size.get()
-            result = analyze_ngrams(self.state.cleaned_content, n=n, top_k=top_k)
-            if result.get("success"):
-                self._display_ngrams(result["ngrams"], top_k, n)
+            if multi:
+                self._display_multi_ngrams(top_k)
             else:
-                self.update_status(result.get("error", "Error"), "orange")
+                n = self._ngram_size.get()
+                result = analyze_ngrams(self.state.cleaned_content, n=n, top_k=top_k, already_cleaned=True)
+                if result.get("success"):
+                    self._display_ngrams(result["ngrams"], top_k, n)
+                else:
+                    self.update_status(result.get("error", "Error"), "orange")
         except Exception as e:
             self.update_status(f"Error: {e}", "red")
 
+    def _display_multi_ngrams(self, top_k: int) -> None:
+        """Display both 2-grams and 3-grams."""
+        from tools.text_tool.processor import analyze_ngrams
+
+        self._ngram_text.delete("1.0", tk.END)
+        texto = "🔗 N-grams\n"
+        texto += "=" * 35 + "\n\n"
+
+        for n in (2, 3):
+            result = analyze_ngrams(self.state.cleaned_content, n=n, top_k=top_k, already_cleaned=True)
+            if not result.get("success"):
+                continue
+            ngrams = result["ngrams"]
+            max_ng_len = max(len(ng) for ng in ngrams) if ngrams else 10
+            text_width = max(25, max_ng_len + 2)
+
+            texto += f"--- {n}-grams ---\n"
+            texto += f"{'#':>3} {'N-gram':<{text_width}} {'Count':>4}\n"
+            texto += "-" * (text_width + 8) + "\n"
+
+            for i, (ng, count) in enumerate(ngrams.items(), 1):
+                texto += f"{i:>3}. {ng:<{text_width}} {count:>4}\n"
+            texto += "\n"
+
+        self._ngram_text.insert("1.0", texto)
+
     def _display_ngrams(self, ngrams: dict, top_k: int, n: int) -> None:
-        """Display n-gram results."""
+        """Display n-gram results for a single size."""
         self._ngram_text.delete("1.0", tk.END)
 
         actual_count = len(ngrams)

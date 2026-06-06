@@ -1,9 +1,11 @@
 """Bubblelines tab for Text Analyzer UI."""
 from __future__ import annotations
 
+from collections import Counter
 from typing import TYPE_CHECKING, Optional
 
 import customtkinter as ctk
+import tkinter as tk
 
 from tools.text_tool.ui.tabs.base_tab import BaseTab
 
@@ -99,6 +101,11 @@ class BubblelinesTab(BaseTab):
         """Return the main frame for this tab."""
         return self._frame
 
+    def on_tab_selected(self) -> None:
+        """Re-render image when tab is selected."""
+        if self._current_image_data:
+            self._display_image(self._current_image_data)
+
     def _on_scale_change(self, value: float) -> None:
         """Handle bubble_scale slider change."""
         n = round(value, 1)
@@ -110,17 +117,28 @@ class BubblelinesTab(BaseTab):
             self.update_status("Cargue y analice el texto primero", "orange")
             return
 
-        # Get terms from entry
+        # Get terms from entry or auto-detect top 10
         terms_text = self._terms_entry.get().strip()
         if not terms_text:
-            self.update_status("Ingrese términos separados por coma", "orange")
-            return
-
-        terms_list = [t.strip() for t in terms_text.split(",") if t.strip()]
-
-        if not terms_list:
-            self.update_status("Ingrese términos válidos", "orange")
-            return
+            words = self.state.filter_pipeline.filtered_words
+            if len(words) < 10:
+                words = self.state.text_content.split()
+            top_words = [
+                w for w, _ in Counter(
+                    w.lower() for w in words if w.isalpha()
+                ).most_common(10)
+            ]
+            if not top_words:
+                self.update_status("No hay suficientes palabras", "orange")
+                return
+            terms_list = top_words
+            self._terms_entry.delete(0, tk.END)
+            self._terms_entry.insert(0, ", ".join(top_words))
+        else:
+            terms_list = [t.strip() for t in terms_text.split(",") if t.strip()]
+            if not terms_list:
+                self.update_status("Ingrese términos válidos", "orange")
+                return
 
         show_bubbles = self._show_bubbles.get()
         bubble_scale = round(self._scale_slider.get(), 1)
@@ -133,6 +151,7 @@ class BubblelinesTab(BaseTab):
                 terms_list=terms_list,
                 show_bubbles=show_bubbles,
                 bubble_scale=bubble_scale,
+                already_cleaned=True,
             )
 
             if result.get("success") and result.get("image_data"):
@@ -148,6 +167,10 @@ class BubblelinesTab(BaseTab):
         if not self.state.cleaned_content:
             self._reset_display()
             return
+
+        # Auto-run if enough text (50+ words)
+        if len(self.state.cleaned_content.split()) >= 50:
+            self._run_analysis()
 
     def _reset_display(self) -> None:
         """Reset display to placeholder."""

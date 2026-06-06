@@ -11,8 +11,14 @@ from typing import Dict, Any, Optional
 from io import BytesIO
 
 from core.utils import clean_text
+from core.metrics import Timer, get_metric
 
 logger = logging.getLogger(__name__)
+
+# Métricas globales para wordcloud (A12)
+_wordcloud_duration = get_metric('text_wordcloud_duration')
+_wordcloud_count = get_metric('text_wordcloud_count')
+_words_processed_wc = get_metric('text_words_processed')
 
 # Check availability
 try:
@@ -102,69 +108,60 @@ def analyze_wordcloud(
     height: int = 400,
     colormap: str = 'viridis',
     margin: int = 10,
-    shape: str = 'rectangle'
+    shape: str = 'rectangle',
+    already_cleaned: bool = False
 ) -> Dict[str, Any]:
-    """
-    Genera una WordCloud con opciones de personalización.
-
-    Args:
-        text: Texto de entrada
-        n_words: Número máximo de palabras (default: 100)
-        width: Ancho en píxeles (default: 800)
-        height: Alto en píxeles (default: 400)
-        colormap: Nombre del colormap de matplotlib
-        margin: Margen entre palabras
-        shape: Forma de la máscara
-
-    Returns:
-        Dict con 'success', 'image_data' (bytes), 'message'
-    """
+    """Genera una WordCloud. A12: métricas de duración y conteo."""
     if not WORDCLOUD_AVAILABLE:
         return {'success': False, 'error': 'wordcloud no instalado'}
 
-    try:
-        # Validate colormap
-        colormap_map = {
-            'viridis': 'viridis', 'plasma': 'plasma', 'inferno': 'inferno',
-            'magma': 'magma', 'cividis': 'cividis', 'blues': 'Blues',
-            'greens': 'Greens', 'reds': 'Reds', 'oranges': 'Oranges',
-            'purples': 'Purples', 'coolwarm': 'coolwarm', 'rdygn': 'RdYlGn',
-            'seismic': 'seismic', 'terrain': 'terrain', 'ocean': 'ocean'
-        }
-        if colormap.lower() in colormap_map:
-            colormap = colormap_map[colormap.lower()]
-        else:
-            logger.warning(f"Invalid colormap '{colormap}', falling back to 'viridis'")
-            colormap = 'viridis'
+    with Timer('wordcloud_analysis'):
+        try:
+            # Validate colormap
+            colormap_map = {
+                'viridis': 'viridis', 'plasma': 'plasma', 'inferno': 'inferno',
+                'magma': 'magma', 'cividis': 'cividis', 'blues': 'Blues',
+                'greens': 'Greens', 'reds': 'Reds', 'oranges': 'Oranges',
+                'purples': 'Purples', 'coolwarm': 'coolwarm', 'rdygn': 'RdYlGn',
+                'seismic': 'seismic', 'terrain': 'terrain', 'ocean': 'ocean'
+            }
+            if colormap.lower() in colormap_map:
+                colormap = colormap_map[colormap.lower()]
+            else:
+                logger.warning(f"Invalid colormap '{colormap}', falling back to 'viridis'")
+                colormap = 'viridis'
 
-        cleaned = clean_text(text, remove_stopwords=True)
-        mask = _generate_shape_mask(shape, width, height)
+            cleaned = text if already_cleaned else clean_text(text, remove_stopwords=True)
+            _words_processed_wc.increment(len(cleaned.split()))
+            _wordcloud_count.increment()
 
-        wc_kwargs = {
-            'width': width,
-            'height': height,
-            'background_color': 'white',
-            'max_words': n_words,
-            'colormap': colormap,
-            'prefer_horizontal': 0.7,
-            'margin': margin
-        }
+            mask = _generate_shape_mask(shape, width, height)
 
-        if mask is not None:
-            wc_kwargs['mask'] = mask
+            wc_kwargs = {
+                'width': width,
+                'height': height,
+                'background_color': 'white',
+                'max_words': n_words,
+                'colormap': colormap,
+                'prefer_horizontal': 0.7,
+                'margin': margin
+            }
 
-        wc = WordCloud(**wc_kwargs)
-        wc.generate(cleaned)
+            if mask is not None:
+                wc_kwargs['mask'] = mask
 
-        img_buffer = BytesIO()
-        wc.to_image().save(img_buffer, format='PNG')
-        img_buffer.seek(0)
+            wc = WordCloud(**wc_kwargs)
+            wc.generate(cleaned)
 
-        return {
-            'success': True,
-            'image_data': img_buffer.getvalue(),
-            'message': f'WordCloud con {n_words} palabras'
-        }
+            img_buffer = BytesIO()
+            wc.to_image().save(img_buffer, format='PNG')
+            img_buffer.seek(0)
 
-    except Exception as e:
-        return {'success': False, 'error': str(e)}
+            return {
+                'success': True,
+                'image_data': img_buffer.getvalue(),
+                'message': f'WordCloud con {n_words} palabras'
+            }
+
+        except Exception as e:
+            return {'success': False, 'error': str(e)}

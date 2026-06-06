@@ -24,6 +24,7 @@ class CorrTab(BaseTab):
         """Initialize CorrTab."""
         self._image_label: ctk.CTkLabel | None = None
         self._current_image_data: Optional[bytes] = None
+        self._manual_btn: ctk.CTkButton | None = None
         super().__init__(parent, state, callbacks)
 
     def _setup_frame(self) -> None:
@@ -38,14 +39,22 @@ class CorrTab(BaseTab):
         )
         self._image_label.pack(expand=True)
 
+        # Manual generate button
+        self._manual_btn = ctk.CTkButton(
+            self._frame,
+            text="🔄 Generar Correlaciones",
+            command=self.refresh,
+        )
+        self._manual_btn.pack(side="bottom", pady=10)
+
     def get_frame(self) -> ctk.CTkFrame:
         """Return the main frame for this tab."""
         return self._frame
 
     def on_tab_selected(self) -> None:
-        """Called when tab is selected."""
+        """Re-render image when tab is selected."""
         if self._current_image_data:
-            self._bind_click_handler()
+            self._display_image(self._current_image_data)
 
     def refresh(self) -> None:
         """Update correlations when text changes."""
@@ -56,7 +65,7 @@ class CorrTab(BaseTab):
         try:
             from tools.text_tool.processor import analyze_correlations
 
-            result = analyze_correlations(self.state.cleaned_content)
+            result = analyze_correlations(self.state.cleaned_content, already_cleaned=True)
             if result.get("success") and result.get("image_data"):
                 self._display_image(result["image_data"])
             else:

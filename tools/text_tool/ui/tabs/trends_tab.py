@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Optional
 import customtkinter as ctk
 
 from tools.text_tool.ui.tabs.base_tab import BaseTab
+from core.constants import COLORS
 
 if TYPE_CHECKING:
     from tools.text_tool.ui.state import TextAnalyzerState
@@ -30,39 +31,60 @@ class TrendsTab(BaseTab):
         """Create the main frame for this tab."""
         self._frame = ctk.CTkFrame(self._parent, fg_color="transparent")
 
+        # Generate button (fallback if auto fails)
+        ctk.CTkButton(
+            self._frame,
+            text="\U0001f4ca Generar Tendencias",
+            command=self._run_analysis,
+            font=ctk.CTkFont(size=14, weight="bold"),
+        ).pack(pady=(10, 5))
+
         # Image display area
         self._image_label = ctk.CTkLabel(
             self._frame,
             text="📊 Tendencias aparecerá aquí\nEjecute análisis primero",
             text_color="gray",
         )
-        self._image_label.pack(expand=True)
+        self._image_label.pack(expand=True, padx=10, pady=10)
 
     def get_frame(self) -> ctk.CTkFrame:
         """Return the main frame for this tab."""
         return self._frame
 
     def on_tab_selected(self) -> None:
-        """Called when tab is selected."""
+        """Re-render image when tab is selected (fix for hidden tab rendering)."""
         if self._current_image_data:
-            self._bind_click_handler()
+            self._display_image(self._current_image_data)
+
+    def _run_analysis(self) -> None:
+        """Run trends analysis and display result."""
+        text = self.state.cleaned_content or self.state.text_content
+        if not text:
+            self.update_status("Primero cargá texto", "orange")
+            return
+
+        try:
+            from tools.text_tool.processor import analyze_trends
+
+            self.update_status("🔄 Generando tendencias...", "blue")
+            result = analyze_trends(
+                text,
+                already_cleaned=bool(self.state.cleaned_content),
+            )
+            if result.get("success") and result.get("image_data"):
+                self._display_image(result["image_data"])
+                self.update_status("✅ Tendencias generadas", "green")
+            else:
+                self.update_status(result.get("error", "Error en tendencias"), "orange")
+        except Exception as e:
+            self.update_status(f"Error: {e}", "red")
 
     def refresh(self) -> None:
         """Update trends when text changes."""
         if not self.state.cleaned_content:
             self._reset_display()
             return
-
-        try:
-            from tools.text_tool.processor import analyze_trends
-
-            result = analyze_trends(self.state.cleaned_content)
-            if result.get("success") and result.get("image_data"):
-                self._display_image(result["image_data"])
-            else:
-                self.update_status(result.get("error", "Error en tendencias"), "orange")
-        except Exception as e:
-            self.update_status(f"Error: {e}", "red")
+        self._run_analysis()
 
     def _reset_display(self) -> None:
         """Reset display to placeholder."""

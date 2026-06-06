@@ -12,7 +12,7 @@ from io import BytesIO
 from core.utils import clean_text
 
 
-def analyze_streamgraph(text: str, n_terms: int = 8, n_sections: int = 15) -> Dict[str, Any]:
+def analyze_streamgraph(text: str, n_terms: int = 8, n_sections: int = 15, already_cleaned: bool = False) -> Dict[str, Any]:
     """
     Análisis StreamGraph - gráfico de área apilada.
 
@@ -37,7 +37,7 @@ def analyze_streamgraph(text: str, n_terms: int = 8, n_sections: int = 15) -> Di
     if n_sections < 5 or n_sections > 20:
         return {'success': False, 'error': 'n_sections debe estar entre 5 y 20', 'image_data': None}
 
-    cleaned = clean_text(text, remove_stopwords=True)
+    cleaned = text if already_cleaned else clean_text(text, remove_stopwords=True)
     words = cleaned.split()
 
     if len(words) < 50:

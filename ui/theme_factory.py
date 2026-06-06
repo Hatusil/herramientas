@@ -234,6 +234,7 @@ def create_textbox(parent, **kwargs):
 
 def create_switch(parent, **kwargs):
     """Switch con colores del tema."""
+    kwargs.setdefault("text", "")
     return ctk.CTkSwitch(
         parent,
         fg_color=COLORS.get("bg_hover"),
@@ -245,7 +246,20 @@ def create_switch(parent, **kwargs):
 
 def create_checkbox(parent, **kwargs):
     """Checkbox con colores del tema."""
+    kwargs.setdefault("text", "")
     return ctk.CTkCheckBox(
+        parent,
+        fg_color=COLORS.get("primary"),
+        hover_color=COLORS.get("primary_hover"),
+        text_color=COLORS.get("text_primary"),
+        **kwargs
+    )
+
+
+def create_radiobutton(parent, **kwargs):
+    """RadioButton con colores del tema."""
+    kwargs.setdefault("text", "")
+    return ctk.CTkRadioButton(
         parent,
         fg_color=COLORS.get("primary"),
         hover_color=COLORS.get("primary_hover"),

@@ -66,7 +66,7 @@ def _generate_trends_chart(top_words: List[str], trends_data: Dict[str, List[int
     return img_buffer.getvalue()
 
 
-def analyze_trends(text: str, n_terms: int = 5, n_sections: int = 10) -> Dict[str, Any]:
+def analyze_trends(text: str, n_terms: int = 5, n_sections: int = 10, already_cleaned: bool = False) -> Dict[str, Any]:
     """
     Análisis de tendencias: frecuencia de palabras en diferentes secciones.
 
@@ -74,6 +74,7 @@ def analyze_trends(text: str, n_terms: int = 5, n_sections: int = 10) -> Dict[st
         text: Texto de entrada
         n_terms: Número de términos a mostrar
         n_sections: Número de secciones del texto
+        already_cleaned: Si True, el texto ya está limpio (sin stopwords, minúsculas)
 
     Returns:
         Dict con 'success', 'image_data', 'top_words', 'trends'
@@ -83,13 +84,21 @@ def analyze_trends(text: str, n_terms: int = 5, n_sections: int = 10) -> Dict[st
     except ImportError:
         return {'success': False, 'error': 'matplotlib no instalado'}
 
-    cleaned = clean_text(text, remove_stopwords=True)
-    words = cleaned.split()
+    if already_cleaned:
+        cleaned = text
+        words = text.split()
+    else:
+        cleaned = clean_text(text, remove_stopwords=True)
+        words = cleaned.split()
 
     if len(words) < n_sections:
         return {'success': False, 'error': 'Texto muy corto para tendencias'}
 
-    top_words = _get_top_words(text, n_terms)
+    if already_cleaned:
+        word_freq = Counter(words)
+        top_words = [w for w, _ in word_freq.most_common(n_terms)]
+    else:
+        top_words = _get_top_words(text, n_terms)
 
     if not top_words:
         return {'success': False, 'error': 'No hay palabras suficientes'}
