@@ -532,17 +532,10 @@ class TestArchitectureRules:
                     f"{tool_dir.name} (missing or @dataclass-less: {rel_state})"
                 )
         violations = filter_known_exceptions("R12", violations)
-        if violations:
-            warnings.warn(
-                "R12 violations (tools with ui/tabs/ lacking state.py @dataclass):\n"
-                + "\n".join(f"  {v}" for v in violations),
-                UserWarning,
-                stacklevel=2,
-            )
-            pytest.skip(
-                f"R12 found {len(violations)} tool(s) with ui/tabs/ but no @dataclass state.py:\n"
-                + "\n".join(f"  {v}" for v in violations)
-            )
+        assert not violations, (
+            f"R12 violations: tools with ui/tabs/ lacking state.py @dataclass:\n"
+            + "\n".join(f"  {v}" for v in violations)
+        )
 
     # =============================================================================
     # R13: Handler Files <= 80 Lines (strict from day 1)
@@ -662,17 +655,10 @@ class TestArchitectureRules:
                     continue
                 violations.extend(self._r14_collect_violations(path))
         violations = filter_known_exceptions("R14", violations)
-        if violations:
-            warnings.warn(
-                "R14 violations (self._main_ui monkey-patch sites):\n"
-                + "\n".join(f"  {v}" for v in violations),
-                UserWarning,
-                stacklevel=2,
-            )
-            pytest.skip(
-                f"R14 found {len(violations)} monkey-patch site(s) on self._main_ui:\n"
-                + "\n".join(f"  {v}" for v in violations)
-            )
+        assert not violations, (
+            f"R14 violations: tabs must not monkey-patch self._main_ui:\n"
+            + "\n".join(f"  {v}" for v in violations)
+        )
 
 
 # =============================================================================
