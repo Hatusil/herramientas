@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional
-from collections import Counter
 
 from core.metrics import Counter, Timer
 

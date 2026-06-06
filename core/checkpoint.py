@@ -4,10 +4,13 @@ Checkpoint system for D18 - Guardar respaldo antes de operaciones costosas.
 import os
 import json
 import hashlib
+import logging
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, Callable, Any
 from functools import wraps
+
+logger = logging.getLogger(__name__)
 
 # Directorio de checkpoints
 CHECKPOINT_DIR = Path("output/checkpoints")
@@ -120,15 +123,15 @@ def costly_operation(threshold: int = COSTLY_THRESHOLD) -> Callable:
                 operation=f"{func.__module__}.{func.__name__}",
                 context={"args": str(args)[:100], "threshold": threshold}
             )
-            print(f"[CHECKPOINT] Guardado {checkpoint_id} antes de {func.__name__}")
+            logger.debug("[CHECKPOINT] Guardado %s antes de %s", checkpoint_id, func.__name__)
             
             try:
                 result = func(*args, **kwargs)
-                print(f"[CHECKPOINT] Operación completada exitosamente")
+                logger.info("[CHECKPOINT] Operación completada exitosamente")
                 return result
             except Exception as e:
-                print(f"[CHECKPOINT] Error en operación: {e}")
-                print(f"[CHECKPOINT] Recovery ID: {checkpoint_id}")
+                logger.error("[CHECKPOINT] Error en operación: %s", e)
+                logger.info("[CHECKPOINT] Recovery ID: %s", checkpoint_id)
                 raise
         return wrapper
     return decorator

@@ -74,7 +74,7 @@ class TextAnalyzerUI(BaseToolUI):
 
     def _on_status(self, message: str, color: str = "gray") -> None:
         """Update status label. Thread-safe via after()."""
-        print(f"[STATUS] {message} ({color})")
+        logger.debug(f"[STATUS] {message} ({color})")
         # Resolver color: si es HEX directo (comienza con #) usar tal cual
         from core.constants import COLORS
         if color.startswith('#'):
