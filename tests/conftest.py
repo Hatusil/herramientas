@@ -8,6 +8,34 @@ from unittest.mock import MagicMock
 import pytest
 
 
+# Whitelist of file:line sites that are exempt from architecture rules R11/R12/R14.
+# Populated lazily as legitimate exceptions are identified. R13 (handler line budget)
+# is strict from day one and does not use this list.
+ARCH_KNOWN_EXCEPTIONS: dict[str, list[str]] = {
+    "R11": [],  # print() in production code
+    "R12": [],  # missing state.py / @dataclass for tools with ui/tabs/
+    "R14": [],  # self._main_ui.X = ...  or  setattr(self._main_ui, ...)
+}
+
+
+def filter_known_exceptions(rule: str, violations: list[str]) -> list[str]:
+    """Strip whitelisted file:line entries from a violation list.
+
+    Entries in ARCH_KNOWN_EXCEPTIONS[rule] are matched as exact strings
+    or as file:line prefixes (so the same file:line is exempt at any
+    statement within that line).
+    """
+    whitelist = ARCH_KNOWN_EXCEPTIONS.get(rule, [])
+    out = []
+    for v in violations:
+        if v in whitelist:
+            continue
+        if any(v.startswith(w + ":") for w in whitelist):
+            continue
+        out.append(v)
+    return out
+
+
 @pytest.fixture
 def temp_dir():
     tmpdir = tempfile.mkdtemp()

@@ -4,8 +4,14 @@ Equivalente a las 20 Maximas pero para arquitectura.
 """
 import ast
 import os
+import warnings
 from pathlib import Path
 import pytest
+
+try:
+    from conftest import ARCH_KNOWN_EXCEPTIONS, filter_known_exceptions
+except ImportError:
+    from tests.conftest import ARCH_KNOWN_EXCEPTIONS, filter_known_exceptions
 
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -376,6 +382,297 @@ class TestArchitectureRules:
                 pass
         
         assert not violations, f"Violaciones R10:\n" + "\n".join(violations)
+
+    # =============================================================================
+    # R11: No Debug Print in Production Code (warning-only)
+    # =============================================================================
+    """
+    Production modules under core/, ui/, tools/**/processor.py, and
+    tools/**/handlers/ MUST NOT call print(). Excluded: scripts/ and
+    if __name__ == "__main__": blocks. Warning-only on day 1.
+    """
+
+    @staticmethod
+    def _build_parent_map(tree: ast.AST) -> dict[int, ast.AST]:
+        """Map every child AST node id() to its parent for ancestor lookups."""
+        parents: dict[int, ast.AST] = {}
+        for parent in ast.walk(tree):
+            for child in ast.iter_child_nodes(parent):
+                parents[id(child)] = parent
+        return parents
+
+    @classmethod
+    def _is_inside_main_block(cls, node: ast.AST, parents: dict[int, ast.AST]) -> bool:
+        """True if `node` is nested under an `if __name__ == "__main__":` test."""
+        current = parents.get(id(node))
+        while current is not None:
+            if isinstance(current, ast.If):
+                test = current.test
+                if (
+                    isinstance(test, ast.Compare)
+                    and isinstance(test.left, ast.Name)
+                    and test.left.id == "__name__"
+                    and any(
+                        isinstance(cmp, ast.Constant) and cmp.value == "__main__"
+                        for cmp in test.comparators
+                    )
+                ):
+                    return True
+            current = parents.get(id(current))
+        return False
+
+    def _r11_scan_roots(self) -> list[Path]:
+        """Return the file roots R11 inspects (core/, ui/, tools/**/processor.py, tools/**/handlers/)."""
+        roots: list[Path] = []
+        core_dir = PROJECT_ROOT / "core"
+        if core_dir.exists():
+            roots.append(core_dir)
+        ui_dir = PROJECT_ROOT / "ui"
+        if ui_dir.exists():
+            roots.append(ui_dir)
+        for processor in TOOLS_DIR.rglob("processor.py"):
+            if "__pycache__" not in str(processor):
+                roots.append(processor)
+        for handler in (TOOLS_DIR).rglob("handlers/*.py"):
+            if "__pycache__" not in str(handler) and handler.name != "__init__.py":
+                roots.append(handler.parent)
+        return roots
+
+    def test_r11_no_print_in_production(self):
+        """R11: No print() in production code (warning-only on day 1)."""
+        violations: list[str] = []
+        seen: set[Path] = set()
+        for root in self._r11_scan_roots():
+            candidates = (
+                [root] if root.is_file() else list(root.rglob("*.py"))
+            )
+            for path in candidates:
+                if "__pycache__" in str(path) or path.name == "__init__.py":
+                    continue
+                if path in seen:
+                    continue
+                seen.add(path)
+                try:
+                    source = path.read_text(encoding="utf-8", errors="ignore")
+                    tree = ast.parse(source)
+                except (SyntaxError, OSError):
+                    continue
+                parents = self._build_parent_map(tree)
+                for node in ast.walk(tree):
+                    if not isinstance(node, ast.Call):
+                        continue
+                    func = node.func
+                    is_print = (
+                        isinstance(func, ast.Name) and func.id == "print"
+                    ) or (
+                        isinstance(func, ast.Attribute) and func.attr == "print"
+                    )
+                    if not is_print:
+                        continue
+                    if self._is_inside_main_block(node, parents):
+                        continue
+                    rel = path.relative_to(PROJECT_ROOT)
+                    violations.append(f"{rel}:{node.lineno}")
+        violations = filter_known_exceptions("R11", violations)
+        if violations:
+            warnings.warn(
+                "R11 violations (print() in production code):\n"
+                + "\n".join(f"  {v}" for v in violations),
+                UserWarning,
+                stacklevel=2,
+            )
+            pytest.skip(
+                f"R11 found {len(violations)} print() call(s) in production code:\n"
+                + "\n".join(f"  {v}" for v in violations)
+            )
+
+    # =============================================================================
+    # R12: Tab-Based UI Tools Must Provide state.py with @dataclass (warning-only)
+    # =============================================================================
+    """
+    If a tool exposes a tab-based UI (ui/tabs/ directory exists), that tool
+    MUST provide ui/state.py containing at least one @dataclass class.
+    Warning-only on day 1.
+    """
+
+    @staticmethod
+    def _file_has_dataclass(path: Path) -> bool:
+        """True iff `path` exists and contains at least one @dataclass class."""
+        if not path.exists():
+            return False
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="ignore"))
+        except (SyntaxError, OSError):
+            return False
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ClassDef):
+                continue
+            for decorator in node.decorator_list:
+                if (
+                    isinstance(decorator, ast.Name) and decorator.id == "dataclass"
+                ) or (
+                    isinstance(decorator, ast.Attribute) and decorator.attr == "dataclass"
+                ):
+                    return True
+        return False
+
+    def test_r12_state_py_required(self):
+        """R12: tools with ui/tabs/ must ship ui/state.py with @dataclass (warning-only)."""
+        violations: list[str] = []
+        for tool_dir in sorted(TOOLS_DIR.iterdir()):
+            if not tool_dir.is_dir() or tool_dir.name.startswith("_"):
+                continue
+            tabs_dir = tool_dir / "ui" / "tabs"
+            if not tabs_dir.exists():
+                continue
+            state_file = tool_dir / "ui" / "state.py"
+            if not self._file_has_dataclass(state_file):
+                rel_state = state_file.relative_to(PROJECT_ROOT)
+                violations.append(
+                    f"{tool_dir.name} (missing or @dataclass-less: {rel_state})"
+                )
+        violations = filter_known_exceptions("R12", violations)
+        if violations:
+            warnings.warn(
+                "R12 violations (tools with ui/tabs/ lacking state.py @dataclass):\n"
+                + "\n".join(f"  {v}" for v in violations),
+                UserWarning,
+                stacklevel=2,
+            )
+            pytest.skip(
+                f"R12 found {len(violations)} tool(s) with ui/tabs/ but no @dataclass state.py:\n"
+                + "\n".join(f"  {v}" for v in violations)
+            )
+
+    # =============================================================================
+    # R13: Handler Files <= 80 Lines (strict from day 1)
+    # =============================================================================
+    """
+    Every .py file under tools/*/ui/handlers/ MUST contain at most 80
+    non-blank, non-pure-#-comment lines. Strict assertion.
+    """
+
+    @staticmethod
+    def _count_meaningful_lines(path: Path) -> int:
+        """Count non-blank lines that are not pure-# comments."""
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            return 0
+        count = 0
+        for raw in text.splitlines():
+            stripped = raw.strip()
+            if not stripped:
+                continue
+            if stripped.startswith("#"):
+                continue
+            count += 1
+        return count
+
+    def test_r13_handlers_under_80(self):
+        """R13: every handler .py <= 80 non-blank, non-pure-#-comment lines."""
+        offenders: list[tuple[str, int]] = []
+        for handler_dir in TOOLS_DIR.rglob("ui/handlers"):
+            if "__pycache__" in str(handler_dir) or not handler_dir.is_dir():
+                continue
+            for path in sorted(handler_dir.glob("*.py")):
+                if path.name == "__init__.py":
+                    continue
+                count = self._count_meaningful_lines(path)
+                if count > 80:
+                    rel = path.relative_to(PROJECT_ROOT)
+                    offenders.append((str(rel), count))
+        assert not offenders, (
+            "R13 violations: handler file(s) exceed 80 non-blank, non-comment lines:\n"
+            + "\n".join(f"  {p}: {n} lines" for p, n in offenders)
+        )
+
+    # =============================================================================
+    # R14: No Monkey-Patch of self._main_ui in Tabs (warning-only)
+    # =============================================================================
+    """
+    tools/*/ui/tabs/*.py MUST NOT mutate self._main_ui via direct
+    assignment or setattr(self._main_ui, ...). Warning-only on day 1.
+    """
+
+    @staticmethod
+    def _is_self_main_ui_attr(node: ast.AST) -> bool:
+        """True if `node` is Attribute(value=Name('self'), attr='_main_ui').
+
+        Matches the `self._main_ui` reference (used as the base for setattr's
+        first arg, or as the base of a deeper attribute like `self._main_ui.X`).
+        """
+        return (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "self"
+            and node.attr == "_main_ui"
+        )
+
+    @classmethod
+    def _is_subattr_of_main_ui(cls, node: ast.AST) -> bool:
+        """True if `node` is Attribute whose value is self._main_ui (any depth >= 1).
+
+        Catches `self._main_ui.X = ...` (X != _main_ui) and `self._main_ui.X.Y = ...`,
+        which is the actual monkey-patch shape; excludes `self._main_ui = ...`.
+        """
+        return (
+            isinstance(node, ast.Attribute)
+            and cls._is_self_main_ui_attr(node.value)
+        )
+
+    def _r14_collect_violations(self, path: Path) -> list[str]:
+        """Return file:line entries for each self._main_ui mutation in `path`."""
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="ignore"))
+        except (SyntaxError, OSError):
+            return []
+        hits: list[str] = []
+        rel = path.relative_to(PROJECT_ROOT)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if self._is_subattr_of_main_ui(target):
+                        hits.append(f"{rel}:{node.lineno}")
+                        break
+            elif isinstance(node, ast.AugAssign):
+                if self._is_subattr_of_main_ui(node.target):
+                    hits.append(f"{rel}:{node.lineno}")
+            elif isinstance(node, ast.Call):
+                func = node.func
+                is_setattr = (
+                    isinstance(func, ast.Name) and func.id == "setattr"
+                )
+                if not is_setattr:
+                    continue
+                if not node.args:
+                    continue
+                if self._is_self_main_ui_attr(node.args[0]):
+                    hits.append(f"{rel}:{node.lineno}")
+        return hits
+
+    def test_r14_no_main_ui_monkey_patch(self):
+        """R14: tabs must not monkey-patch self._main_ui (warning-only)."""
+        violations: list[str] = []
+        for tabs_dir in TOOLS_DIR.rglob("ui/tabs"):
+            if "__pycache__" in str(tabs_dir) or not tabs_dir.is_dir():
+                continue
+            for path in sorted(tabs_dir.glob("*.py")):
+                if path.name == "__init__.py":
+                    continue
+                violations.extend(self._r14_collect_violations(path))
+        violations = filter_known_exceptions("R14", violations)
+        if violations:
+            warnings.warn(
+                "R14 violations (self._main_ui monkey-patch sites):\n"
+                + "\n".join(f"  {v}" for v in violations),
+                UserWarning,
+                stacklevel=2,
+            )
+            pytest.skip(
+                f"R14 found {len(violations)} monkey-patch site(s) on self._main_ui:\n"
+                + "\n".join(f"  {v}" for v in violations)
+            )
 
 
 # =============================================================================
