@@ -5,24 +5,36 @@ from typing import TYPE_CHECKING
 from core.constants import COLORS
 
 if TYPE_CHECKING:
-    from tools.pdf_tool.ui.main_ui import PDFToolUI
+    from tools.pdf_tool.ui.state import PDFState, PDFContext
 
 
-def compress_pdf(ui: PDFToolUI) -> None:
+def compress_pdf(state: "PDFState") -> None:
     """Compress PDF."""
-    if not ui.files:
-        ui.status_label.configure(text="Seleccione un PDF primero", text_color=COLORS.get("warning", "orange"))
+    if not state.ctx.files:
+        if state.ctx.status_label is not None:
+            state.ctx.status_label.configure(
+                text="Seleccione un PDF primero",
+                text_color=COLORS.get("warning", "orange"),
+            )
         return
-    compress_level = getattr(ui, "compress_level", None)
-    level = compress_level.get() if compress_level else "medium"
-    ui.status_label.configure(text="Procesando...", text_color="blue")
-    ui.process_async("compress", ui.files, {"level": level})
+    compress_level = state.compress_level
+    level = compress_level.get() if compress_level is not None else "medium"
+    if state.ctx.status_label is not None:
+        state.ctx.status_label.configure(text="Procesando...", text_color="blue")
+    if state.ctx.process_async is not None:
+        state.ctx.process_async("compress", state.ctx.files, {"level": level})
 
 
-def clean_metadata(ui: PDFToolUI) -> None:
-    """Clean PDF metadata."""
-    if not ui.files:
-        ui.status_label.configure(text="Seleccione un PDF primero", text_color=COLORS.get("warning", "orange"))
+def clean_metadata(state: "PDFState", ctx: "PDFContext") -> None:
+    """Clean PDF metadata (widget-less)."""
+    if not ctx.files:
+        if ctx.status_label is not None:
+            ctx.status_label.configure(
+                text="Seleccione un PDF primero",
+                text_color=COLORS.get("warning", "orange"),
+            )
         return
-    ui.status_label.configure(text="Procesando...", text_color="blue")
-    ui.process_async("clean_metadata", ui.files, {})
+    if ctx.status_label is not None:
+        ctx.status_label.configure(text="Procesando...", text_color="blue")
+    if ctx.process_async is not None:
+        ctx.process_async("clean_metadata", ctx.files, {})

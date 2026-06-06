@@ -2,32 +2,35 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from core.constants import COLORS
-
 if TYPE_CHECKING:
-    from tools.pdf_tool.ui.main_ui import PDFToolUI
+    from tools.pdf_tool.ui.state import PDFState, PDFContext
 
 
-def merge_pdfs(ui: PDFToolUI) -> None:
-    """Merge multiple PDFs into one."""
-    if not ui.files or len(ui.files) < 2:
-        ui.status_label.configure(
-            text="Seleccione al menos 2 PDFs", text_color=COLORS.get("warning", "orange")
+def merge_pdfs(state: PDFState, ctx: PDFContext) -> None:
+    """Merge multiple PDFs into one (widget-less)."""
+    files = ctx.files
+    if not files or len(files) < 2:
+        ctx.status_label and ctx.status_label.configure(
+            text="Seleccione al menos 2 PDFs", text_color="orange",
         )
         return
-    ui.process_async("merge", ui.files, {})
+    if ctx.process_async is not None:
+        ctx.process_async("merge", files, {})
 
 
-def extract_pages(ui: PDFToolUI) -> None:
+def extract_pages(state: PDFState) -> None:
     """Extract specific pages from PDF."""
-    if not ui.files:
-        ui.status_label.configure(text="Seleccione un PDF primero", text_color=COLORS.get("warning", "orange"))
+    files = state.ctx.files
+    if not files:
+        state.ctx.status_label and state.ctx.status_label.configure(
+            text="Seleccione un PDF primero", text_color="orange",
+        )
         return
-    extract_entry = getattr(ui, "extract_pages", None)
-    pages_str = extract_entry.get().strip() if extract_entry else ""
+    entry = state.extract_pages
+    pages_str = entry.get().strip() if entry is not None else ""
     if not pages_str:
-        ui.status_label.configure(
-            text="Ingrese las paginas a extraer", text_color=COLORS.get("warning", "orange")
+        state.ctx.status_label and state.ctx.status_label.configure(
+            text="Ingrese las paginas a extraer", text_color="orange",
         )
         return
     try:
@@ -37,29 +40,47 @@ def extract_pages(ui: PDFToolUI) -> None:
         else:
             pages = [int(p.strip()) for p in pages_str.split(",")]
     except ValueError:
-        ui.status_label.configure(text="Formato de paginas invalido", text_color="red")
+        state.ctx.status_label and state.ctx.status_label.configure(
+            text="Formato de paginas invalido", text_color="red",
+        )
         return
-    ui.process_async("extract", ui.files, {"pages": pages})
+    state.ctx.status_label and state.ctx.status_label.configure(
+        text="Procesando...", text_color="blue",
+    )
+    if state.ctx.process_async is not None:
+        state.ctx.process_async("extract", files, {"pages": pages})
 
 
-def extract_range(ui: PDFToolUI) -> None:
+def extract_range(state: PDFState) -> None:
     """Extract a range of pages from PDF."""
-    if not ui.files:
-        ui.status_label.configure(text="Seleccione un PDF primero", text_color=COLORS.get("warning", "orange"))
+    files = state.ctx.files
+    if not files:
+        state.ctx.status_label and state.ctx.status_label.configure(
+            text="Seleccione un PDF primero", text_color="orange",
+        )
         return
-    extract_start = getattr(ui, "extract_start", None)
-    extract_end = getattr(ui, "extract_end", None)
+    start_entry = state.extract_start
+    end_entry = state.extract_end
     try:
-        start = int(extract_start.get()) if extract_start else 1
-        end = int(extract_end.get()) if extract_end else 1
+        start = int(start_entry.get()) if start_entry is not None else 1
+        end = int(end_entry.get()) if end_entry is not None else 1
     except ValueError:
-        ui.status_label.configure(text="Numeros de pagina invalidos", text_color="red")
+        state.ctx.status_label and state.ctx.status_label.configure(
+            text="Numeros de pagina invalidos", text_color="red",
+        )
         return
     if start < 1 or end < 1:
-        ui.status_label.configure(text="Los numeros deben ser >= 1", text_color="red")
+        state.ctx.status_label and state.ctx.status_label.configure(
+            text="Los numeros deben ser >= 1", text_color="red",
+        )
         return
     if start > end:
-        ui.status_label.configure(text="Inicio debe ser menor que fin", text_color="red")
+        state.ctx.status_label and state.ctx.status_label.configure(
+            text="Inicio debe ser menor que fin", text_color="red",
+        )
         return
-    ui.status_label.configure(text="Procesando...", text_color="blue")
-    ui.process_async("extract_range", ui.files, {"start": start, "end": end})
+    state.ctx.status_label and state.ctx.status_label.configure(
+        text="Procesando...", text_color="blue",
+    )
+    if state.ctx.process_async is not None:
+        state.ctx.process_async("extract_range", files, {"start": start, "end": end})

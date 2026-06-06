@@ -167,21 +167,11 @@ class WatermarkTab(PDFBaseTab):
 
     def _apply_watermark(self) -> None:
         from tools.pdf_tool.ui.handlers.watermark_handler import apply_text_watermark, apply_image_watermark
-        self._main_ui.watermark_text = self._watermark_text_var
-        self._main_ui.watermark_size = self._watermark_size
-        self._main_ui.watermark_color = self._watermark_color
-        self._main_ui.watermark_opacity_slider = self._opacity_slider
-        self._main_ui.watermark_rotation_slider = self._rotation_slider
-        self._main_ui.watermark_position = self._watermark_position
-        self._main_ui.watermark_pos_x = self._watermark_pos_x
-        self._main_ui.watermark_pos_y = self._watermark_pos_y
-        self._main_ui.watermark_image_path = self._watermark_image_path_var
-        self._main_ui.watermark_type = self._watermark_type
         if self._watermark_type.get() == "image":
-            apply_image_watermark(self._main_ui)
+            apply_image_watermark(self._state)
         else:
-            apply_text_watermark(self._main_ui)
+            apply_text_watermark(self._state)
 
     def _remove_watermark(self) -> None:
         from tools.pdf_tool.ui.handlers.watermark_handler import remove_watermark
-        remove_watermark(self._main_ui)
+        remove_watermark(self._state, self._state.ctx)

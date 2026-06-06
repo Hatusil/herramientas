@@ -114,23 +114,12 @@ class EditTab(PDFBaseTab):
 
     def _add_annotation(self) -> None:
         from tools.pdf_tool.ui.handlers.edit_handler import add_annotation
-        self._main_ui.annot_text = self._annot_text
-        self._main_ui.annot_page = self._annot_page
-        self._main_ui.annot_x = self._annot_x
-        self._main_ui.annot_y = self._annot_y
-        add_annotation(self._main_ui)
+        add_annotation(self._state)
 
     def _redact_area(self) -> None:
         from tools.pdf_tool.ui.handlers.edit_handler import redact_area
-        self._main_ui.redact_page = self._redact_page
-        self._main_ui.redact_x = self._redact_x
-        self._main_ui.redact_y = self._redact_y
-        self._main_ui.redact_w = self._redact_w
-        self._main_ui.redact_h = self._redact_h
-        redact_area(self._main_ui)
+        redact_area(self._state)
 
     def _extract_range(self) -> None:
         from tools.pdf_tool.ui.handlers.combine_handler import extract_range
-        self._main_ui.extract_start = self._extract_start
-        self._main_ui.extract_end = self._extract_end
-        extract_range(self._main_ui)
+        extract_range(self._state)

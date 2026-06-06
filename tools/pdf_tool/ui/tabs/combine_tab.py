@@ -56,9 +56,8 @@ class CombineTab(PDFBaseTab):
 
     def _merge(self) -> None:
         from tools.pdf_tool.ui.handlers.combine_handler import merge_pdfs
-        merge_pdfs(self._main_ui)
+        merge_pdfs(self._state, self._state.ctx)
 
     def _extract(self) -> None:
         from tools.pdf_tool.ui.handlers.combine_handler import extract_pages
-        self._main_ui.extract_pages = self._extract_pages
-        extract_pages(self._main_ui)
+        extract_pages(self._state)

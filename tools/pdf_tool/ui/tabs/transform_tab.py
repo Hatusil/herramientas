@@ -65,11 +65,8 @@ class TransformTab(PDFBaseTab):
 
     def _rotate_pages(self) -> None:
         from tools.pdf_tool.ui.handlers.transform_handler import rotate_pages
-        self._main_ui.rotate_var = self._rotate_var
-        self._main_ui.rotate_pages = self._rotate_pages
-        rotate_pages(self._main_ui)
+        rotate_pages(self._state)
 
     def _reorder_pages(self) -> None:
         from tools.pdf_tool.ui.handlers.transform_handler import reorder_pages
-        self._main_ui.reorder_input = self._reorder_input
-        reorder_pages(self._main_ui)
+        reorder_pages(self._state)

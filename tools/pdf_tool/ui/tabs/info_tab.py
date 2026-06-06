@@ -45,5 +45,4 @@ class InfoTab(PDFBaseTab):
 
     def _run_analysis(self) -> None:
         from tools.pdf_tool.ui.handlers.info_handler import get_pdf_info
-        self._main_ui.info_text = self._info_text
-        get_pdf_info(self._main_ui)
+        get_pdf_info(self._state, self._state.ctx)

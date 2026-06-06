@@ -5,38 +5,57 @@ from typing import TYPE_CHECKING
 from core.constants import COLORS
 
 if TYPE_CHECKING:
-    from tools.pdf_tool.ui.main_ui import PDFToolUI
+    from tools.pdf_tool.ui.state import PDFState
 
 
-def rotate_pages(ui: PDFToolUI) -> None:
+def rotate_pages(state: "PDFState") -> None:
     """Rotate PDF pages."""
-    if not ui.files:
-        ui.status_label.configure(text="Seleccione un PDF primero", text_color=COLORS.get("warning", "orange"))
+    if not state.ctx.files:
+        if state.ctx.status_label is not None:
+            state.ctx.status_label.configure(
+                text="Seleccione un PDF primero",
+                text_color=COLORS.get("warning", "orange"),
+            )
         return
-    rotate_var = getattr(ui, "rotate_var", None)
-    degrees = int(rotate_var.get()) if rotate_var else 90
-    rotate_entry = getattr(ui, "rotate_pages", None)
+    rotate_var = state.rotate_var
+    degrees = int(rotate_var.get()) if rotate_var is not None else 90
+    rotate_entry = state.rotate_pages
     pages = None
-    if rotate_entry and rotate_entry.get().strip():
+    if rotate_entry is not None and rotate_entry.get().strip():
         pages = [int(p) for p in rotate_entry.get().split(",")]
-    ui.status_label.configure(text="Procesando...", text_color="blue")
-    ui.process_async("rotate", ui.files, {"degrees": degrees, "pages": pages})
+    if state.ctx.status_label is not None:
+        state.ctx.status_label.configure(text="Procesando...", text_color="blue")
+    if state.ctx.process_async is not None:
+        state.ctx.process_async("rotate", state.ctx.files, {"degrees": degrees, "pages": pages})
 
 
-def reorder_pages(ui: PDFToolUI) -> None:
+def reorder_pages(state: "PDFState") -> None:
     """Reorder PDF pages."""
-    if not ui.files:
-        ui.status_label.configure(text="Seleccione un PDF primero", text_color=COLORS.get("warning", "orange"))
+    if not state.ctx.files:
+        if state.ctx.status_label is not None:
+            state.ctx.status_label.configure(
+                text="Seleccione un PDF primero",
+                text_color=COLORS.get("warning", "orange"),
+            )
         return
-    reorder_input = getattr(ui, "reorder_input", None)
-    order_str = reorder_input.get().strip() if reorder_input else ""
+    reorder_input = state.reorder_input
+    order_str = reorder_input.get().strip() if reorder_input is not None else ""
     if not order_str:
-        ui.status_label.configure(text="Ingrese el orden de paginas", text_color=COLORS.get("warning", "orange"))
+        if state.ctx.status_label is not None:
+            state.ctx.status_label.configure(
+                text="Ingrese el orden de paginas",
+                text_color=COLORS.get("warning", "orange"),
+            )
         return
     try:
         new_order = [int(p) for p in order_str.split(",")]
     except ValueError:
-        ui.status_label.configure(text="Orden invalido", text_color="red")
+        if state.ctx.status_label is not None:
+            state.ctx.status_label.configure(
+                text="Orden invalido", text_color="red",
+            )
         return
-    ui.status_label.configure(text="Procesando...", text_color="blue")
-    ui.process_async("reorder", ui.files, {"new_order": new_order})
+    if state.ctx.status_label is not None:
+        state.ctx.status_label.configure(text="Procesando...", text_color="blue")
+    if state.ctx.process_async is not None:
+        state.ctx.process_async("reorder", state.ctx.files, {"new_order": new_order})

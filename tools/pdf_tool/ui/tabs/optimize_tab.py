@@ -54,9 +54,8 @@ class OptimizeTab(PDFBaseTab):
 
     def _compress(self) -> None:
         from tools.pdf_tool.ui.handlers.optimize_handler import compress_pdf
-        self._main_ui.compress_level = self._compress_level
-        compress_pdf(self._main_ui)
+        compress_pdf(self._state)
 
     def _clean(self) -> None:
         from tools.pdf_tool.ui.handlers.optimize_handler import clean_metadata
-        clean_metadata(self._main_ui)
+        clean_metadata(self._state, self._state.ctx)

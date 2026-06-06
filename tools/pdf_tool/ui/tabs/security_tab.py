@@ -57,10 +57,8 @@ class SecurityTab(PDFBaseTab):
 
     def _encrypt(self) -> None:
         from tools.pdf_tool.ui.handlers.security_handler import encrypt_pdf
-        self._main_ui.lock_password = self._lock_password
-        encrypt_pdf(self._main_ui)
+        encrypt_pdf(self._state)
 
     def _decrypt(self) -> None:
         from tools.pdf_tool.ui.handlers.security_handler import decrypt_pdf
-        self._main_ui.unlock_password = self._unlock_password
-        decrypt_pdf(self._main_ui)
+        decrypt_pdf(self._state)

@@ -4,25 +4,32 @@ from typing import TYPE_CHECKING
 import tkinter as tk
 
 if TYPE_CHECKING:
-    from tools.pdf_tool.ui.main_ui import PDFToolUI
+    from tools.pdf_tool.ui.state import PDFState, PDFContext
 
 
-def get_pdf_info(ui: PDFToolUI) -> None:
-    """Show PDF metadata in the info text box."""
-    if not ui._check_files():
+def get_pdf_info(state: "PDFState", ctx: "PDFContext") -> None:
+    """Show PDF metadata in the info text box (widget-less)."""
+    if not ctx.files:
+        if ctx.status_label is not None:
+            ctx.status_label.configure(
+                text="Seleccione un PDF primero", text_color="orange",
+            )
         return
     from tools.pdf_tool.processor import get_pdf_info as _get_info
 
-    ui.info_text.delete("1.0", tk.END)
-    for file_path in ui.files:
+    if state.info_text is not None:
+        state.info_text.delete("1.0", tk.END)
+    for file_path in ctx.files:
         info = _get_info(file_path)
         if info.get("success"):
-            ui.info_text.insert(tk.END, _format_info(info))
+            if state.info_text is not None:
+                state.info_text.insert(tk.END, _format_info(info))
         else:
-            ui.info_text.insert(
-                tk.END,
-                f"Error con {info.get('file_name', file_path)}: {info.get('error', 'Error desconocido')}\n\n",
-            )
+            if state.info_text is not None:
+                state.info_text.insert(
+                    tk.END,
+                    f"Error con {info.get('file_name', file_path)}: {info.get('error', 'Error desconocido')}\n\n",
+                )
 
 
 def _format_info(info: dict) -> str:
@@ -50,12 +57,17 @@ def _format_info(info: dict) -> str:
     return "\n".join(lines)
 
 
-def get_page_count(ui: PDFToolUI) -> None:
-    """Get page count for current file."""
-    if not ui._check_files():
+def get_page_count(state: "PDFState", ctx: "PDFContext") -> None:
+    """Get page count for current file (widget-less)."""
+    if not ctx.files:
+        if ctx.status_label is not None:
+            ctx.status_label.configure(
+                text="Seleccione un PDF primero", text_color="orange",
+            )
         return
     from tools.pdf_tool.processor import get_pdf_info as _get_info
 
-    info = _get_info(ui.files[0])
+    info = _get_info(ctx.files[0])
     count = info.get("num_pages", 0)
-    ui.status_label.configure(text=f"Paginas: {count}", text_color="blue")
+    if ctx.status_label is not None:
+        ctx.status_label.configure(text=f"Paginas: {count}", text_color="blue")

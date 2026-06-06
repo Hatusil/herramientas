@@ -5,23 +5,29 @@ from typing import TYPE_CHECKING
 from core.constants import COLORS
 
 if TYPE_CHECKING:
-    from tools.pdf_tool.ui.main_ui import PDFToolUI
+    from tools.pdf_tool.ui.state import PDFState
 
 
-def add_page_numbers(ui: PDFToolUI) -> None:
+def add_page_numbers(state: "PDFState") -> None:
     """Add page numbers to PDF."""
-    if not ui.files:
-        ui.status_label.configure(text="Seleccione un PDF primero", text_color=COLORS.get("warning", "orange"))
+    if not state.ctx.files:
+        if state.ctx.status_label is not None:
+            state.ctx.status_label.configure(
+                text="Seleccione un PDF primero",
+                text_color=COLORS.get("warning", "orange"),
+            )
         return
-    num_position = getattr(ui, "num_position", None)
-    position = num_position.get() if num_position else "footer"
-    num_start = getattr(ui, "num_start", None)
-    start = int(num_start.get() or 1) if num_start else 1
-    num_format = getattr(ui, "num_format", None)
-    fmt = num_format.get() if num_format else "Pagina {n} de {total}"
-    ui.status_label.configure(text="Procesando...", text_color="blue")
-    ui.process_async("page_numbers", ui.files, {
-        "position": position,
-        "start": start,
-        "format": fmt,
-    })
+    num_position = state.num_position
+    position = num_position.get() if num_position is not None else "footer"
+    num_start = state.num_start
+    start = int(num_start.get() or 1) if num_start is not None else 1
+    num_format = state.num_format
+    fmt = num_format.get() if num_format is not None else "Pagina {n} de {total}"
+    if state.ctx.status_label is not None:
+        state.ctx.status_label.configure(text="Procesando...", text_color="blue")
+    if state.ctx.process_async is not None:
+        state.ctx.process_async("page_numbers", state.ctx.files, {
+            "position": position,
+            "start": start,
+            "format": fmt,
+        })

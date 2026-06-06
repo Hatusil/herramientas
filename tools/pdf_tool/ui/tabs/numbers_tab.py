@@ -56,7 +56,4 @@ class NumbersTab(PDFBaseTab):
 
     def _add_numbers(self) -> None:
         from tools.pdf_tool.ui.handlers.numbers_handler import add_page_numbers
-        self._main_ui.num_position = self._num_position
-        self._main_ui.num_start = self._num_start
-        self._main_ui.num_format = self._num_format
-        add_page_numbers(self._main_ui)
+        add_page_numbers(self._state)

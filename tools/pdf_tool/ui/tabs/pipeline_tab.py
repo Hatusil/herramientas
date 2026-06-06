@@ -116,7 +116,7 @@ class PipelineTab(PDFBaseTab):
             frame.pack(fill="x", padx=5)
 
     def _add_to_pipeline(self) -> None:
-        if not self._main_ui.files:
+        if not self._state.ctx.files:
             self.update_status("Seleccione un PDF primero", COLORS.get("warning", "orange"))
             return
         op_type = self._op_type.get()
@@ -175,7 +175,7 @@ class PipelineTab(PDFBaseTab):
         self.update_status("Pipeline limpiado", "gray")
 
     def _execute(self) -> None:
-        self._main_ui.pipeline_operations = self._operations
+        self._state.pipeline_operations = self._operations
         from tools.pdf_tool.ui.handlers.pipeline_handler import execute_pipeline
-        execute_pipeline(self._main_ui)
+        execute_pipeline(self._state)
         self._refresh_list()
