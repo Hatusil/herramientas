@@ -70,6 +70,15 @@ Both rules flip from `pytest.skip` (warning-only) to `assert not violations`
 (strict) in the same commit that lands the refactor — see the test file
 for the exact line.
 
+## R11 invariants
+
+`tests/test_arch_structure.py::_r11_scan_roots()` covers `core/`,
+top-level `ui/`, every `tools/**/processor.py`, and every
+`tools/**/handlers/*.py` (excluding `__init__.py`). A `print(...)` call
+outside an `if __name__ == "__main__":` block fails CI. The
+`ARCH_KNOWN_EXCEPTIONS["R11"]` whitelist is empty; `filter_known_exceptions`
+is the identity function for R11. Last rule in the R11–R14 series.
+
 ## 10-line code skeleton
 
 Copy this block into a sibling tool's `ui/state.py`, then add fields and a

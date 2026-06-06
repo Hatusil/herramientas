@@ -389,7 +389,7 @@ class TestArchitectureRules:
     """
     Production modules under core/, ui/, tools/**/processor.py, and
     tools/**/handlers/ MUST NOT call print(). Excluded: scripts/ and
-    if __name__ == "__main__": blocks. Warning-only on day 1.
+    if __name__ == "__main__": blocks.
     """
 
     @staticmethod
@@ -439,7 +439,7 @@ class TestArchitectureRules:
         return roots
 
     def test_r11_no_print_in_production(self):
-        """R11: No print() in production code (warning-only on day 1)."""
+        """R11: No print() in production code (strict)."""
         violations: list[str] = []
         seen: set[Path] = set()
         for root in self._r11_scan_roots():
@@ -474,17 +474,10 @@ class TestArchitectureRules:
                     rel = path.relative_to(PROJECT_ROOT)
                     violations.append(f"{rel}:{node.lineno}")
         violations = filter_known_exceptions("R11", violations)
-        if violations:
-            warnings.warn(
-                "R11 violations (print() in production code):\n"
-                + "\n".join(f"  {v}" for v in violations),
-                UserWarning,
-                stacklevel=2,
-            )
-            pytest.skip(
-                f"R11 found {len(violations)} print() call(s) in production code:\n"
-                + "\n".join(f"  {v}" for v in violations)
-            )
+        assert not violations, (
+            f"R11 violations: print() calls in production code:\n"
+            + "\n".join(f"  {v}" for v in violations)
+        )
 
     # =============================================================================
     # R12: Tab-Based UI Tools Must Provide state.py with @dataclass (warning-only)
