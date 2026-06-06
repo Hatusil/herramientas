@@ -76,8 +76,7 @@ Copy this block into a sibling tool's `ui/state.py`, then add fields and a
 `@dataclass` to match the new tool's widgets.
 
 ```python
-from dataclasses import dataclass, field
-from typing import Any, Callable, List, Optional
+from dataclasses import dataclass, field; from typing import Any, Callable, List, Optional
 import customtkinter as ctk
 @dataclass
 class ToolContext:
