@@ -73,6 +73,7 @@ class TestRunInBackgroundContract:
         with caplog.at_level(logging.DEBUG, logger="core.async_utils"):
             fut = run_in_background(boom, callback=cb)
             _wait(fut)
+            time.sleep(0.1)
 
         assert received == []
         # Exception must be logged so it's not silently swallowed.
