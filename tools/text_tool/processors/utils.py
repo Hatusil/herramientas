@@ -1,28 +1,15 @@
-"""
-Utils - Utilidades y configuración para analizadores.
-
-Funciones:
-- check_text_size: verifica tamaño del texto
-- process_in_chunks: procesa texto grande en chunks
-- ANALYZER_REGISTRY: registro de analizadores disponibles
-- get_analyzer, list_analyzers, get_analyzer_info
-- check_dependencies, get_text_stats, validate_text
-"""
-
 import re
 import logging
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, List, Callable
 
-from core.utils import clean_text, STOP_WORDS
+from core.utils import clean_text
 
 logger = logging.getLogger(__name__)
 
-# Configuración de límites
 TEXT_SIZE_WARNING = 100_000
 TEXT_SIZE_LIMIT = 500_000
 TEXT_SIZE_CHUNK = 50_000
 
-# Check availability
 try:
     import nltk
     nltk.data.find('tokenizers/punkt')
@@ -68,14 +55,15 @@ try:
 except ImportError:
     SKLEARN_AVAILABLE = False
 
+from tools.text_tool.processors._registry import (
+    ANALYZER_REGISTRY,
+    get_analyzer,
+    list_analyzers,
+    get_analyzer_info,
+)
+
 
 def check_text_size(text: str) -> Dict[str, Any]:
-    """
-    Verifica el tamaño del texto y retorna información de estado.
-
-    Returns:
-        dict con is_too_large, needs_warning, size, size_mb, word_count, estimated_time
-    """
     if not text:
         return {
             'is_too_large': False,
@@ -110,18 +98,6 @@ def check_text_size(text: str) -> Dict[str, Any]:
 
 
 def process_in_chunks(text: str, analyzer_func: Callable, chunk_size: int = TEXT_SIZE_CHUNK, **kwargs) -> Dict[str, Any]:
-    """
-    Procesa texto grande en chunks y combina resultados.
-
-    Args:
-        text: Texto a procesar
-        analyzer_func: Función de análisis a aplicar
-        chunk_size: Tamaño de cada chunk
-        **kwargs: Argumentos para la función de análisis
-
-    Returns:
-        dict con chunks_processed, successful, errors, results
-    """
     chunks = []
     current_chunk = []
     current_size = 0
@@ -161,173 +137,7 @@ def process_in_chunks(text: str, analyzer_func: Callable, chunk_size: int = TEXT
     }
 
 
-# Registry de analizadores
-ANALYZER_REGISTRY: Dict[str, Dict[str, Any]] = {}
-
-
-def get_analyzer(name: str) -> Optional[Callable]:
-    """Obtiene función de análisis por nombre."""
-    return ANALYZER_REGISTRY.get(name, {}).get('func')
-
-
-def list_analyzers() -> List[str]:
-    """Lista todos los analizadores registrados."""
-    return list(ANALYZER_REGISTRY.keys())
-
-
-def get_analyzer_info(name: str) -> Optional[Dict[str, Any]]:
-    """Obtiene metadata de un analizador."""
-    return ANALYZER_REGISTRY.get(name)
-
-
-def _register_analyzers():
-    """Registra todos los analizadores disponibles."""
-    # Importar aquí para evitar imports circulares
-    from tools.text_tool.processors.frequency import analyze_frequency, analyze_ngrams, analyze_stats
-    from tools.text_tool.processors.wordcloud import analyze_wordcloud
-    from tools.text_tool.processors.wordtree import analyze_wordtree_simple, analyze_wordtree
-    from tools.text_tool.processors.topics import analyze_topics
-    from tools.text_tool.processors.correlations import analyze_correlations
-    from tools.text_tool.processors.scatter import analyze_scatter
-    from tools.text_tool.processors.streamgraph import analyze_streamgraph
-    from tools.text_tool.processors.bubblelines import analyze_bubblelines
-    from tools.text_tool.processors.mandala import analyze_mandala
-    from tools.text_tool.processors.category import analyze_category, analyze_sentiment, analyze_entities, analyze_summary
-    from tools.text_tool.processors.trends import analyze_trends
-
-    global ANALYZER_REGISTRY
-
-    ANALYZER_REGISTRY.update({
-        'wordcloud': {
-            'func': analyze_wordcloud,
-            'requires': ['wordcloud'],
-            'returns': 'image',
-            'description': 'Genera nube de palabras',
-            'min_words': 10
-        },
-        'frequency': {
-            'func': analyze_frequency,
-            'requires': [],
-            'returns': 'text',
-            'description': 'Palabras más frecuentes',
-            'min_words': 5
-        },
-        'stats': {
-            'func': analyze_stats,
-            'requires': [],
-            'returns': 'stats',
-            'description': 'Estadísticas del corpus',
-            'min_words': 1
-        },
-        'ngrams': {
-            'func': analyze_ngrams,
-            'requires': [],
-            'returns': 'text',
-            'description': 'N-grams (bigramas, trigramas)',
-            'min_words': 3
-        },
-        'trends': {
-            'func': analyze_trends,
-            'requires': ['matplotlib'],
-            'returns': 'image',
-            'description': 'Tendencia de términos por secciones',
-            'min_words': 50
-        },
-        'correlations': {
-            'func': analyze_correlations,
-            'requires': ['matplotlib', 'numpy'],
-            'returns': 'image',
-            'description': 'Co-ocurrencia de términos',
-            'min_words': 20
-        },
-        'scatter': {
-            'func': analyze_scatter,
-            'requires': ['matplotlib'],
-            'returns': 'image',
-            'description': 'Distribución término-posición',
-            'min_words': 20
-        },
-        'topics': {
-            'func': analyze_topics,
-            'requires': ['sklearn'],
-            'returns': 'data',
-            'description': 'LDA - Latent Dirichlet Allocation',
-            'min_words': 100
-        },
-        'wordtree': {
-            'func': analyze_wordtree,
-            'requires': ['matplotlib'],
-            'returns': 'image',
-            'description': 'WordTree - Árbol de palabras',
-            'min_words': 50
-        },
-        'wordtree_simple': {
-            'func': analyze_wordtree_simple,
-            'requires': [],
-            'returns': 'text',
-            'description': 'WordTree Simple - lista de continuaciones',
-            'min_words': 20
-        },
-        'streamgraph': {
-            'func': analyze_streamgraph,
-            'requires': ['matplotlib'],
-            'returns': 'image',
-            'description': 'StreamGraph - gráfico de área apilada',
-            'min_words': 50
-        },
-        'bubblelines': {
-            'func': analyze_bubblelines,
-            'requires': ['matplotlib'],
-            'returns': 'image',
-            'description': 'Bubblelines - líneas con burbujas',
-            'min_words': 50
-        },
-        'mandala': {
-            'func': analyze_mandala,
-            'requires': ['matplotlib'],
-            'returns': 'image',
-            'description': 'Mandala - diagrama circular concéntrico',
-            'min_words': 100
-        },
-        'sentiment': {
-            'func': analyze_sentiment,
-            'requires': [],
-            'returns': 'data',
-            'description': 'Análisis de sentimiento (positivo/negativo/neutral)',
-            'min_words': 10
-        },
-        'entities': {
-            'func': analyze_entities,
-            'requires': [],
-            'returns': 'data',
-            'description': 'Reconocimiento de entidades (emails, URLs, fechas, teléfonos)',
-            'min_words': 5
-        },
-        'category': {
-            'func': analyze_category,
-            'requires': [],
-            'returns': 'data',
-            'description': 'Clasificación de texto (informativo, opinión, técnico, narrativo)',
-            'min_words': 20
-        },
-        'summary': {
-            'func': analyze_summary,
-            'requires': [],
-            'returns': 'text',
-            'description': 'Resumen extractivo por frecuencia de palabras',
-            'min_words': 30
-        }
-    })
-
-
-# Inicializar registry al importar
-_register_analyzers()
-
-
-# Funciones utilitarias adicionales
-
 def check_dependencies(requires: List[str]) -> Dict[str, Any]:
-    """Verifica si las dependencias están disponibles."""
     missing = []
 
     dep_map = {
@@ -351,7 +161,6 @@ def check_dependencies(requires: List[str]) -> Dict[str, Any]:
 
 
 def get_text_stats(text: str) -> Dict[str, Any]:
-    """Obtiene estadísticas básicas del texto sin limpiar."""
     words = text.split()
     sentences = re.split(r'[.!?]+', text)
     sentences = [s for s in sentences if s.strip()]
@@ -366,7 +175,6 @@ def get_text_stats(text: str) -> Dict[str, Any]:
 
 
 def validate_text(text: str, min_words: int = 1) -> Dict[str, Any]:
-    """Valida que el texto tenga suficiente contenido."""
     if not text or not text.strip():
         return {'valid': False, 'error': 'Texto vacío', 'word_count': 0}
 
