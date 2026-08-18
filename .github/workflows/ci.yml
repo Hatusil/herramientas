@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Architecture tests
+        run: python -m pytest tests/test_arch_structure.py -v --tb=short
+
+      - name: Processor tests
+        run: |
+          python -m pytest \
+            tools/compress_tool/tests/ \
+            tools/pdf_tool/tests/ \
+            tools/image_tool/tests/ \
+            tools/audio_tool/tests/ \
+            tools/video_tool/tests/ \
+            -v --tb=short
+
+      - name: All tests
+        run: python -m pytest -v --tb=short
