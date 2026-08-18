@@ -237,67 +237,75 @@ class VideoToolUI(BaseToolUI):
 
     def _show_info(self) -> None:
         if not self._check_files():
-            self.status_label.configure(text="Seleccion\u00e1 un video primero", text_color=COLORS.get("warning"))
+            self.status_label.configure(text="Seleccioná un video primero", text_color=COLORS.get("warning"))
             return
-
-        from tools.video_tool.processor import get_video_info
 
         self.status_label.configure(text="Cargando info...", text_color=COLORS.get("warning"))
         self.update()
 
         selected = self._get_selected_files()
         if not selected:
-            self.status_label.configure(text="Seleccion\u00e1 un video", text_color=COLORS.get("warning"))
+            self.status_label.configure(text="Seleccioná un video", text_color=COLORS.get("warning"))
             return
 
         self.info_text.configure(state="normal")
         self.info_text.delete("1.0", tk.END)
 
-        all_info = []
-        errors = []
-        divider = "\u2500" * 35
+        def info_thread():
+            try:
+                from tools.video_tool.processor import get_video_info
+                all_info = []
+                errors = []
+                divider = "\u2500" * 35
 
-        for video_path in selected:
-            result = get_video_info(video_path)
-            if result["success"]:
-                fps = result["video_fps"]
-                if "/" in str(fps):
-                    try:
-                        num, den = fps.split("/")
-                        fps = f"{float(num)/float(den):.2f}"
-                    except (ValueError, ZeroDivisionError):
-                        pass
+                for video_path in selected:
+                    result = get_video_info(video_path)
+                    if result["success"]:
+                        fps = result["video_fps"]
+                        if "/" in str(fps):
+                            try:
+                                num, den = fps.split("/")
+                                fps = f"{float(num)/float(den):.2f}"
+                            except (ValueError, ZeroDivisionError):
+                                pass
 
-                fmt = result["format"] or "N/A"
-                if "," in fmt:
-                    fmt = fmt.split(",")[0]
+                        fmt = result["format"] or "N/A"
+                        if "," in fmt:
+                            fmt = fmt.split(",")[0]
 
-                res = result["video_resolution"] or "N/A"
+                        res = result["video_resolution"] or "N/A"
 
-                info = f"""\U0001F4F9 {result['file_name']}
+                        info = f"""\U0001F4F9 {result['file_name']}
 {divider}
   \U0001F4E6 Formato:     {fmt}
-  \U0001F4BE Tama\u00f1o:      {result['file_size'] / 1024 / 1024:.2f} MB
-  \u23f1\ufe0f Duraci\u00f3n:    {result['duration']:.1f}s
+  \U0001F4BE Tamaño:      {result['file_size'] / 1024 / 1024:.2f} MB
+  \u23f1\ufe0f Duración:    {result['duration']:.1f}s
   \U0001F3AC Video:       {result['video_codec'] or 'N/A'} | {res}
   \u26a1 Bitrate:     {result.get('video_bitrate', 'N/A')}
   \U0001F39E\ufe0f FPS:        {fps}
   \U0001F50A Audio:       {result['audio_codec'] or 'N/A'}"""
-                all_info.append(info)
-            else:
-                errors.append(f"{Path(video_path).name}: {result.get('error', 'Error')}")
+                        all_info.append(info)
+                    else:
+                        errors.append(f"{Path(video_path).name}: {result.get('error', 'Error')}")
 
+                self.after(0, lambda: self._on_info_done(all_info, errors))
+            except Exception as e:
+                self.after(0, lambda: self._on_info_done([], [str(e)]))
+
+        threading.Thread(target=info_thread, daemon=True).start()
+
+    def _on_info_done(self, all_info, errors):
+        self.info_text.configure(state="normal")
+        self.info_text.delete("1.0", tk.END)
         if all_info:
             self.info_text.insert("1.0", "\n\n".join(all_info))
         if errors:
             if all_info:
-                self.info_text.insert(tk.END, f"\n\n\u26a0\ufe0f ERRORES:\n" + "\n".join(errors))
+                self.info_text.insert(tk.END, f"\n\n⚠️ ERRORES:\n" + "\n".join(errors))
             else:
-                self.info_text.insert("1.0", "\u26a0\ufe0f ERRORES:\n" + "\n".join(errors))
-
+                self.info_text.insert("1.0", "⚠️ ERRORES:\n" + "\n".join(errors))
         if errors and not all_info:
             self.status_label.configure(text="Error al cargar info", text_color="red")
         else:
             self._update_selection_status()
-
         self.info_text.configure(state="disabled")

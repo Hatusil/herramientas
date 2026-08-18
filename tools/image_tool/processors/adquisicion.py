@@ -26,20 +26,14 @@ def _load_from_file(file_path: str) -> Dict[str, Any]:
 
 
 def _load_from_url(url: str) -> Dict[str, Any]:
-    """Carga imagen desde URL (async)."""
     try:
         import urllib.request
-        import ssl
+        import tempfile
 
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-
-        with urllib.request.urlopen(url, context=ctx, timeout=10) as resp:
+        with urllib.request.urlopen(url, timeout=10) as resp:
             data = resp.read()
 
-        import tempfile
-        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=True) as tmp:
             tmp.write(data)
             result = _load_image(tmp.name)
 

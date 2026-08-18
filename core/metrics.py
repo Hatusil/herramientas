@@ -131,27 +131,17 @@ class Timer:
 # ============================================================================
 
 def increment(name: str, value: int = 1) -> None:
-    """
-    Función de conveniencia para incrementar un contador global.
-    
-    Args:
-        name: Nombre del contador
-        value: Cantidad a incrementar
-    """
-    counter = Counter(name)
-    counter.increment(value)
+    if name in _metrics_registry:
+        _metrics_registry[name].increment(value)
+    else:
+        Counter(name).increment(value)
 
 
 def gauge_set(name: str, value: float) -> None:
-    """
-    Función de conveniencia para establecer un valor de gauge global.
-    
-    Args:
-        name: Nombre del gauge
-        value: Valor a establecer
-    """
-    gauge = Gauge(name)
-    gauge.set(value)
+    if name in _metrics_registry:
+        _metrics_registry[name].set(value)
+    else:
+        Gauge(name).set(value)
 
 
 def timer(name: str) -> Timer:

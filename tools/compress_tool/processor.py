@@ -184,6 +184,12 @@ def decompress_zip(zip_path: str, output_dir: str = None) -> Dict[str, Any]:
             os.makedirs(output_dir, exist_ok=True)
             
             with zipfile.ZipFile(zip_path, 'r') as zf:
+                # C1: Zip Slip prevention — validate every member stays within output_dir
+                for member in zf.namelist():
+                    member_path = os.path.normpath(os.path.join(output_dir, member))
+                    if not member_path.startswith(os.path.normpath(output_dir)):
+                        increment('compress_errors')
+                        return {'success': False, 'error': f'Unsafe path in archive: {member}', 'output_files': []}
                 zf.extractall(output_dir)
             
             increment('compress_operations_total')
@@ -214,6 +220,10 @@ def decompress_tar(tar_path: str, output_dir: str = None) -> Dict[str, Any]:
         os.makedirs(output_dir, exist_ok=True)
         
         with tarfile.open(tar_path, 'r:*') as tf:
+            for member in tf.getmembers():
+                member_path = os.path.normpath(os.path.join(output_dir, member.name))
+                if not member_path.startswith(os.path.normpath(output_dir)):
+                    return {'success': False, 'error': f'Unsafe path in archive: {member.name}', 'output_files': []}
             tf.extractall(output_dir)
         
         return {

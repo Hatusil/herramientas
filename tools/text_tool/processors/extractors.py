@@ -104,12 +104,36 @@ def extract_text_from_file(file_path: str) -> Dict[str, Any]:
 
 
 def _validate_url_format(url: str) -> str:
-    """Validate and return URL format with proper scheme."""
     url = url.strip()
     if not url.startswith(('http://', 'https://')):
         logger.warning(f"URL sin protocolo válido: {url}")
         return 'https://' + url
     return url
+
+
+_PRIVATE_RANGES = (
+    '10.', '127.', '169.254.', '192.168.',
+    '172.16.', '172.17.', '172.18.', '172.19.',
+    '172.20.', '172.21.', '172.22.', '172.23.',
+    '172.24.', '172.25.', '172.26.', '172.27.',
+    '172.28.', '172.29.', '172.30.', '172.31.',
+    '0.', 'localhost',
+)
+
+
+def _is_safe_url(url: str) -> bool:
+    from urllib.parse import urlparse
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname or ''
+        if hostname == 'localhost':
+            return False
+        for prefix in _PRIVATE_RANGES:
+            if hostname.startswith(prefix):
+                return False
+        return True
+    except Exception:
+        return False
 
 
 def _build_request_headers(url: str) -> Dict[str, str]:
@@ -147,6 +171,8 @@ def extract_text_from_url(url: str) -> Dict[str, Any]:
 
     try:
         url = _validate_url_format(url)
+        if not _is_safe_url(url):
+            return {'success': False, 'error': 'URL apunta a red privada o localhost'}
         headers = _build_request_headers(url)
 
         logger.info(f"Haciendo request a: {url}")
