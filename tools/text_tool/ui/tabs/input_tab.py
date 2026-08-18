@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, List, Tuple
 
 import customtkinter as ctk
 
+from core.async_utils import run_in_background
 from tools.text_tool.ui.tabs.base_tab import BaseTab
 
 # Importar submódulos
@@ -45,7 +45,6 @@ class InputTab(BaseTab):
         self._load_btn: ctk.CTkButton | None = None
         self._file_frame: ctk.CTkFrame | None = None
         self._url_frame: ctk.CTkFrame | None = None
-        self._executor = ThreadPoolExecutor(max_workers=2)
         super().__init__(parent, state, callbacks)
 
     def _setup_frame(self) -> None:
@@ -167,7 +166,7 @@ class InputTab(BaseTab):
                 return
             self._callbacks.on_status(f"📂 Cargando {len(self._pending_files)} archivo(s)...", "blue")
             files_to_load = list(self._pending_files)
-            self._executor.submit(self._load_files_async, files_to_load)
+            run_in_background(self._load_files_async, files_to_load)
 
         # URLs - async 
         elif input_type == "url":
@@ -176,7 +175,7 @@ class InputTab(BaseTab):
                 self._callbacks.on_status("⚠️ Escribí al menos una URL", "orange")
                 return
             self._callbacks.on_status(f"🌐 Descargando {len(urls)} URL(s)...", "blue")
-            self._executor.submit(self._load_urls_async, urls)
+            run_in_background(self._load_urls_async, urls)
 
     def _load_files_async(self, files: List[str]) -> None:
         """Load files in background thread. A9: thread-safe."""

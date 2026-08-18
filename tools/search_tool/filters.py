@@ -4,9 +4,12 @@ Separado de processor.py por SRP (máxima R0: clases <300 líneas).
 """
 import os
 import re
+import logging
 from pathlib import Path
 from datetime import datetime
 from typing import List, Optional
+
+logger = logging.getLogger(__name__)
 
 
 def search_by_name(files: List[str], pattern: str, mode: str = 'contains', 
@@ -29,6 +32,7 @@ def search_by_name(files: List[str], pattern: str, mode: str = 'contains',
                 flags = 0 if case_sensitive else re.IGNORECASE
                 match = bool(re.search(pattern, name, flags))
             except re.error:
+                logger.warning("Regex inválida en search_by_name: %s", pattern)
                 match = False
         else:
             match = pattern.lower() in name.lower()

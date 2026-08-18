@@ -4,6 +4,7 @@ Módulo de configuración y persistencia de preferencias.
 import json
 import os
 import logging
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -84,7 +85,7 @@ def load_theme() -> str:
 
 def save_theme(theme: str) -> None:
     """
-    Guarda el tema en config.json.
+    Guarda el tema en config.json (atomic write).
     
     Args:
         theme: Tema a guardar ('dark' o 'light')
@@ -96,9 +97,17 @@ def save_theme(theme: str) -> None:
     config_path = get_config_path() / CONFIG_FILENAME
     
     try:
+        config_path.parent.mkdir(parents=True, exist_ok=True)
         data = {"theme": theme}
-        with open(config_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        # Atomic write: temp file + rename prevents corruption on crash
+        fd, tmp_path = tempfile.mkstemp(dir=config_path.parent, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            os.replace(tmp_path, config_path)
+        except BaseException:
+            os.unlink(tmp_path)
+            raise
         logger.info(f"Tema guardado: {theme}")
     except Exception as e:
         logger.error(f"Error guardando tema: {e}")
@@ -130,7 +139,7 @@ def get_config_value(key: str, default: Optional[str] = None) -> Optional[str]:
 
 def set_config_value(key: str, value: str) -> None:
     """
-    Establece un valor de configuración.
+    Establece un valor de configuración (atomic write).
     
     Args:
         key: Clave a establecer
@@ -139,7 +148,6 @@ def set_config_value(key: str, value: str) -> None:
     config_path = get_config_path() / CONFIG_FILENAME
     
     try:
-        # Cargar config existente o crear nuevo
         if config_path.exists():
             with open(config_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -148,7 +156,14 @@ def set_config_value(key: str, value: str) -> None:
         
         data[key] = value
         
-        with open(config_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(dir=config_path.parent, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            os.replace(tmp_path, config_path)
+        except BaseException:
+            os.unlink(tmp_path)
+            raise
     except Exception as e:
         logger.error(f"Error guardando config {key}: {e}")

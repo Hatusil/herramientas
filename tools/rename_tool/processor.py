@@ -7,12 +7,11 @@ import shutil
 from pathlib import Path
 from typing import List, Dict, Any
 
-# Importar funciones compartidas de core (máxima C2: Consistency)
 from core.file_utils import validate_input_file, get_output_path
-# Métricas
 from core.metrics import Counter, Timer, increment
 
-# Contadores de operaciones
+_REGEX_MAX_LEN = 200
+
 rename_operations_total = Counter('rename_operations_total')
 rename_errors = Counter('rename_errors')
 
@@ -217,37 +216,39 @@ def rename_regex(files: List[str], pattern: str, replace: str) -> Dict[str, Any]
     with Timer('rename_tool.rename_regex'):
         renamed = []
         errors = []
-        
+
+        if len(pattern) > _REGEX_MAX_LEN:
+            increment('rename_errors')
+            return {'success': False, 'error': f'Patrón regex demasiado largo (máx {_REGEX_MAX_LEN})'}
+
         try:
             regex = re.compile(pattern)
-            
-            for f in files:
-                try:
-                    p = Path(f)
-                    new_name = regex.sub(replace, p.name)
-                    # A8: Si el nombre no cambia (no hay match), no hacer copy
-                    if new_name == p.name:
-                        renamed.append((f, str(p)))  # Registrar como "sin cambio"
-                        continue
-                    new_path = p.parent / new_name
-                    shutil.copy2(f, new_path)  # A8: copy instead of rename for idempotency
-                    renamed.append((f, str(new_path)))
-                except Exception as e:
-                    errors.append(f"Error: {p.name} - {str(e)}")
-                    increment('rename_errors')
-        
         except re.error as e:
             increment('rename_errors')
             return {'success': False, 'error': f'Expresión regular inválida: {e}'}
-        
+
+        for f in files:
+            try:
+                p = Path(f)
+                new_name = regex.sub(replace, p.name, count=0)
+                if new_name == p.name:
+                    renamed.append((f, str(p)))
+                    continue
+                new_path = p.parent / new_name
+                shutil.copy2(f, new_path)
+                renamed.append((f, str(new_path)))
+            except Exception as e:
+                errors.append(f"Error: {p.name} - {str(e)}")
+                increment('rename_errors')
+
         if len(renamed) > 0:
             increment('rename_operations_total')
-        
+
         success = len(renamed) > 0
         msg = f"✓ Regex '{pattern}' → '{replace}' en {len(renamed)} archivos"
         if errors:
             msg += f" ({len(errors)} errores)"
-        
+
         return {
             'success': success,
             'message': msg,
