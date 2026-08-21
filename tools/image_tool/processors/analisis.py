@@ -7,6 +7,7 @@ import numpy as np
 from core.image_utils import _load_image
 
 from ._ok import _ok, _fail, _image_to_dict, CV2_AVAILABLE
+from core.constants import OUTPUT_DIR
 
 
 def _template_match(image: np.ndarray, template_path: str) -> Dict[str, Any]:
@@ -44,7 +45,7 @@ def _template_match(image: np.ndarray, template_path: str) -> Dict[str, Any]:
             output = cv2.cvtColor(output, cv2.COLOR_GRAY2RGB)
         cv2.rectangle(output, max_loc, (max_loc[0] + w, max_loc[1] + h), (0, 255, 0), 3)
 
-        output_path = Path('output/template_match.png')
+        output_path = OUTPUT_DIR / 'template_match.png'
         output_path.parent.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(str(output_path), cv2.cvtColor(output, cv2.COLOR_RGB2BGR))
 
@@ -139,7 +140,7 @@ def _haar_detect(image: np.ndarray, cascade_path: str) -> Dict[str, Any]:
         for (x, y, w, h) in detections:
             cv2.rectangle(result, (x, y), (x + w, y + h), (0, 255, 0), 3)
 
-        output_path = Path('output/haar_detect.png')
+        output_path = OUTPUT_DIR / 'haar_detect.png'
         output_path.parent.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(str(output_path), cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
 

@@ -91,3 +91,6 @@ tests_local/
 
 # --- Otros ---
 informes/
+
+# --- Runtime outputs (generados en ejecución/tests) ---
+output/

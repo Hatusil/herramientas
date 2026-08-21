@@ -1,10 +1,10 @@
 """Phase 3: Mejora Visual."""
-from pathlib import Path
 from typing import Dict, Any
 
 import numpy as np
 
 from ._ok import _ok, _fail, _image_to_dict, CV2_AVAILABLE
+from core.constants import OUTPUT_DIR
 
 
 def _compute_histogram(image: np.ndarray) -> Dict[str, Any]:
@@ -23,7 +23,7 @@ def _compute_histogram(image: np.ndarray) -> Dict[str, Any]:
         ax.set_ylabel('Frecuencia')
         ax.set_title('Histograma de Intensidades')
 
-        output_path = Path('output/histogram.png')
+        output_path = OUTPUT_DIR / 'histogram.png'
         output_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(str(output_path), dpi=100, bbox_inches='tight')
         plt.close(fig)

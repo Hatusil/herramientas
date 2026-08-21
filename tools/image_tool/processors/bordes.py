@@ -1,10 +1,10 @@
 """Phase 6: Detección de Bordes."""
-from pathlib import Path
 from typing import Dict, Any
 
 import numpy as np
 
 from ._ok import _ok, _fail, _image_to_dict, CV2_AVAILABLE
+from core.constants import OUTPUT_DIR
 
 
 def _to_grayscale(image: np.ndarray) -> np.ndarray:
@@ -119,7 +119,7 @@ def _find_contours(image: np.ndarray) -> Dict[str, Any]:
             result = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
         cv2.drawContours(result, contours, -1, (0, 255, 0), 2)
 
-        output_path = Path('output/contours.png')
+        output_path = OUTPUT_DIR / 'contours.png'
         output_path.parent.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(str(output_path), cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
 
@@ -156,7 +156,7 @@ def _bounding_boxes(image: np.ndarray, min_area: int = 100) -> Dict[str, Any]:
                 boxes.append({'x': x, 'y': y, 'w': w, 'h': h, 'area': int(area)})
                 cv2.rectangle(result, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
-        output_path = Path('output/bounding_boxes.png')
+        output_path = OUTPUT_DIR / 'bounding_boxes.png'
         output_path.parent.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(str(output_path), cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
 
