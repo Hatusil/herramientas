@@ -20,7 +20,6 @@ class PipelineTab(PDFBaseTab):
         state=None,
     ):
         super().__init__(parent, callbacks, main_ui, state)
-        self._operations = []
 
     def _setup_frame(self) -> None:
         self._frame = create_frame(self._parent, fg_color="transparent")
@@ -94,7 +93,9 @@ class PipelineTab(PDFBaseTab):
             width=150, fg_color=COLORS.get("success"),
         ).pack(side="left", padx=5, fill="x", expand=True)
 
-        self._state.pipeline_operations = self._operations
+        # _setup_frame runs during super().__init__(): adopt the state-owned
+        # list instead of creating self._operations in __init__.
+        self._operations = self._state.pipeline_operations
 
     def get_frame(self) -> ctk.CTkFrame:
         return self._frame
@@ -175,7 +176,6 @@ class PipelineTab(PDFBaseTab):
         self.update_status("Pipeline limpiado", "gray")
 
     def _execute(self) -> None:
-        self._state.pipeline_operations = self._operations
         from tools.pdf_tool.ui.handlers.pipeline_handler import execute_pipeline
         execute_pipeline(self._state)
         self._refresh_list()
