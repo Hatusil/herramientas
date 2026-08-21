@@ -29,6 +29,7 @@ class FilterPipeline:
     raw_text: str = ""
     raw_words: List[str] = field(default_factory=list)
     filtered_words: List[str] = field(default_factory=list)
+    applied_filters: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -107,13 +108,17 @@ class TextAnalyzerState:
         exclude = self.exclude_words.lower().split(",") if self.exclude_words else []
         exclude = [w.strip() for w in exclude if w.strip()]
 
+        applied: List[str] = []
         if self.remove_stopwords:
             words = self._filter_stopwords(words)
+            applied.append("stopwords")
 
         if exclude:
             words = [w for w in words if w not in exclude]
+            applied.append("exclusiones")
 
         self.filter_pipeline.filtered_words = words
+        self.filter_pipeline.applied_filters = applied
         self.cleaned_content = " ".join(words)
 
     def apply_stopwords_filter(self, enabled: bool) -> None:
